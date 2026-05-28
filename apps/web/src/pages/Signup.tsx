@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
+import Turnstile from "../components/Turnstile.js";
 
 const TOS_VERSION = "2026-05-28"; // must match TOS_VERSION in the Worker
 
@@ -11,12 +12,17 @@ export default function Signup() {
   const [phone, setPhone] = useState("+1");
   const [displayName, setDisplayName] = useState("");
   const [accepted, setAccepted] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!turnstileToken) {
+      setError("Please complete the bot check");
+      return;
+    }
     setBusy(true);
     try {
       const r = await api<{ challengeId: string }>("/auth/signup", {
@@ -28,8 +34,7 @@ export default function Signup() {
           displayName,
           tosVersion: TOS_VERSION,
           tosAccepted: true,
-          // TODO: integrate Turnstile widget; this is a placeholder.
-          turnstileToken: "dev-bypass",
+          turnstileToken,
         }),
       });
       nav(`/signup/verify?cid=${encodeURIComponent(r.challengeId)}`);
@@ -100,10 +105,15 @@ export default function Signup() {
             not a party to any trade I make.
           </span>
         </label>
+        <Turnstile
+          onVerify={setTurnstileToken}
+          onExpire={() => setTurnstileToken(null)}
+          onError={() => setTurnstileToken(null)}
+        />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
-          disabled={!accepted || busy}
+          disabled={!accepted || busy || !turnstileToken}
           className="w-full rounded bg-brand text-white py-2.5 disabled:opacity-50"
         >
           {busy ? "Sending code…" : "Create account & send SMS"}
