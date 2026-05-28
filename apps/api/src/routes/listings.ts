@@ -14,7 +14,10 @@ export const listingsRoutes = new Hono<AppContext>();
 
 // ---------------- search (public) ----------------
 listingsRoutes.get("/", optionalAuth, async (c) => {
-  const raw = Object.fromEntries(new URL(c.req.url).searchParams.entries());
+  const raw: Record<string, unknown> = {};
+  new URL(c.req.url).searchParams.forEach((v, k) => {
+    raw[k] = v;
+  });
   // Coerce numeric query strings
   for (const k of ["north", "south", "east", "west", "lat", "lng", "radiusKm", "limit"]) {
     if (raw[k] !== undefined) (raw as any)[k] = Number(raw[k]);

@@ -2,9 +2,7 @@ name = "unscrewed-api"
 main = "src/index.ts"
 compatibility_date = "2024-11-12"
 compatibility_flags = ["nodejs_compat"]
-# account_id should come from `wrangler login` against the `smb` Cloudflare account.
-# To pin it explicitly, fill in below.
-# account_id = "<smb-account-id>"
+account_id = "485a8b721eeb6afa98c6e4071b50fe04"  # smb
 
 workers_dev = false
 
@@ -17,17 +15,17 @@ zone_name = "unscrewed.lol"
 [[d1_databases]]
 binding = "DB"
 database_name = "unscrewed"
-database_id = "REPLACE_WITH_D1_ID"   # run `wrangler d1 create unscrewed` then paste the id
+database_id = "9369c48b-e156-4963-827e-a0b7ed76e149"
 migrations_dir = "../../packages/db/src/migrations"
 
 # ---------- KV ----------
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "REPLACE_WITH_SESSIONS_KV_ID"   # `wrangler kv namespace create SESSIONS`
+id = "3f47aca094bf4d338da2fb0cbb71085f"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "REPLACE_WITH_RATE_LIMIT_KV_ID" # `wrangler kv namespace create RATE_LIMIT`
+id = "d30c4d4391c64dbdbb0438235623c642"
 
 # ---------- R2 ----------
 [[r2_buckets]]

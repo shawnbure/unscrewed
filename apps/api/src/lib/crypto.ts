@@ -52,7 +52,7 @@ async function pbkdf2(
     ["deriveBits"]
   );
   return crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt, iterations, hash: "SHA-256" },
+    { name: "PBKDF2", salt: salt as BufferSource, iterations, hash: "SHA-256" },
     key,
     KEY_LEN * 8
   );

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "description": "Barter marketplace on Cloudflare",
-  "packageManager": "pnpm@9.12.0",
+  "packageManager": "pnpm@11.4.0",
   "scripts": {
     "dev": "pnpm -r --parallel --filter=./apps/* dev",
     "build": "pnpm -r --filter=./apps/* build",
