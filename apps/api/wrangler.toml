@@ -1,0 +1,56 @@
+name = "unscrewed-api"
+main = "src/index.ts"
+compatibility_date = "2024-11-12"
+compatibility_flags = ["nodejs_compat"]
+# account_id should come from `wrangler login` against the `smb` Cloudflare account.
+# To pin it explicitly, fill in below.
+# account_id = "<smb-account-id>"
+
+workers_dev = false
+
+# Custom domain — set up the route in the Cloudflare dashboard after first deploy.
+[[routes]]
+pattern = "api.unscrewed.lol/*"
+zone_name = "unscrewed.lol"
+
+# ---------- D1 ----------
+[[d1_databases]]
+binding = "DB"
+database_name = "unscrewed"
+database_id = "REPLACE_WITH_D1_ID"   # run `wrangler d1 create unscrewed` then paste the id
+migrations_dir = "../../packages/db/src/migrations"
+
+# ---------- KV ----------
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "REPLACE_WITH_SESSIONS_KV_ID"   # `wrangler kv namespace create SESSIONS`
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "REPLACE_WITH_RATE_LIMIT_KV_ID" # `wrangler kv namespace create RATE_LIMIT`
+
+# ---------- R2 ----------
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "unscrewed-photos"     # `wrangler r2 bucket create unscrewed-photos`
+
+# ---------- Durable Objects ----------
+[[durable_objects.bindings]]
+name = "NEGOTIATION"
+class_name = "NegotiationRoom"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["NegotiationRoom"]
+
+# ---------- Public env ----------
+[vars]
+PUBLIC_BASE_URL = "https://unscrewed.lol"
+TOS_VERSION = "2026-05-28"
+
+# ---------- Secrets (set via `wrangler secret put`, do NOT commit) ----------
+# TELNYX_API_KEY
+# TELNYX_MESSAGING_PROFILE_ID
+# TELNYX_FROM_NUMBER
+# SESSION_SECRET
+# TURNSTILE_SECRET_KEY

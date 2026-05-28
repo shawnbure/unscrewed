@@ -1,0 +1,26 @@
+{
+  "name": "@unscrewed/db",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate:local": "wrangler d1 migrations apply unscrewed --local --config ../../apps/api/wrangler.toml",
+    "migrate:remote": "wrangler d1 migrations apply unscrewed --remote --config ../../apps/api/wrangler.toml",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.36.4"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.28.1",
+    "wrangler": "^3.90.0",
+    "better-sqlite3": "^11.5.0"
+  }
+}

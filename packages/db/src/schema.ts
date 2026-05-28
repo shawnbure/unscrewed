@@ -1,0 +1,280 @@
+import { sql } from "drizzle-orm";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
+
+// ============================================================
+// users
+// ============================================================
+export const users = sqliteTable(
+  "users",
+  {
+    id: text("id").primaryKey(), // uuid
+    email: text("email").notNull(),
+    emailNormalized: text("email_normalized").notNull(),
+    passwordHash: text("password_hash").notNull(), // scrypt JSON blob
+    phoneE164: text("phone_e164").notNull(),
+    phoneVerifiedAt: integer("phone_verified_at"), // epoch ms; null until SMS verified
+    displayName: text("display_name").notNull(),
+    isAdmin: integer("is_admin").notNull().default(0),
+    isArchived: integer("is_archived").notNull().default(0),
+    isDeleted: integer("is_deleted").notNull().default(0),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateModified: integer("date_modified")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    uxEmail: uniqueIndex("ux_users_email_normalized").on(t.emailNormalized),
+    ixPhone: index("ix_users_phone").on(t.phoneE164),
+  })
+);
+
+// ============================================================
+// tos_acceptances — every signup + future ToS version bump
+// ============================================================
+export const tosAcceptances = sqliteTable(
+  "tos_acceptances",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    tosVersion: text("tos_version").notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    dateAccepted: integer("date_accepted")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    ixUser: index("ix_tos_user").on(t.userId),
+  })
+);
+
+// ============================================================
+// sms_codes — short-lived 6-digit codes for signup / login 2FA
+// ============================================================
+export const smsCodes = sqliteTable(
+  "sms_codes",
+  {
+    id: text("id").primaryKey(), // == challengeId returned to client
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    purpose: text("purpose").notNull(), // SmsCodePurpose
+    codeHash: text("code_hash").notNull(), // SHA-256 of "<code>:<id>"
+    expiresAt: integer("expires_at").notNull(), // epoch ms
+    consumedAt: integer("consumed_at"),
+    attempts: integer("attempts").notNull().default(0),
+    sentToPhoneE164: text("sent_to_phone_e164").notNull(),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    ixUser: index("ix_sms_codes_user").on(t.userId),
+    ixExpires: index("ix_sms_codes_expires").on(t.expiresAt),
+  })
+);
+
+// ============================================================
+// sms_log — outbound + delivery receipts from Telnyx
+// ============================================================
+export const smsLog = sqliteTable(
+  "sms_log",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id"),
+    direction: text("direction").notNull(), // 'outbound' | 'inbound'
+    toNumber: text("to_number").notNull(),
+    fromNumber: text("from_number"),
+    telnyxMessageId: text("telnyx_message_id"),
+    status: text("status"), // queued, sending, sent, delivered, sending_failed, delivery_failed
+    errorCode: text("error_code"),
+    errorMessage: text("error_message"),
+    body: text("body"),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateModified: integer("date_modified")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    ixTelnyxId: index("ix_sms_log_telnyx_id").on(t.telnyxMessageId),
+    ixUser: index("ix_sms_log_user").on(t.userId),
+  })
+);
+
+// ============================================================
+// listings
+// ============================================================
+export const listings = sqliteTable(
+  "listings",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    kind: text("kind").notNull(), // 'good' | 'service'
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    category: text("category").notNull(),
+    condition: text("condition"),
+    wants: text("wants").notNull(),
+    postalCode: text("postal_code").notNull(),
+    countryCode: text("country_code").notNull().default("US"),
+    lat: real("lat").notNull(),
+    lng: real("lng").notNull(),
+    geohash: text("geohash").notNull(), // 7-char precision (~150m)
+    status: text("status").notNull().default("active"), // active | traded | withdrawn
+    isArchived: integer("is_archived").notNull().default(0),
+    isDeleted: integer("is_deleted").notNull().default(0),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateModified: integer("date_modified")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    ixUser: index("ix_listings_user").on(t.userId),
+    ixCategory: index("ix_listings_category").on(t.category),
+    ixGeohash: index("ix_listings_geohash").on(t.geohash),
+    ixStatus: index("ix_listings_status").on(t.status),
+  })
+);
+
+// ============================================================
+// listing_photos
+// ============================================================
+export const listingPhotos = sqliteTable(
+  "listing_photos",
+  {
+    id: text("id").primaryKey(),
+    listingId: text("listing_id")
+      .notNull()
+      .references(() => listings.id),
+    r2Key: text("r2_key").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    widthPx: integer("width_px"),
+    heightPx: integer("height_px"),
+    sizeBytes: integer("size_bytes"),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    ixListing: index("ix_photos_listing").on(t.listingId),
+  })
+);
+
+// ============================================================
+// negotiations — one thread per (listing, requester)
+// ============================================================
+export const negotiations = sqliteTable(
+  "negotiations",
+  {
+    id: text("id").primaryKey(),
+    listingId: text("listing_id")
+      .notNull()
+      .references(() => listings.id),
+    listerUserId: text("lister_user_id")
+      .notNull()
+      .references(() => users.id),
+    requesterUserId: text("requester_user_id")
+      .notNull()
+      .references(() => users.id),
+    offering: text("offering").notNull(),
+    status: text("status").notNull().default("open"), // open | contract_drafted | signed | closed
+    isArchived: integer("is_archived").notNull().default(0),
+    isDeleted: integer("is_deleted").notNull().default(0),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateModified: integer("date_modified")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    ixListing: index("ix_neg_listing").on(t.listingId),
+    ixLister: index("ix_neg_lister").on(t.listerUserId),
+    ixRequester: index("ix_neg_requester").on(t.requesterUserId),
+    uxPair: uniqueIndex("ux_neg_listing_requester").on(
+      t.listingId,
+      t.requesterUserId
+    ),
+  })
+);
+
+// ============================================================
+// negotiation_messages
+// ============================================================
+export const negotiationMessages = sqliteTable(
+  "negotiation_messages",
+  {
+    id: text("id").primaryKey(),
+    negotiationId: text("negotiation_id")
+      .notNull()
+      .references(() => negotiations.id),
+    senderUserId: text("sender_user_id")
+      .notNull()
+      .references(() => users.id),
+    body: text("body").notNull(),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    ixNeg: index("ix_msg_neg").on(t.negotiationId),
+  })
+);
+
+// ============================================================
+// contracts — immutable once signed
+// ============================================================
+export const contracts = sqliteTable(
+  "contracts",
+  {
+    id: text("id").primaryKey(),
+    negotiationId: text("negotiation_id")
+      .notNull()
+      .references(() => negotiations.id),
+    listingId: text("listing_id")
+      .notNull()
+      .references(() => listings.id),
+    partyAUserId: text("party_a_user_id") // lister
+      .notNull()
+      .references(() => users.id),
+    partyBUserId: text("party_b_user_id") // requester
+      .notNull()
+      .references(() => users.id),
+    termsJson: text("terms_json").notNull(), // ContractTerms
+    status: text("status").notNull().default("draft"),
+    partyASignedName: text("party_a_signed_name"),
+    partyASignedAt: integer("party_a_signed_at"),
+    partyASignedIp: text("party_a_signed_ip"),
+    partyBSignedName: text("party_b_signed_name"),
+    partyBSignedAt: integer("party_b_signed_at"),
+    partyBSignedIp: text("party_b_signed_ip"),
+    tosVersionAtSigning: text("tos_version_at_signing"),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateModified: integer("date_modified")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    ixNeg: index("ix_contract_neg").on(t.negotiationId),
+    ixListing: index("ix_contract_listing").on(t.listingId),
+  })
+);
