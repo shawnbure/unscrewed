@@ -1,11 +1,18 @@
 // Thin API client. All requests go through Vite's /api proxy in dev and
 // through api.unscrewed.lol in prod.
 
-const BASE =
-  import.meta.env.VITE_API_BASE ??
-  (typeof window !== "undefined" && window.location.hostname === "unscrewed.lol"
-    ? "https://api.unscrewed.lol"
-    : "/api");
+// Pick API base from build-time env if set; otherwise: any unscrewed.lol host
+// or *.pages.dev preview hits the live API directly; localhost goes through the
+// Vite proxy.
+const BASE = (() => {
+  const fromEnv = import.meta.env.VITE_API_BASE as string | undefined;
+  if (fromEnv) return fromEnv;
+  if (typeof window === "undefined") return "/api";
+  const host = window.location.hostname;
+  if (host === "localhost" || host === "127.0.0.1") return "/api";
+  // unscrewed.lol, www.unscrewed.lol, *.unscrewed-web.pages.dev → live API
+  return "https://api.unscrewed.lol";
+})();
 
 export async function api<T = unknown>(
   path: string,
