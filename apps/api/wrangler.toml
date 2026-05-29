@@ -32,6 +32,10 @@ id = "d30c4d4391c64dbdbb0438235623c642"
 binding = "PHOTOS"
 bucket_name = "unscrewed-photos"     # `wrangler r2 bucket create unscrewed-photos`
 
+# ---------- Workers AI ----------
+[ai]
+binding = "AI"
+
 # ---------- Durable Objects ----------
 [[durable_objects.bindings]]
 name = "NEGOTIATION"

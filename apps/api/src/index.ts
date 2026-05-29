@@ -8,6 +8,7 @@ import { negotiationRoutes } from "./routes/negotiation.js";
 import { webhookRoutes } from "./routes/webhooks.js";
 import { meRoutes } from "./routes/me.js";
 import { adminRoutes } from "./routes/admin.js";
+import { contractsRoutes } from "./routes/contracts.js";
 
 export { NegotiationRoom } from "./lib/negotiationRoom.js";
 
@@ -39,6 +40,7 @@ app.route("/auth", authRoutes);
 app.route("/me", meRoutes);
 app.route("/listings", listingsRoutes);
 app.route("/negotiations", negotiationRoutes);
+app.route("/contracts", contractsRoutes);
 app.route("/webhooks", webhookRoutes);
 app.route("/admin", adminRoutes);
 

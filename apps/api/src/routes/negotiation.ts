@@ -14,6 +14,7 @@ import {
 import type { AppContext } from "../env.js";
 import { requireAuth } from "../middleware/auth.js";
 import { uuidv4 } from "../lib/crypto.js";
+import { generateDraft, createContract } from "./contracts.js";
 
 export const negotiationRoutes = new Hono<AppContext>();
 
@@ -170,6 +171,16 @@ negotiationRoutes.post("/:id/messages", async (c) => {
   }
 
   return c.json({ id: msgId });
+});
+
+// ---------------- AI: generate a contract draft (does NOT persist) ----------------
+negotiationRoutes.post("/:id/contract/draft", async (c) => {
+  return generateDraft(c, c.req.param("id"));
+});
+
+// ---------------- create a contract from agreed terms ----------------
+negotiationRoutes.post("/:id/contract", async (c) => {
+  return createContract(c, c.req.param("id"));
 });
 
 // websocket upgrade → forward to DO

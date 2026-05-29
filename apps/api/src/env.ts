@@ -5,6 +5,7 @@ export interface Env {
   RATE_LIMIT: KVNamespace;
   PHOTOS: R2Bucket;
   NEGOTIATION: DurableObjectNamespace;
+  AI: Ai;
 
   // Vars
   PUBLIC_BASE_URL: string;
