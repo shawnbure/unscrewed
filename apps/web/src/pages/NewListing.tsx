@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container } from "../ui/Container.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
+import { CategoryIcon } from "../ui/CategoryIcons.js";
 import { PhotoUploader } from "../ui/PhotoUploader.js";
 import { api } from "../lib/api.js";
 
@@ -129,11 +130,11 @@ export default function NewListing() {
                 onClick={() => setCategory(c.slug)}
                 className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors ${
                   category === c.slug
-                    ? "border-brand-500 bg-brand-50 text-brand-800"
-                    : "border-sand-300 text-ink-700 hover:border-brand-400"
+                    ? "border-ink-900 bg-surface-100 text-ink-900"
+                    : "border-surface-300 text-ink-700 hover:border-ink-700"
                 }`}
               >
-                <span aria-hidden>{c.emoji}</span>
+                <CategoryIcon slug={c.slug} className="h-4 w-4" />
                 <span>{c.label}</span>
               </button>
             ))}

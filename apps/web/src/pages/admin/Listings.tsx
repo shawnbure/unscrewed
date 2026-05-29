@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../../lib/api.js";
 import { photoUrl } from "../../lib/photoUrl.js";
 import { CATEGORIES } from "../../ui/CategoryTile.js";
+import { CategoryIcon } from "../../ui/CategoryIcons.js";
 
 interface Row {
   id: string;
@@ -95,8 +96,8 @@ export default function AdminListings() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-2xl" aria-hidden>
-                    {cat?.emoji ?? "✨"}
+                  <div className={`flex h-full items-center justify-center ${cat?.iconColor ?? "text-ink-400"}`}>
+                    <CategoryIcon slug={l.category} className="h-7 w-7" />
                   </div>
                 )}
               </div>
@@ -113,7 +114,8 @@ export default function AdminListings() {
                       <span className="chip">{l.kind}</span>
                       {cat && (
                         <span className="chip">
-                          {cat.emoji} {cat.label}
+                          <CategoryIcon slug={cat.slug} className="h-3.5 w-3.5" />
+                          {cat.label}
                         </span>
                       )}
                     </div>

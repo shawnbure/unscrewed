@@ -209,7 +209,12 @@ authRoutes.post("/signup/verify", async (c) => {
   return c.json({ ok: true });
 });
 
-// ---------------- login (password) ----------------
+// ---------------- login (password + Turnstile) ----------------
+// Login does NOT require SMS 2FA. Turnstile + password is sufficient. SMS
+// codes are reserved for proving phone ownership at signup, on phone-change,
+// and any future high-trust action. (Background: every login burning a
+// toll-free SMS is expensive and adds latency for a marginal security win
+// when Turnstile is already blocking automated credential stuffing.)
 authRoutes.post("/login", async (c) => {
   const ip = clientIp(c);
   const rl = await rateLimit(c.env, `login:${ip ?? "unknown"}`, 20, 600);
@@ -217,8 +222,7 @@ authRoutes.post("/login", async (c) => {
 
   const json = await c.req.json().catch(() => null);
   const parsed = LoginSchema.safeParse(json);
-  if (!parsed.success)
-    return c.json({ error: "invalid_input" }, 400);
+  if (!parsed.success) return c.json({ error: "invalid_input" }, 400);
   const input = parsed.data;
 
   const ok = await verifyTurnstile(c.env, input.turnstileToken, ip);
@@ -239,14 +243,22 @@ authRoutes.post("/login", async (c) => {
   const pwOk = await verifyPassword(input.password, u.passwordHash);
   if (!pwOk) return c.json({ error: "invalid_credentials" }, 401);
 
+  // Phone never verified during signup (likely abandoned). Send an SMS code
+  // so the user can finish phone verification; they cannot log in until then.
   if (!u.phoneVerifiedAt) {
-    // Force re-verification.
+    const phoneRl = await rateLimit(c.env, `sms:${u.phoneE164}`, 5, 3600);
+    if (!phoneRl.allowed) return c.json({ error: "sms_rate_limited" }, 429);
     const issue = await issueSmsCode({
       env: c.env,
       userId: u.id,
       phone: u.phoneE164,
       purpose: "signup_verify_phone",
     });
+    if (!issue.sendOk)
+      return c.json(
+        { error: "sms_send_failed", message: issue.errorMessage },
+        502
+      );
     return c.json({
       ok: true,
       step: "verify_phone",
@@ -254,30 +266,9 @@ authRoutes.post("/login", async (c) => {
     });
   }
 
-  // Per-phone SMS send rate limit
-  const phoneRl = await rateLimit(c.env, `sms:${u.phoneE164}`, 5, 3600);
-  if (!phoneRl.allowed)
-    return c.json({ error: "sms_rate_limited" }, 429);
-
-  const issue = await issueSmsCode({
-    env: c.env,
-    userId: u.id,
-    phone: u.phoneE164,
-    purpose: "login_2fa",
-  });
-  if (!issue.sendOk)
-    return c.json(
-      { error: "sms_send_failed", message: issue.errorMessage },
-      502
-    );
-
-  return c.json({
-    ok: true,
-    step: "verify_2fa",
-    challengeId: issue.challengeId,
-    // Hint at last 4 of the phone for UX clarity, never the full number.
-    phoneHint: `••• ••• ${u.phoneE164.slice(-4)}`,
-  });
+  // Phone already verified — issue a session immediately.
+  await createSession(c, u.id, u.isAdmin === 1);
+  return c.json({ ok: true, step: "done" });
 });
 
 // ---------------- 2FA verify ----------------

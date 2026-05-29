@@ -3,9 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import Turnstile from "../components/Turnstile.js";
 import { AuthLayout } from "../ui/AuthLayout.js";
+import { useSession } from "../lib/session.js";
+
+interface LoginResponse {
+  ok: true;
+  step: "done" | "verify_phone";
+  challengeId?: string;
+}
 
 export default function Login() {
   const nav = useNavigate();
+  const { refresh } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -21,18 +29,19 @@ export default function Login() {
     }
     setBusy(true);
     try {
-      const r = await api<{
-        step: "verify_2fa" | "verify_phone";
-        challengeId: string;
-        phoneHint?: string;
-      }>("/auth/login", {
+      const r = await api<LoginResponse>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password, turnstileToken }),
       });
-      const target = r.step === "verify_phone" ? "/signup/verify" : "/2fa";
-      const qs = new URLSearchParams({ cid: r.challengeId });
-      if (r.phoneHint) qs.set("hint", r.phoneHint);
-      nav(`${target}?${qs.toString()}`);
+      if (r.step === "verify_phone" && r.challengeId) {
+        // User signed up but never verified their phone. Bounce them to the
+        // signup phone-verify page to finish.
+        nav(`/signup/verify?cid=${encodeURIComponent(r.challengeId)}`);
+        return;
+      }
+      // step === "done" — session cookie is set, just go.
+      await refresh();
+      nav("/browse");
     } catch (e: any) {
       setError(e?.body?.error ?? e?.message ?? "Login failed");
     } finally {
@@ -43,13 +52,13 @@ export default function Login() {
   return (
     <AuthLayout
       title="Welcome back"
-      subtitle="Sign in to post trades, negotiate, and manage your account."
+      subtitle="Sign in with your email and password."
       footer={
         <>
           New here?{" "}
           <Link
             to="/signup"
-            className="font-medium text-brand-700 hover:underline"
+            className="font-medium text-ink-900 hover:underline"
           >
             Create an account
           </Link>
@@ -84,13 +93,21 @@ export default function Login() {
           onExpire={() => setTurnstileToken(null)}
           onError={() => setTurnstileToken(null)}
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className="text-sm text-red-700">
+            {error === "invalid_credentials"
+              ? "Wrong email or password."
+              : error === "account_suspended"
+                ? "This account has been suspended. Contact support."
+                : error}
+          </p>
+        )}
         <button
           type="submit"
           disabled={busy || !turnstileToken}
           className="btn-primary w-full"
         >
-          {busy ? "Sending code…" : "Sign in — SMS code next"}
+          {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>
     </AuthLayout>

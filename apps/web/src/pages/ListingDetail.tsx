@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Container } from "../ui/Container.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
+import { CategoryIcon } from "../ui/CategoryIcons.js";
 import { api } from "../lib/api.js";
 import { useSession } from "../lib/session.js";
 import { photoUrl } from "../lib/photoUrl.js";
@@ -79,8 +80,8 @@ export default function ListingDetail() {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-7xl" aria-hidden>
-                {cat?.emoji ?? "✨"}
+              <div className={`flex h-full items-center justify-center ${cat?.iconColor ?? "text-ink-400"}`}>
+                <CategoryIcon slug={l.category} className="h-20 w-20" />
               </div>
             )}
             {photoKeys.length > 1 && (
@@ -134,7 +135,12 @@ export default function ListingDetail() {
           <div className="card p-5">
             <div className="flex items-center gap-2 text-xs text-ink-400">
               <span className="chip">{l.kind}</span>
-              {cat && <span className="chip">{cat.emoji} {cat.label}</span>}
+              {cat && (
+                <span className="chip">
+                  <CategoryIcon slug={cat.slug} className="h-3.5 w-3.5" />
+                  {cat.label}
+                </span>
+              )}
             </div>
             <h1 className="mt-2 text-2xl font-bold text-ink-900 sm:text-3xl">
               {l.title}

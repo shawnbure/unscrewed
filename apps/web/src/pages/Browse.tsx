@@ -5,6 +5,7 @@ import { Container } from "../ui/Container.js";
 import { SearchBar } from "../ui/SearchBar.js";
 import { ListingCard, type ListingCardData } from "../ui/ListingCard.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
+import { CategoryIcon } from "../ui/CategoryIcons.js";
 import { api } from "../lib/api.js";
 
 type View = "grid" | "map";
@@ -95,10 +96,10 @@ export default function Browse() {
                     className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm ${
                       cat === c.slug
                         ? "bg-brand-50 font-semibold text-brand-700"
-                        : "text-ink-700 hover:bg-sand-100"
+                        : "text-ink-700 hover:bg-surface-100"
                     }`}
                   >
-                    <span aria-hidden>{c.emoji}</span>
+                    <CategoryIcon slug={c.slug} className="h-4 w-4" />
                     <span>{c.label}</span>
                   </button>
                 </li>

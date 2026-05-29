@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Search } from "lucide-react";
 
 interface Props {
   initial?: string;
@@ -15,26 +16,28 @@ export function SearchBar({ initial = "", size = "md" }: Props) {
     if (q.trim()) params.set("q", q.trim());
     nav(`/browse?${params.toString()}`);
   };
-  const heightClass = size === "lg" ? "py-4 text-lg" : "py-2.5 text-base";
+  const isLg = size === "lg";
   return (
     <form
       onSubmit={onSubmit}
-      className={`flex w-full items-center gap-2 rounded-2xl bg-white shadow-card ring-1 ring-sand-200 transition-shadow focus-within:ring-brand-300 ${size === "lg" ? "p-2 pl-4" : "p-1.5 pl-3"}`}
       role="search"
+      className={`flex w-full items-center gap-2 rounded-2xl bg-white shadow-card ring-1 ring-surface-200 transition-shadow focus-within:ring-2 focus-within:ring-ink-900/30 ${isLg ? "p-2 pl-4" : "p-1.5 pl-3"}`}
     >
-      <span aria-hidden className="text-ink-400">
-        🔎
-      </span>
+      <Search
+        className="h-4 w-4 shrink-0 text-ink-400"
+        strokeWidth={2}
+        aria-hidden
+      />
       <input
         type="search"
         placeholder="Search trades — guitar, lawn care, baby clothes…"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        className={`flex-1 bg-transparent text-ink-900 placeholder:text-ink-400 focus:outline-none ${heightClass}`}
+        className={`flex-1 bg-transparent text-ink-900 placeholder:text-ink-400 focus:outline-none ${isLg ? "py-3 text-base" : "py-2 text-sm"}`}
       />
       <button
         type="submit"
-        className={`btn-primary ${size === "lg" ? "px-6 py-3" : "py-2"}`}
+        className={`btn-primary ${isLg ? "px-5 py-2.5" : "py-1.5"}`}
       >
         Search
       </button>

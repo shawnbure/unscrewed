@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  ArrowRight,
+  MessageSquare,
+  FileSignature,
+  Hand,
+} from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { SearchBar } from "../ui/SearchBar.js";
 import { CategoryTile, CATEGORIES } from "../ui/CategoryTile.js";
@@ -19,23 +25,29 @@ export default function Home() {
   const services = CATEGORIES.filter((c) => c.kind === "service");
 
   return (
-    <div className="pb-20">
+    <div className="pb-24">
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-sand-200 bg-gradient-to-b from-brand-50 to-sand-50">
-        <Container size="xl" className="py-10 sm:py-16">
+      <section className="relative overflow-hidden border-b border-surface-200">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-brand-50/70 via-surface-50 to-surface-50" />
+        <Container size="xl" className="py-14 sm:py-20">
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
-              Trade what you have for what you need.
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-ink-700 shadow-card ring-1 ring-surface-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+              No fees · No middleman · Just neighbors
+            </span>
+            <h1 className="display mt-5 text-5xl leading-[1.05] text-ink-900 sm:text-6xl">
+              Trade what you have <br className="hidden sm:block" />
+              for what you need.
             </h1>
-            <p className="mt-4 text-lg text-ink-500">
-              A barter marketplace for your neighborhood — goods, services,
-              skills. No fees. No middleman. Just a fair swap.
+            <p className="mx-auto mt-5 max-w-xl text-base text-ink-500 sm:text-lg">
+              A neighborhood barter marketplace. Goods, services, skills — swap
+              direct with someone nearby, on terms you both agree to.
             </p>
-            <div className="mt-8">
+            <div className="mx-auto mt-8 max-w-xl">
               <SearchBar size="lg" />
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-ink-500">
-              <span>Popular:</span>
+              <span>Try:</span>
               {[
                 "lawn care",
                 "guitar",
@@ -58,13 +70,13 @@ export default function Home() {
       </section>
 
       {/* Goods categories */}
-      <Container size="xl" className="mt-10">
+      <Container size="xl" className="mt-14">
         <SectionHeader
-          title="Browse goods"
-          subtitle="Things you can swap for other things"
+          eyebrow="Goods"
+          title="Things to swap"
           linkTo="/browse?kind=good"
         />
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {goods.map((c) => (
             <CategoryTile key={c.slug} {...c} />
           ))}
@@ -72,13 +84,13 @@ export default function Home() {
       </Container>
 
       {/* Services categories */}
-      <Container size="xl" className="mt-12">
+      <Container size="xl" className="mt-14">
         <SectionHeader
-          title="Browse services"
-          subtitle="Time and skills — labor, expertise, helping hands"
+          eyebrow="Services"
+          title="Time, skills & helping hands"
           linkTo="/browse?kind=service"
         />
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {services.map((c) => (
             <CategoryTile key={c.slug} {...c} />
           ))}
@@ -86,24 +98,24 @@ export default function Home() {
       </Container>
 
       {/* Trending */}
-      <Container size="xl" className="mt-14">
+      <Container size="xl" className="mt-16">
         <SectionHeader
+          eyebrow="Recent"
           title="Trades near you"
-          subtitle="The latest listings within your map view"
           linkTo="/browse"
         />
         {trending.length === 0 ? (
-          <div className="mt-4 card p-8 text-center text-ink-500">
-            <div className="text-3xl">🌱</div>
-            <p className="mt-2">
-              No trades posted yet — be the first.{" "}
-              <Link to="/post" className="text-brand-700 underline">
-                Post a trade
-              </Link>
+          <div className="mt-5 card flex flex-col items-center p-10 text-center text-ink-500">
+            <Hand className="h-10 w-10 text-brand-400" strokeWidth={1.5} />
+            <p className="mt-3 text-base">
+              No trades posted yet — be the first.
             </p>
+            <Link to="/post" className="btn-brand mt-4">
+              Post a trade <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         ) : (
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {trending.map((l) => (
               <ListingCard key={l.id} l={l} />
             ))}
@@ -112,30 +124,40 @@ export default function Home() {
       </Container>
 
       {/* How it works */}
-      <Container size="lg" className="mt-16">
-        <div className="card p-8">
-          <h2 className="text-2xl font-bold text-ink-900">How unscrewed works</h2>
-          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <Container size="lg" className="mt-20">
+        <div className="card p-8 sm:p-12">
+          <div className="text-center">
+            <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+              How it works
+            </p>
+            <h2 className="display mt-2 text-3xl text-ink-900">
+              Three steps, no money.
+            </h2>
+          </div>
+          <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
             <Step
               n={1}
+              icon={<Hand className="h-5 w-5" strokeWidth={2} />}
               title="Post or browse"
-              body="List what you have. Or browse what others have nearby."
+              body="List what you have. Or see what others have nearby."
             />
             <Step
               n={2}
+              icon={<MessageSquare className="h-5 w-5" strokeWidth={2} />}
               title="Negotiate"
-              body="Chat with the other party. Agree on what each side gives."
+              body="Chat with the other party and agree on terms."
             />
             <Step
               n={3}
+              icon={<FileSignature className="h-5 w-5" strokeWidth={2} />}
               title="Sign and trade"
               body="Both parties sign a simple social contract. Meet and swap."
             />
           </div>
-          <p className="mt-6 text-xs text-ink-500">
-            unscrewed.lol is not a party to your trade. Read the{" "}
-            <Link to="/tos" className="underline">
-              Terms
+          <p className="mt-8 text-center text-xs text-ink-500">
+            unscrewed.lol is not a party to your trade.{" "}
+            <Link to="/tos" className="underline hover:text-ink-900">
+              Read the Terms
             </Link>{" "}
             before you trade.
           </p>
@@ -146,37 +168,54 @@ export default function Home() {
 }
 
 function SectionHeader({
+  eyebrow,
   title,
-  subtitle,
   linkTo,
 }: {
+  eyebrow: string;
   title: string;
-  subtitle: string;
   linkTo: string;
 }) {
   return (
     <div className="flex items-end justify-between gap-4">
       <div>
-        <h2 className="text-xl font-bold text-ink-900 sm:text-2xl">{title}</h2>
-        <p className="mt-0.5 text-sm text-ink-500">{subtitle}</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+          {eyebrow}
+        </p>
+        <h2 className="display mt-1 text-2xl text-ink-900 sm:text-3xl">
+          {title}
+        </h2>
       </div>
       <Link
         to={linkTo}
-        className="hidden text-sm font-medium text-brand-700 hover:underline sm:inline"
+        className="hidden items-center gap-1 text-sm font-medium text-ink-700 hover:text-ink-900 sm:inline-flex"
       >
-        See all →
+        See all <ArrowRight className="h-4 w-4" />
       </Link>
     </div>
   );
 }
 
-function Step({ n, title, body }: { n: number; title: string; body: string }) {
+function Step({
+  n,
+  icon,
+  title,
+  body,
+}: {
+  n: number;
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
   return (
     <div>
-      <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-500 text-sm font-bold text-white">
-        {n}
+      <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-500/10 text-brand-700">
+        {icon}
       </div>
-      <h3 className="mt-3 font-semibold text-ink-900">{title}</h3>
+      <h3 className="mt-3 font-semibold text-ink-900">
+        <span className="mr-2 text-ink-400">0{n}</span>
+        {title}
+      </h3>
       <p className="mt-1 text-sm text-ink-500">{body}</p>
     </div>
   );
