@@ -5,6 +5,9 @@ import {
   MessageSquare,
   FileSignature,
   Hand,
+  TrendingDown,
+  Users,
+  Building2,
 } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { SearchBar } from "../ui/SearchBar.js";
@@ -21,27 +24,31 @@ export default function Home() {
       .catch(() => setTrending([]));
   }, []);
 
-  const goods = CATEGORIES.filter((c) => c.kind === "good" || c.kind === "both");
+  const goods = CATEGORIES.filter(
+    (c) => c.kind === "good" || c.kind === "both"
+  );
   const services = CATEGORIES.filter((c) => c.kind === "service");
 
   return (
     <div className="pb-24">
-      {/* Hero */}
+      {/* Hero — opinionated, anti-corporate-skim manifesto */}
       <section className="relative overflow-hidden border-b border-surface-200">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-brand-50/70 via-surface-50 to-surface-50" />
-        <Container size="xl" className="py-14 sm:py-20">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-brand-50/80 via-surface-50 to-surface-50" />
+        <Container size="xl" className="pt-16 pb-12 sm:pt-24 sm:pb-16">
           <div className="mx-auto max-w-3xl text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-ink-700 shadow-card ring-1 ring-surface-200">
               <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-              No fees · No middleman · Just neighbors
+              Community-owned · No fees · No middleman
             </span>
-            <h1 className="display mt-5 text-5xl leading-[1.05] text-ink-900 sm:text-6xl">
-              Trade what you have <br className="hidden sm:block" />
-              for what you need.
+            <h1 className="display mt-5 text-balance text-5xl leading-[1.02] text-ink-900 sm:text-6xl">
+              Inflation is rigged.{" "}
+              <span className="text-brand-600">Trade isn’t.</span>
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-base text-ink-500 sm:text-lg">
-              A neighborhood barter marketplace. Goods, services, skills — swap
-              direct with someone nearby, on terms you both agree to.
+            <p className="mx-auto mt-5 max-w-2xl text-balance text-base text-ink-500 sm:text-lg">
+              Corporations are posting record profits while your paycheck buys
+              less every month. unscrewed.lol is a neighborhood barter
+              marketplace — swap goods and services with the people around you.
+              No app fees, no payment processors, no corporate skim.
             </p>
             <div className="mx-auto mt-8 max-w-xl">
               <SearchBar size="lg" />
@@ -65,6 +72,47 @@ export default function Home() {
                 </Link>
               ))}
             </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* Manifesto: why this exists */}
+      <section className="border-b border-surface-200 bg-white">
+        <Container size="xl" className="py-16 sm:py-20">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+              Why we built this
+            </p>
+            <h2 className="display mt-2 text-balance text-3xl text-ink-900 sm:text-4xl">
+              The economy is squeezing all of us.{" "}
+              <span className="text-brand-600">
+                Our communities can squeeze back.
+              </span>
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl text-base text-ink-500">
+              The dollar buys less. Rents climb. Subscriptions multiply. Every
+              transaction has a corporate layer skimming a cut. Meanwhile, the
+              people next door have skills you need, and you have things they
+              need. Trade is older than money — and it still works.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-3">
+            <ManifestoCard
+              icon={<TrendingDown className="h-5 w-5" strokeWidth={2} />}
+              title="Inflation eats your paycheck"
+              body="Real wages have been flat for a generation. Groceries, rent, and basics keep climbing. A trade doesn't care what the dollar is worth."
+            />
+            <ManifestoCard
+              icon={<Building2 className="h-5 w-5" strokeWidth={2} />}
+              title="Middlemen take a cut of everything"
+              body="Marketplaces, payment processors, ad networks, apps — each transaction passes through hands that produce nothing. unscrewed takes nothing."
+            />
+            <ManifestoCard
+              icon={<Users className="h-5 w-5" strokeWidth={2} />}
+              title="Neighbors > corporations"
+              body="Your community already has what you need. The work of building a real, local trade network is how we get unscrewed together."
+            />
           </div>
         </Container>
       </section>
@@ -105,10 +153,10 @@ export default function Home() {
           linkTo="/browse"
         />
         {trending.length === 0 ? (
-          <div className="mt-5 card flex flex-col items-center p-10 text-center text-ink-500">
+          <div className="card mt-5 flex flex-col items-center p-10 text-center text-ink-500">
             <Hand className="h-10 w-10 text-brand-400" strokeWidth={1.5} />
             <p className="mt-3 text-base">
-              No trades posted yet — be the first.
+              No trades posted yet — be the first one to start.
             </p>
             <Link to="/post" className="btn-brand mt-4">
               Post a trade <ArrowRight className="h-4 w-4" />
@@ -131,7 +179,7 @@ export default function Home() {
               How it works
             </p>
             <h2 className="display mt-2 text-3xl text-ink-900">
-              Three steps, no money.
+              Three steps. No money. No fees.
             </h2>
           </div>
           <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
@@ -139,13 +187,13 @@ export default function Home() {
               n={1}
               icon={<Hand className="h-5 w-5" strokeWidth={2} />}
               title="Post or browse"
-              body="List what you have. Or see what others have nearby."
+              body="List what you have. Or see what your neighbors have nearby."
             />
             <Step
               n={2}
               icon={<MessageSquare className="h-5 w-5" strokeWidth={2} />}
               title="Negotiate"
-              body="Chat with the other party and agree on terms."
+              body="Chat with the other party. Agree on terms that work for both of you."
             />
             <Step
               n={3}
@@ -163,6 +211,53 @@ export default function Home() {
           </p>
         </div>
       </Container>
+
+      {/* Closing CTA */}
+      <Container size="lg" className="mt-16">
+        <div className="rounded-3xl bg-ink-900 p-8 text-center text-white sm:p-12">
+          <h2 className="display text-3xl text-balance sm:text-4xl">
+            Stop renting your life from corporations.
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-base text-white/70">
+            Post one thing you don't need anymore. Find one thing you do. That's
+            how we start.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              to="/signup"
+              className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-ink-900 hover:bg-surface-100"
+            >
+              Join the trade
+            </Link>
+            <Link
+              to="/browse"
+              className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              Browse trades
+            </Link>
+          </div>
+        </div>
+      </Container>
+    </div>
+  );
+}
+
+function ManifestoCard({
+  icon,
+  title,
+  body,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="card p-5 text-left">
+      <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500/10 text-brand-700">
+        {icon}
+      </div>
+      <h3 className="mt-3 text-base font-semibold text-ink-900">{title}</h3>
+      <p className="mt-1.5 text-sm text-ink-500">{body}</p>
     </div>
   );
 }
@@ -213,7 +308,7 @@ function Step({
         {icon}
       </div>
       <h3 className="mt-3 font-semibold text-ink-900">
-        <span className="mr-2 text-ink-400">0{n}</span>
+        <span className="mr-2 font-mono text-sm text-ink-400">0{n}</span>
         {title}
       </h3>
       <p className="mt-1 text-sm text-ink-500">{body}</p>
