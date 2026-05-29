@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { ChevronLeft, ChevronRight, MapPin, Check, X } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
 import { CategoryIcon } from "../ui/CategoryIcons.js";
@@ -89,20 +90,20 @@ export default function ListingDetail() {
                 <button
                   type="button"
                   aria-label="Previous photo"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-card hover:bg-white"
+                  className="absolute left-2 top-1/2 grid -translate-y-1/2 place-items-center rounded-full bg-white/95 p-2 shadow-card hover:bg-white"
                   onClick={() =>
                     setIdx((i) => (i - 1 + photoKeys.length) % photoKeys.length)
                   }
                 >
-                  ‹
+                  <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
                 </button>
                 <button
                   type="button"
                   aria-label="Next photo"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-card hover:bg-white"
+                  className="absolute right-2 top-1/2 grid -translate-y-1/2 place-items-center rounded-full bg-white/95 p-2 shadow-card hover:bg-white"
                   onClick={() => setIdx((i) => (i + 1) % photoKeys.length)}
                 >
-                  ›
+                  <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
                 </button>
               </>
             )}
@@ -145,8 +146,9 @@ export default function ListingDetail() {
             <h1 className="mt-2 text-2xl font-bold text-ink-900 sm:text-3xl">
               {l.title}
             </h1>
-            <p className="mt-1 text-sm text-ink-500">
-              📍 {l.postalCode ?? l.postal_code ?? "—"}
+            <p className="mt-1 inline-flex items-center gap-1 text-sm text-ink-500">
+              <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
+              {l.postalCode ?? l.postal_code ?? "—"}
               {l.dateCreated || l.date_created
                 ? ` · posted ${formatRelative(l.dateCreated ?? l.date_created!)}`
                 : ""}
@@ -185,16 +187,22 @@ export default function ListingDetail() {
               Before you trade
             </h3>
             <ul className="mt-2 space-y-1.5 text-xs text-ink-500">
-              <li>✓ Meet in a public place, ideally during daylight.</li>
-              <li>✓ Inspect the item or scope the service before exchanging.</li>
-              <li>✓ Both sides sign the social contract in chat — keep the record.</li>
-              <li>
-                ✗ unscrewed.lol is not party to the trade — see{" "}
+              <SafetyLi tone="good">
+                Meet in a public place, ideally during daylight.
+              </SafetyLi>
+              <SafetyLi tone="good">
+                Inspect the item or scope the service before exchanging.
+              </SafetyLi>
+              <SafetyLi tone="good">
+                Both sides sign the social contract in chat — keep the record.
+              </SafetyLi>
+              <SafetyLi tone="bad">
+                unscrewed.lol is not party to the trade — see{" "}
                 <Link to="/tos" className="underline">
                   Terms
                 </Link>
                 .
-              </li>
+              </SafetyLi>
             </ul>
           </div>
         </aside>
@@ -290,6 +298,31 @@ function ProposeModal({
         </form>
       </div>
     </div>
+  );
+}
+
+function SafetyLi({
+  tone,
+  children,
+}: {
+  tone: "good" | "bad";
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-start gap-1.5">
+      {tone === "good" ? (
+        <Check
+          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-600"
+          strokeWidth={2.5}
+        />
+      ) : (
+        <X
+          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600"
+          strokeWidth={2.5}
+        />
+      )}
+      <span>{children}</span>
+    </li>
   );
 }
 

@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { ImagePlus, Trash2 } from "lucide-react";
 import { api, API_BASE } from "../lib/api.js";
 import { photoUrl } from "../lib/photoUrl.js";
 
@@ -112,14 +113,12 @@ export function PhotoUploader({
         className={`group flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
           drag
             ? "border-brand-500 bg-brand-50"
-            : "border-sand-300 bg-white hover:border-brand-400 hover:bg-brand-50/40"
+            : "border-surface-300 bg-white hover:border-brand-400 hover:bg-brand-50/40"
         }`}
         role="button"
         tabIndex={0}
       >
-        <div className="text-3xl" aria-hidden>
-          📸
-        </div>
+        <ImagePlus className="h-8 w-8 text-ink-400" strokeWidth={1.5} />
         <p className="mt-2 text-sm font-medium text-ink-700">
           Drop photos here or <span className="text-brand-700">click to upload</span>
         </p>
@@ -188,9 +187,10 @@ export function PhotoUploader({
                 <button
                   type="button"
                   onClick={() => removeAt(idx)}
-                  className="rounded-md bg-red-500/95 px-2 py-0.5 text-xs text-white"
+                  className="inline-flex items-center gap-1 rounded-md bg-red-500/95 px-2 py-0.5 text-xs text-white"
                   aria-label="Remove"
                 >
+                  <Trash2 className="h-3 w-3" strokeWidth={2} />
                   Remove
                 </button>
               </div>

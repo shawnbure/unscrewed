@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { Link, useSearchParams } from "react-router-dom";
+import { PackageOpen } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { SearchBar } from "../ui/SearchBar.js";
 import { ListingCard, type ListingCardData } from "../ui/ListingCard.js";
@@ -221,10 +222,10 @@ function GridView({
   }
   if (items.length === 0) {
     return (
-      <div className="card p-10 text-center text-ink-500">
-        <div className="text-3xl">🤷</div>
-        <p className="mt-2">No trades match your filters yet.</p>
-        <Link to="/post" className="btn-primary mt-4 inline-flex">
+      <div className="card flex flex-col items-center p-10 text-center text-ink-500">
+        <PackageOpen className="h-10 w-10 text-ink-300" strokeWidth={1.5} />
+        <p className="mt-3">No trades match your filters yet.</p>
+        <Link to="/post" className="btn-brand mt-4 inline-flex">
           Post the first one
         </Link>
       </div>

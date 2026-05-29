@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { MessageSquare } from "lucide-react";
 import { api } from "../../lib/api.js";
 
 interface User {
@@ -130,10 +131,11 @@ export default function AdminUsers() {
                     <div className="flex justify-end gap-1">
                       <Link
                         to={`/admin/sms?userId=${u.id}`}
-                        className="rounded-lg px-2 py-1 text-xs text-ink-500 hover:bg-sand-100"
+                        className="rounded-lg p-1.5 text-ink-500 hover:bg-surface-100"
                         title="View SMS log"
+                        aria-label="View SMS log"
                       >
-                        📨
+                        <MessageSquare className="h-4 w-4" strokeWidth={2} />
                       </Link>
                       {u.is_archived === 0 && u.is_deleted === 0 && (
                         <button

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Crosshair } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
 import { CategoryIcon } from "../ui/CategoryIcons.js";
@@ -248,9 +249,9 @@ export default function NewListing() {
           <button
             type="button"
             onClick={geolocate}
-            className="btn-ghost mt-2 text-sm"
+            className="btn-ghost mt-2"
           >
-            📍 Use my current location
+            <Crosshair className="h-4 w-4" strokeWidth={2} /> Use my current location
           </button>
         </Section>
 

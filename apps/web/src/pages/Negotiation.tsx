@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Check } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { api } from "../lib/api.js";
 
@@ -187,9 +188,19 @@ export default function NegotiationPage() {
               Stay safe
             </h3>
             <ul className="mt-1 space-y-1 text-xs text-ink-500">
-              <li>✓ Meet in public during daylight.</li>
-              <li>✓ Inspect before exchanging.</li>
-              <li>✓ Trust your gut — walk away from anything off.</li>
+              {[
+                "Meet in public during daylight.",
+                "Inspect before exchanging.",
+                "Trust your gut — walk away from anything off.",
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-1.5">
+                  <Check
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-600"
+                    strokeWidth={2.5}
+                  />
+                  <span>{t}</span>
+                </li>
+              ))}
             </ul>
           </div>
         </aside>
