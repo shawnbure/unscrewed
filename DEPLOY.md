@@ -44,9 +44,13 @@ Connected via Workers & Pages → unscrewed-api → Settings → Build → Conne
 | Setting | Value |
 | --- | --- |
 | Production branch | `dev` |
-| Build command | `npm install -g pnpm && pnpm install` |
+| Build command | `pnpm install` |
 | Deploy command | `npx wrangler deploy` |
 | Root directory | `apps/api` |
+
+> **Don't** prepend `npm install -g pnpm` to the build command. Cloudflare's
+> Workers Builds image auto-installs pnpm based on the `packageManager` field
+> in the root `package.json`, and the global install collides with `/pnpx`.
 
 Worker config lives in [`apps/api/wrangler.toml`](apps/api/wrangler.toml).
 
