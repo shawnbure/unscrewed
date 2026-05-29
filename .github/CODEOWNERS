@@ -1,0 +1,7 @@
+# CODEOWNERS for unscrewed.lol
+#
+# Every PR auto-requests review from the listed owners. For a solo
+# project this is mostly cosmetic, but it makes the audit trail
+# clearer and slots in cleanly when collaborators are added later.
+
+* @shawnbure
