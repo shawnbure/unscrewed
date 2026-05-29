@@ -81,7 +81,7 @@ Draft the contract terms JSON now.`;
       max_tokens: 700,
       temperature: 0.4,
     });
-    raw = typeof out === "string" ? out : (out?.response ?? "");
+    raw = coerceToString(out);
   } catch (e) {
     console.warn("[contractAi] AI run failed", e);
   }
@@ -89,7 +89,46 @@ Draft the contract terms JSON now.`;
   return parseOrFallback(raw, ctx);
 }
 
+// Workers AI response shapes vary by model and runtime version. Coerce
+// anything reasonable into a string we can scan for a JSON block.
+function coerceToString(out: any): string {
+  if (out == null) return "";
+  if (typeof out === "string") return out;
+  // Common chat shape: { response: "..." }
+  if (typeof out.response === "string") return out.response;
+  // Some models return { response: [{ text: "..." }] }
+  if (Array.isArray(out.response)) {
+    return out.response
+      .map((p: any) =>
+        typeof p === "string" ? p : (p?.text ?? p?.content ?? "")
+      )
+      .join("");
+  }
+  // OpenAI-style chat completion
+  if (Array.isArray(out.choices)) {
+    return out.choices
+      .map(
+        (ch: any) => ch?.message?.content ?? ch?.delta?.content ?? ch?.text ?? ""
+      )
+      .join("");
+  }
+  // Llama tool-call shape: { response: { ... } }
+  if (out.response && typeof out.response === "object") {
+    if (typeof out.response.content === "string") return out.response.content;
+    if (typeof out.response.text === "string") return out.response.text;
+    return JSON.stringify(out.response);
+  }
+  // Fallback: stringify the whole envelope so parseOrFallback can still try
+  try {
+    return JSON.stringify(out);
+  } catch {
+    return "";
+  }
+}
+
 function parseOrFallback(raw: string, ctx: DraftContext): AiDraftTerms {
+  // Defensive: even if some upstream slips a non-string through, don't crash.
+  if (typeof raw !== "string") raw = String(raw ?? "");
   if (raw) {
     // Extract the first balanced {...} JSON object the model returned.
     const start = raw.indexOf("{");
