@@ -99,12 +99,15 @@ listingsRoutes.get("/:id", async (c) => {
     .from(listings)
     .where(eq(listings.id, id))
     .limit(1);
-  if (!row[0]) return c.json({ error: "not_found" }, 404);
+  const listing = row[0];
+  // Hide soft-deleted or archived listings from the public detail endpoint.
+  if (!listing || listing.isDeleted === 1 || listing.isArchived === 1)
+    return c.json({ error: "not_found" }, 404);
   const photos = await db
     .select()
     .from(listingPhotos)
     .where(eq(listingPhotos.listingId, id));
-  return c.json({ listing: row[0], photos });
+  return c.json({ listing, photos });
 });
 
 // ---------------- create ----------------

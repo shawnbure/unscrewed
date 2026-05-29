@@ -7,6 +7,7 @@ import { listingsRoutes } from "./routes/listings.js";
 import { negotiationRoutes } from "./routes/negotiation.js";
 import { webhookRoutes } from "./routes/webhooks.js";
 import { meRoutes } from "./routes/me.js";
+import { adminRoutes } from "./routes/admin.js";
 
 export { NegotiationRoom } from "./lib/negotiationRoom.js";
 
@@ -39,6 +40,7 @@ app.route("/me", meRoutes);
 app.route("/listings", listingsRoutes);
 app.route("/negotiations", negotiationRoutes);
 app.route("/webhooks", webhookRoutes);
+app.route("/admin", adminRoutes);
 
 app.onError((err, c) => {
   console.error("[api error]", err);

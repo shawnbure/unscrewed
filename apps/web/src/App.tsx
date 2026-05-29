@@ -34,6 +34,17 @@ export default function App() {
               >
                 Browse
               </NavLink>
+              {session?.authenticated && session.isAdmin && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) =>
+                    `rounded-xl px-3 py-2 ${isActive ? "bg-amber-100 text-amber-800" : "text-amber-700 hover:bg-amber-50"}`
+                  }
+                  title="Admin tools"
+                >
+                  ⚙️ Admin
+                </NavLink>
+              )}
               {session?.authenticated ? (
                 <>
                   <NavLink to="/post" className="btn-primary ml-2">

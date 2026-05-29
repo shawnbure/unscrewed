@@ -29,6 +29,7 @@ negotiationRoutes.get("/", async (c) => {
     .where(
       and(
         eq(negotiations.isDeleted, 0),
+        eq(negotiations.isArchived, 0),
         or(
           eq(negotiations.listerUserId, userId),
           eq(negotiations.requesterUserId, userId)
@@ -53,7 +54,10 @@ negotiationRoutes.post("/", async (c) => {
     .where(eq(listings.id, parsed.data.listingId))
     .limit(1);
   const listing = listingRow[0];
-  if (!listing) return c.json({ error: "listing_not_found" }, 404);
+  if (!listing || listing.isDeleted === 1 || listing.isArchived === 1)
+    return c.json({ error: "listing_not_found" }, 404);
+  if (listing.status !== "active")
+    return c.json({ error: "listing_not_available" }, 400);
   if (listing.userId === userId)
     return c.json({ error: "cannot_negotiate_own_listing" }, 400);
 
@@ -103,7 +107,8 @@ negotiationRoutes.get("/:id", async (c) => {
     .where(eq(negotiations.id, id))
     .limit(1);
   const n = row[0];
-  if (!n) return c.json({ error: "not_found" }, 404);
+  if (!n || n.isDeleted === 1)
+    return c.json({ error: "not_found" }, 404);
   if (n.listerUserId !== userId && n.requesterUserId !== userId)
     return c.json({ error: "forbidden" }, 403);
 

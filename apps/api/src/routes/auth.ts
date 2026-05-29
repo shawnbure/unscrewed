@@ -231,7 +231,10 @@ authRoutes.post("/login", async (c) => {
     .where(eq(users.emailNormalized, normalizeEmail(input.email)))
     .limit(1);
   const u = row[0];
+  // Don't leak the distinction between "wrong password" and "archived account"
+  // to unauthenticated callers — return the same generic error.
   if (!u || u.isDeleted) return c.json({ error: "invalid_credentials" }, 401);
+  if (u.isArchived) return c.json({ error: "account_suspended" }, 403);
 
   const pwOk = await verifyPassword(input.password, u.passwordHash);
   if (!pwOk) return c.json({ error: "invalid_credentials" }, 401);

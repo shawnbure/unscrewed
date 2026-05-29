@@ -12,6 +12,12 @@ import ListingDetail from "./pages/ListingDetail.js";
 import NewListing from "./pages/NewListing.js";
 import NegotiationPage from "./pages/Negotiation.js";
 import Tos from "./pages/Tos.js";
+import { AdminLayout } from "./pages/admin/AdminLayout.js";
+import AdminDashboard from "./pages/admin/Dashboard.js";
+import AdminUsers from "./pages/admin/Users.js";
+import AdminListings from "./pages/admin/Listings.js";
+import AdminSms from "./pages/admin/SmsLog.js";
+import { RequireAdmin } from "./ui/RequireAdmin.js";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -29,6 +35,19 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="post" element={<NewListing />} />
           <Route path="n/:id" element={<NegotiationPage />} />
           <Route path="tos" element={<Tos />} />
+          <Route
+            path="admin"
+            element={
+              <RequireAdmin>
+                <AdminLayout />
+              </RequireAdmin>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="listings" element={<AdminListings />} />
+            <Route path="sms" element={<AdminSms />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
