@@ -14,11 +14,13 @@ import { useSession } from "./lib/session.js";
 import { api } from "./lib/api.js";
 import { Container } from "./ui/Container.js";
 import { Logo } from "./ui/Logo.js";
+import { PhilosophyModal } from "./ui/PhilosophyModal.js";
 
 export default function App() {
   const { session, refresh } = useSession();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [philOpen, setPhilOpen] = useState(false);
 
   useEffect(() => {
     refresh();
@@ -175,6 +177,13 @@ export default function App() {
             </span>
           </div>
           <div className="flex items-center gap-5 text-xs">
+            <button
+              type="button"
+              onClick={() => setPhilOpen(true)}
+              className="hover:text-ink-900"
+            >
+              Our philosophy
+            </button>
             <Link to="/tos" className="hover:text-ink-900">Terms</Link>
             <a href="mailto:help@unscrewed.lol" className="hover:text-ink-900">
               Contact
@@ -183,6 +192,7 @@ export default function App() {
           </div>
         </Container>
       </footer>
+      <PhilosophyModal open={philOpen} onClose={() => setPhilOpen(false)} />
     </div>
   );
 }

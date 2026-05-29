@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
+  BookOpen,
   MessageSquare,
   FileSignature,
   Hand,
@@ -13,10 +14,12 @@ import { Container } from "../ui/Container.js";
 import { SearchBar } from "../ui/SearchBar.js";
 import { CategoryTile, CATEGORIES } from "../ui/CategoryTile.js";
 import { ListingCard, type ListingCardData } from "../ui/ListingCard.js";
+import { PhilosophyModal } from "../ui/PhilosophyModal.js";
 import { api } from "../lib/api.js";
 
 export default function Home() {
   const [trending, setTrending] = useState<ListingCardData[]>([]);
+  const [philOpen, setPhilOpen] = useState(false);
 
   useEffect(() => {
     api<{ items: ListingCardData[] }>("/listings?limit=12")
@@ -36,10 +39,15 @@ export default function Home() {
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-brand-50/80 via-surface-50 to-surface-50" />
         <Container size="xl" className="pt-16 pb-12 sm:pt-24 sm:pb-16">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-ink-700 shadow-card ring-1 ring-surface-200">
+            <button
+              type="button"
+              onClick={() => setPhilOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-ink-700 shadow-card ring-1 ring-surface-200 transition-colors hover:bg-surface-50 hover:ring-brand-300"
+            >
               <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
               Community-owned · No fees · No middleman
-            </span>
+              <span className="text-ink-400">— read why</span>
+            </button>
             <h1 className="display mt-5 text-balance text-5xl leading-[1.02] text-ink-900 sm:text-6xl">
               Inflation is rigged.{" "}
               <span className="text-brand-600">Trade isn’t.</span>
@@ -95,6 +103,14 @@ export default function Home() {
               people next door have skills you need, and you have things they
               need. Trade is older than money — and it still works.
             </p>
+            <button
+              type="button"
+              onClick={() => setPhilOpen(true)}
+              className="btn-outline mt-6"
+            >
+              <BookOpen className="h-4 w-4" strokeWidth={2} />
+              Read the full philosophy
+            </button>
           </div>
 
           <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-3">
@@ -211,6 +227,8 @@ export default function Home() {
           </p>
         </div>
       </Container>
+
+      <PhilosophyModal open={philOpen} onClose={() => setPhilOpen(false)} />
 
       {/* Closing CTA */}
       <Container size="lg" className="mt-16">
