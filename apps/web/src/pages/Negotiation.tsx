@@ -380,12 +380,10 @@ function DraftContractModal({
             onChange={(v) => setTerms({ ...terms, meetupLocation: v })}
             single
           />
-          <Field
-            label="Meetup date/time (ISO 8601, optional)"
-            value={terms.meetupAt ?? ""}
-            onChange={(v) => setTerms({ ...terms, meetupAt: v })}
-            single
-            placeholder="2026-06-15T18:00:00-07:00"
+          <DateTimeField
+            label="Meetup date & time (optional)"
+            iso={terms.meetupAt ?? ""}
+            onChange={(iso) => setTerms({ ...terms, meetupAt: iso })}
           />
           <Field
             label="Conditions (optional)"
@@ -682,6 +680,51 @@ function Field({
           rows={3}
           className="input mt-1"
         />
+      )}
+    </label>
+  );
+}
+
+// Converts between an ISO 8601 string (stored) and the browser's
+// datetime-local format (displayed in the user's local timezone).
+function isoToLocalInput(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  // Build local YYYY-MM-DDTHH:mm
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function localInputToIso(local: string): string {
+  if (!local) return "";
+  // datetime-local has no timezone — interpret as local time.
+  const d = new Date(local);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+}
+
+function DateTimeField({
+  label,
+  iso,
+  onChange,
+}: {
+  label: string;
+  iso: string;
+  onChange: (iso: string) => void;
+}) {
+  const local = isoToLocalInput(iso);
+  return (
+    <label className="block">
+      <span className="label">{label}</span>
+      <input
+        type="datetime-local"
+        value={local}
+        onChange={(e) => onChange(localInputToIso(e.target.value))}
+        className="input mt-1"
+      />
+      {iso && (
+        <p className="mt-1 text-xs text-ink-400">
+          Shown in your local time. Stored as {iso}.
+        </p>
       )}
     </label>
   );

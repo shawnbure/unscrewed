@@ -6,11 +6,26 @@ import { AuthLayout } from "../ui/AuthLayout.js";
 
 const TOS_VERSION = "2026-05-28";
 
+// Format raw digits as "(NNN) NNN-NNNN" for display.
+function formatUsPhoneDisplay(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(0, 10);
+  if (d.length === 0) return "";
+  if (d.length < 4) return `(${d}`;
+  if (d.length < 7) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+// Pull just the digits and prepend +1 for E.164.
+function toE164Us(display: string): string {
+  const d = display.replace(/\D/g, "").slice(-10);
+  return d.length === 10 ? `+1${d}` : "";
+}
+
 export default function Signup() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("+1");
+  const [phoneDisplay, setPhoneDisplay] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -22,6 +37,11 @@ export default function Signup() {
     setError(null);
     if (!turnstileToken) {
       setError("Please complete the bot check");
+      return;
+    }
+    const phone = toE164Us(phoneDisplay);
+    if (!phone) {
+      setError("Enter a valid 10-digit US mobile number.");
       return;
     }
     setBusy(true);
@@ -91,16 +111,25 @@ export default function Signup() {
             autoComplete="new-password"
           />
         </Field>
-        <Field label="Mobile number" hint="E.164, e.g. +14155551234">
-          <input
-            required
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="input"
-            pattern="^\+[1-9]\d{7,14}$"
-            autoComplete="tel"
-            inputMode="tel"
-          />
+        <Field
+          label="Mobile number"
+          hint="US mobile only for now. We'll text you a 6-digit code."
+        >
+          <div className="flex items-center gap-2 rounded-xl border border-surface-300 bg-white px-3 py-2 focus-within:border-ink-900 focus-within:ring-4 focus-within:ring-ink-900/10">
+            <span className="select-none text-sm text-ink-400">🇺🇸</span>
+            <input
+              required
+              value={phoneDisplay}
+              onChange={(e) =>
+                setPhoneDisplay(formatUsPhoneDisplay(e.target.value))
+              }
+              className="flex-1 bg-transparent text-ink-900 placeholder:text-ink-400 focus:outline-none"
+              placeholder="(555) 123-4567"
+              autoComplete="tel-national"
+              inputMode="tel"
+              maxLength={14}
+            />
+          </div>
         </Field>
         <label className="flex items-start gap-2 text-sm text-ink-700">
           <input

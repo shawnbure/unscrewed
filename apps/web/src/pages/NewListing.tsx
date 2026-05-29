@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Crosshair } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
 import { CategoryIcon } from "../ui/CategoryIcons.js";
 import { PhotoUploader } from "../ui/PhotoUploader.js";
+import { AddressPicker, type AddressValue } from "../ui/AddressPicker.js";
 import { api } from "../lib/api.js";
 
 const CONDITIONS = [
@@ -24,31 +24,18 @@ export default function NewListing() {
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("good");
   const [wants, setWants] = useState("");
-  const [postalCode, setPostalCode] = useState("");
-  const [lat, setLat] = useState("");
-  const [lng, setLng] = useState("");
+  const [address, setAddress] = useState<AddressValue | null>(null);
   const [photoKeys, setPhotoKeys] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  function geolocate() {
-    setError(null);
-    if (!navigator.geolocation) {
-      setError("Geolocation not supported by this browser");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLat(pos.coords.latitude.toFixed(6));
-        setLng(pos.coords.longitude.toFixed(6));
-      },
-      (err) => setError(err.message)
-    );
-  }
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!address) {
+      setError("Please pick a location.");
+      return;
+    }
     setBusy(true);
     try {
       const r = await api<{ id: string }>("/listings", {
@@ -60,16 +47,21 @@ export default function NewListing() {
           category,
           condition: kind === "good" ? condition : undefined,
           wants,
-          postalCode,
+          // Backend requires postalCode min 3 chars; fall back to a city-level
+          // marker if the picked address didn't include a ZIP.
+          postalCode: address.postcode || "USA",
           countryCode: "US",
-          lat: Number(lat),
-          lng: Number(lng),
+          lat: address.lat,
+          lng: address.lng,
           photoKeys,
         }),
       });
       nav(`/listing/${r.id}`);
     } catch (e: any) {
-      setError(e?.body?.error ?? e?.message ?? "Failed");
+      const fieldErr = e?.body?.issues?.[0];
+      setError(
+        fieldErr?.message ?? e?.body?.error ?? e?.message ?? "Failed"
+      );
     } finally {
       setBusy(false);
     }
@@ -211,48 +203,11 @@ export default function NewListing() {
           />
         </Section>
 
-        <Section title="6. Where are you?" subtitle="ZIP + a rough lat/lng. We never show your street address.">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <label className="block">
-              <span className="label">ZIP / Postal</span>
-              <input
-                required
-                minLength={3}
-                maxLength={12}
-                value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
-                className="input mt-1"
-                placeholder="85003"
-              />
-            </label>
-            <label className="block">
-              <span className="label">Latitude</span>
-              <input
-                required
-                value={lat}
-                onChange={(e) => setLat(e.target.value)}
-                className="input mt-1"
-                placeholder="33.4484"
-              />
-            </label>
-            <label className="block">
-              <span className="label">Longitude</span>
-              <input
-                required
-                value={lng}
-                onChange={(e) => setLng(e.target.value)}
-                className="input mt-1"
-                placeholder="-112.0740"
-              />
-            </label>
-          </div>
-          <button
-            type="button"
-            onClick={geolocate}
-            className="btn-ghost mt-2"
-          >
-            <Crosshair className="h-4 w-4" strokeWidth={2} /> Use my current location
-          </button>
+        <Section
+          title="6. Where are you?"
+          subtitle="Pick a neighborhood, ZIP, or street. We only show approximate location to buyers."
+        >
+          <AddressPicker value={address} onChange={setAddress} />
         </Section>
 
         {error && (
