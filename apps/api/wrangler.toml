@@ -56,3 +56,53 @@ TOS_VERSION = "2026-05-28"
 # TELNYX_FROM_NUMBER
 # SESSION_SECRET
 # TURNSTILE_SECRET_KEY
+
+# ======================================================================
+# DEV environment — `wrangler deploy --env dev` produces a sibling
+# Worker named "unscrewed-api-dev" bound to api-dev.unscrewed.lol. It
+# shares D1, KV, R2, Durable Object, AI, and *secrets* with prod for
+# now (one data store, two worker scripts). When we want true data
+# isolation later, create dev-suffixed resources and re-point bindings.
+# ======================================================================
+[env.dev]
+name = "unscrewed-api-dev"
+workers_dev = true
+
+[[env.dev.routes]]
+pattern = "api-dev.unscrewed.lol"
+custom_domain = true
+
+# Bindings are re-declared because wrangler does not inherit list-typed
+# bindings (d1, kv, r2, durable_objects, migrations) across envs.
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "unscrewed"
+database_id = "9369c48b-e156-4963-827e-a0b7ed76e149"
+migrations_dir = "../../packages/db/src/migrations"
+
+[[env.dev.kv_namespaces]]
+binding = "SESSIONS"
+id = "3f47aca094bf4d338da2fb0cbb71085f"
+
+[[env.dev.kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "d30c4d4391c64dbdbb0438235623c642"
+
+[[env.dev.r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "unscrewed-photos"
+
+[env.dev.ai]
+binding = "AI"
+
+[[env.dev.durable_objects.bindings]]
+name = "NEGOTIATION"
+class_name = "NegotiationRoom"
+
+[[env.dev.migrations]]
+tag = "v1"
+new_sqlite_classes = ["NegotiationRoom"]
+
+[env.dev.vars]
+PUBLIC_BASE_URL = "https://dev.unscrewed.lol"
+TOS_VERSION = "2026-05-28"

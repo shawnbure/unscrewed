@@ -16,7 +16,61 @@ export default function Tos() {
           </p>
         </header>
 
-        <div className="prose prose-neutral mt-8 max-w-none text-ink-700">
+        {/* ------- Philosophy preamble ------- */}
+        <section className="mt-8 rounded-2xl border border-brand-200 bg-brand-50/40 p-6 sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+            Our philosophy
+          </p>
+          <h2 className="display mt-2 text-2xl text-ink-900 sm:text-3xl">
+            We weren't meant to live like this.
+          </h2>
+          <div className="prose prose-neutral mt-4 max-w-none text-ink-700">
+            <p>
+              Somewhere along the way, we forgot how to live with each other.
+              We turned neighbors into strangers, skills into subscriptions,
+              and time itself into something we rent back from people who
+              produce nothing. We pay for the privilege of working, and we
+              work to afford the things that were meant to make work bearable.
+            </p>
+            <p>
+              That isn't an economy. That's a cage with a screen in it. A
+              system designed to convince you that what's natural — helping
+              a neighbor, fixing your own car, growing your own food, trading
+              with someone you actually know — is somehow inefficient,
+              backward, or quaint. Meanwhile the people who own the cage post
+              record profits.
+            </p>
+            <p>
+              <strong>unscrewed.lol exists to wake people up</strong>, gently,
+              by giving them a place to remember that another way is possible.
+              That a haircut can pay for a tune-up. That a guitar lesson can
+              pay for a tomato harvest. That your time, your skills, and the
+              things sitting in your garage are worth something to someone
+              within walking distance — and that exchange between humans does
+              not require a corporation, a payment processor, or a permission
+              slip from an algorithm.
+            </p>
+            <p>
+              We believe community is not something the government delivers
+              or a brand sponsors. It's something we build with our own hands,
+              one trade at a time. We believe the dollar is a tool, not a
+              master. We believe the people who run things will not save us —
+              and we can save each other.
+            </p>
+            <p>
+              If you're reading this, you already feel it. The whole system
+              has been quietly draining your time, your money, your trust,
+              and your hope. You're not crazy. You're awake. Welcome.
+            </p>
+            <p className="text-sm italic text-ink-500">
+              The legal text below is here because we live in a world that
+              still requires it. The philosophy above is why we built any of
+              this in the first place. Both matter.
+            </p>
+          </div>
+        </section>
+
+        <div className="prose prose-neutral mt-10 max-w-none text-ink-700">
           <h2>1. What unscrewed.lol is</h2>
           <p>
             unscrewed.lol ("the Service") is a venue for users to discover one
