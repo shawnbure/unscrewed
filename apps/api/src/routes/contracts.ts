@@ -24,6 +24,40 @@ export const contractsRoutes = new Hono<AppContext>();
 contractsRoutes.use("*", requireAuth);
 
 // ----------------------------------------------------------------------
+// GET /contracts — list contracts the caller is a party to, joined with
+// the listing for context.
+// Optional query: ?status=draft|awaiting_signatures|signed|cancelled|all
+// (default: everything not cancelled)
+// ----------------------------------------------------------------------
+contractsRoutes.get("/", async (c) => {
+  const userId = c.get("userId")!;
+  const status = new URL(c.req.url).searchParams.get("status") ?? "active";
+  let where = "c.status != 'cancelled'";
+  if (status !== "active" && status !== "all") {
+    where = `c.status = '${status.replace(/'/g, "''")}'`;
+  } else if (status === "all") {
+    where = "1=1";
+  }
+  const rows = await c.env.DB.prepare(
+    `SELECT c.*,
+            l.title    AS listing_title,
+            l.kind     AS listing_kind,
+            l.category AS listing_category,
+            (SELECT lp.r2_key FROM listing_photos lp
+              WHERE lp.listing_id = l.id ORDER BY lp.sort_order LIMIT 1)
+                                AS firstPhotoKey
+       FROM contracts c
+       JOIN listings l ON l.id = c.listing_id
+      WHERE (c.party_a_user_id = ?1 OR c.party_b_user_id = ?1)
+        AND ${where}
+      ORDER BY c.date_modified DESC`
+  )
+    .bind(userId)
+    .all();
+  return c.json({ items: rows.results });
+});
+
+// ----------------------------------------------------------------------
 // GET /contracts/:id — returns a contract if the caller is one of the two
 //                      parties on it.
 // ----------------------------------------------------------------------

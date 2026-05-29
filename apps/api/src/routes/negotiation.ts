@@ -21,23 +21,87 @@ export const negotiationRoutes = new Hono<AppContext>();
 negotiationRoutes.use("*", requireAuth);
 
 // list my negotiations
+// Returns rows joined with: listing.title + status, other-party display_name,
+// last message body/at, message count, current contract status (if any).
 negotiationRoutes.get("/", async (c) => {
   const userId = c.get("userId")!;
+  const url = new URL(c.req.url);
+  const status = (url.searchParams.get("status") ?? "active") as
+    | "active"
+    | "archived"
+    | "all";
+
+  let archiveFilter = "n.is_archived = 0";
+  if (status === "archived") archiveFilter = "n.is_archived = 1";
+  else if (status === "all") archiveFilter = "1=1";
+
+  const rows = await c.env.DB.prepare(
+    `SELECT
+       n.id, n.listing_id, n.lister_user_id, n.requester_user_id,
+       n.offering, n.status, n.is_archived, n.is_deleted,
+       n.date_created, n.date_modified,
+       l.title         AS listing_title,
+       l.status        AS listing_status,
+       l.kind          AS listing_kind,
+       l.category      AS listing_category,
+       l.is_deleted    AS listing_is_deleted,
+       (CASE WHEN ?1 = n.lister_user_id THEN u_req.display_name ELSE u_list.display_name END) AS other_name,
+       (SELECT lp.r2_key FROM listing_photos lp
+         WHERE lp.listing_id = l.id ORDER BY lp.sort_order LIMIT 1)        AS firstPhotoKey,
+       (SELECT COUNT(*) FROM negotiation_messages nm
+         WHERE nm.negotiation_id = n.id)                                   AS message_count,
+       (SELECT nm.body FROM negotiation_messages nm
+         WHERE nm.negotiation_id = n.id ORDER BY nm.date_created DESC LIMIT 1)
+                                                                          AS last_message_body,
+       (SELECT nm.date_created FROM negotiation_messages nm
+         WHERE nm.negotiation_id = n.id ORDER BY nm.date_created DESC LIMIT 1)
+                                                                          AS last_message_at,
+       (SELECT c.status FROM contracts c
+         WHERE c.negotiation_id = n.id AND c.status != 'cancelled'
+         ORDER BY c.date_created DESC LIMIT 1)                            AS active_contract_status,
+       (SELECT c.id FROM contracts c
+         WHERE c.negotiation_id = n.id AND c.status != 'cancelled'
+         ORDER BY c.date_created DESC LIMIT 1)                            AS active_contract_id
+     FROM negotiations n
+     JOIN listings l   ON l.id = n.listing_id
+     JOIN users u_list ON u_list.id = n.lister_user_id
+     JOIN users u_req  ON u_req.id  = n.requester_user_id
+     WHERE n.is_deleted = 0
+       AND ${archiveFilter}
+       AND (n.lister_user_id = ?1 OR n.requester_user_id = ?1)
+     ORDER BY COALESCE(last_message_at, n.date_modified) DESC`
+  )
+    .bind(userId)
+    .all();
+  return c.json({ items: rows.results });
+});
+
+// User-facing PATCH — currently only archive / unarchive their own row.
+// (Soft-delete of negotiations is admin-only; users can hide via archive.)
+negotiationRoutes.patch("/:id", async (c) => {
+  const userId = c.get("userId")!;
+  const id = c.req.param("id");
+  const json = (await c.req.json().catch(() => null)) as
+    | { isArchived?: boolean }
+    | null;
+  if (!json || typeof json.isArchived !== "boolean")
+    return c.json({ error: "invalid_input" }, 400);
+
   const db = getDb(c.env.DB);
-  const rows = await db
+  const row = await db
     .select()
     .from(negotiations)
-    .where(
-      and(
-        eq(negotiations.isDeleted, 0),
-        eq(negotiations.isArchived, 0),
-        or(
-          eq(negotiations.listerUserId, userId),
-          eq(negotiations.requesterUserId, userId)
-        )
-      )
-    );
-  return c.json({ items: rows });
+    .where(eq(negotiations.id, id))
+    .limit(1);
+  const n = row[0];
+  if (!n) return c.json({ error: "not_found" }, 404);
+  if (n.listerUserId !== userId && n.requesterUserId !== userId)
+    return c.json({ error: "forbidden" }, 403);
+  await db
+    .update(negotiations)
+    .set({ isArchived: json.isArchived ? 1 : 0, dateModified: Date.now() })
+    .where(eq(negotiations.id, id));
+  return c.json({ ok: true });
 });
 
 // start a negotiation on a listing

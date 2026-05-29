@@ -11,6 +11,7 @@ import Browse from "./pages/Browse.js";
 import ListingDetail from "./pages/ListingDetail.js";
 import NewListing from "./pages/NewListing.js";
 import NegotiationPage from "./pages/Negotiation.js";
+import TradesPage from "./pages/Trades.js";
 import Tos from "./pages/Tos.js";
 import { AdminLayout } from "./pages/admin/AdminLayout.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
@@ -34,6 +35,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="listing/:id" element={<ListingDetail />} />
           <Route path="post" element={<NewListing />} />
           <Route path="n/:id" element={<NegotiationPage />} />
+          <Route path="trades" element={<TradesPage />} />
           <Route path="tos" element={<Tos />} />
           <Route
             path="admin"

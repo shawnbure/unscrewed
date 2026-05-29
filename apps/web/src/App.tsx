@@ -1,6 +1,15 @@
 import { Link, Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Plus, Menu, X, ShieldCheck, LogOut, LogIn, UserPlus } from "lucide-react";
+import {
+  Plus,
+  Menu,
+  X,
+  ShieldCheck,
+  LogOut,
+  LogIn,
+  UserPlus,
+  Inbox as InboxIcon,
+} from "lucide-react";
 import { useSession } from "./lib/session.js";
 import { api } from "./lib/api.js";
 import { Container } from "./ui/Container.js";
@@ -45,6 +54,16 @@ export default function App() {
               >
                 Browse
               </NavLink>
+              {session?.authenticated && (
+                <NavLink
+                  to="/trades"
+                  className={({ isActive }) =>
+                    `inline-flex items-center gap-1.5 rounded-xl px-3 py-2 ${isActive ? "bg-surface-100 text-ink-900" : "text-ink-700 hover:bg-surface-100"}`
+                  }
+                >
+                  <InboxIcon className="h-4 w-4" strokeWidth={2} /> My trades
+                </NavLink>
+              )}
               {session?.authenticated && session.isAdmin && (
                 <NavLink
                   to="/admin"
@@ -107,6 +126,11 @@ export default function App() {
                 {session?.authenticated && (
                   <MobileLink to="/post" onClick={() => setMobileOpen(false)}>
                     <Plus className="h-4 w-4" strokeWidth={2.5} /> Post a trade
+                  </MobileLink>
+                )}
+                {session?.authenticated && (
+                  <MobileLink to="/trades" onClick={() => setMobileOpen(false)}>
+                    <InboxIcon className="h-4 w-4" strokeWidth={2} /> My trades
                   </MobileLink>
                 )}
                 {session?.authenticated && session.isAdmin && (
