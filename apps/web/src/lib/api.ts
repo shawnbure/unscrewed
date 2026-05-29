@@ -4,7 +4,7 @@
 // Pick API base from build-time env if set; otherwise: any unscrewed.lol host
 // or *.pages.dev preview hits the live API directly; localhost goes through the
 // Vite proxy.
-const BASE = (() => {
+export const API_BASE = (() => {
   const fromEnv = import.meta.env.VITE_API_BASE as string | undefined;
   if (fromEnv) return fromEnv;
   if (typeof window === "undefined") return "/api";
@@ -13,6 +13,7 @@ const BASE = (() => {
   // unscrewed.lol, www.unscrewed.lol, *.unscrewed-web.pages.dev → live API
   return "https://api.unscrewed.lol";
 })();
+const BASE = API_BASE;
 
 export async function api<T = unknown>(
   path: string,

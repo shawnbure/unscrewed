@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import ngeohash from "ngeohash";
 import {
   ListingCreateSchema,
@@ -26,33 +26,19 @@ listingsRoutes.get("/", optionalAuth, async (c) => {
   if (!parsed.success)
     return c.json({ error: "invalid_input", issues: parsed.error.issues }, 400);
   const q = parsed.data;
-  const db = getDb(c.env.DB);
-
-  const conditions = [eq(listings.status, "active"), eq(listings.isDeleted, 0)];
-  if (q.category) conditions.push(eq(listings.category, q.category));
-  if (q.kind) conditions.push(eq(listings.kind, q.kind));
-
-  // Bounding-box filter
-  if (
-    q.north !== undefined &&
-    q.south !== undefined &&
-    q.east !== undefined &&
-    q.west !== undefined
-  ) {
-    conditions.push(sql`${listings.lat} BETWEEN ${q.south} AND ${q.north}`);
-    conditions.push(sql`${listings.lng} BETWEEN ${q.west} AND ${q.east}`);
-  } else if (q.lat !== undefined && q.lng !== undefined) {
-    // Radius via geohash prefix narrowing (cheap; refine in app)
-    const precision = q.radiusKm && q.radiusKm > 50 ? 3 : 4;
-    const center = ngeohash.encode(q.lat, q.lng, precision);
-    conditions.push(sql`substr(${listings.geohash}, 1, ${precision}) = ${center}`);
-  }
+  // Subquery to attach the first (lowest sort_order) photo key to each row.
+  // Cheap enough at our scale; revisit if listing volume grows.
+  const photoSubquery = `(
+    SELECT lp.r2_key FROM listing_photos lp
+    WHERE lp.listing_id = l.id
+    ORDER BY lp.sort_order ASC LIMIT 1
+  ) AS firstPhotoKey`;
 
   // FTS5 full-text query
   if (q.q && q.q.trim().length > 0) {
     const term = q.q.trim().replace(/[^\w\s]/g, " ");
     const rows = await c.env.DB.prepare(
-      `SELECT l.* FROM listings l
+      `SELECT l.*, ${photoSubquery} FROM listings l
        JOIN listings_fts ON listings_fts.rowid = l.rowid
        WHERE listings_fts MATCH ?1
          AND l.status = 'active' AND l.is_deleted = 0
@@ -63,14 +49,45 @@ listingsRoutes.get("/", optionalAuth, async (c) => {
     return c.json({ items: rows.results });
   }
 
-  const rows = await db
-    .select()
-    .from(listings)
-    .where(and(...conditions))
-    .orderBy(desc(listings.dateCreated))
-    .limit(q.limit);
+  // Build the equivalent of drizzle's filter via raw SQL so we can add the
+  // photo subquery in the same trip.
+  const where: string[] = ["l.status = 'active'", "l.is_deleted = 0"];
+  const binds: any[] = [];
+  if (q.category) {
+    where.push("l.category = ?");
+    binds.push(q.category);
+  }
+  if (q.kind) {
+    where.push("l.kind = ?");
+    binds.push(q.kind);
+  }
+  if (
+    q.north !== undefined &&
+    q.south !== undefined &&
+    q.east !== undefined &&
+    q.west !== undefined
+  ) {
+    where.push("l.lat BETWEEN ? AND ?");
+    binds.push(q.south, q.north);
+    where.push("l.lng BETWEEN ? AND ?");
+    binds.push(q.west, q.east);
+  } else if (q.lat !== undefined && q.lng !== undefined) {
+    const precision = q.radiusKm && q.radiusKm > 50 ? 3 : 4;
+    const center = ngeohash.encode(q.lat, q.lng, precision);
+    where.push(`substr(l.geohash, 1, ${precision}) = ?`);
+    binds.push(center);
+  }
+  binds.push(q.limit);
 
-  return c.json({ items: rows });
+  const rows = await c.env.DB.prepare(
+    `SELECT l.*, ${photoSubquery} FROM listings l
+     WHERE ${where.join(" AND ")}
+     ORDER BY l.date_created DESC
+     LIMIT ?`
+  )
+    .bind(...binds)
+    .all();
+  return c.json({ items: rows.results });
 });
 
 // ---------------- get single (public) ----------------

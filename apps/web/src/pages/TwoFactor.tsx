@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { useSession } from "../lib/session.js";
+import { AuthLayout } from "../ui/AuthLayout.js";
 
 export default function TwoFactor() {
   const [sp] = useSearchParams();
@@ -32,12 +33,11 @@ export default function TwoFactor() {
   }
 
   return (
-    <div className="max-w-sm mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold">Two-factor verification</h1>
-      <p className="mt-1 text-sm text-neutral-600">
-        We texted a 6-digit code{hint ? ` to ${hint}` : ""}. Enter it below.
-      </p>
-      <form onSubmit={submit} className="mt-6 space-y-4">
+    <AuthLayout
+      title="Two-factor verification"
+      subtitle={`Enter the 6-digit code we texted${hint ? ` to ${hint}` : ""}.`}
+    >
+      <form onSubmit={submit} className="space-y-4">
         <input
           inputMode="numeric"
           pattern="\d{6}"
@@ -45,18 +45,20 @@ export default function TwoFactor() {
           required
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          className="w-full rounded border border-neutral-300 px-3 py-3 text-center text-2xl tracking-[0.5em]"
+          className="input text-center text-2xl tracking-[0.5em]"
           placeholder="••••••"
+          autoComplete="one-time-code"
+          autoFocus
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={busy || code.length !== 6}
-          className="w-full rounded bg-brand text-white py-2.5 disabled:opacity-50"
+          className="btn-primary w-full"
         >
           {busy ? "Verifying…" : "Verify and sign in"}
         </button>
       </form>
-    </div>
+    </AuthLayout>
   );
 }

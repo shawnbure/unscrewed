@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import Turnstile from "../components/Turnstile.js";
+import { AuthLayout } from "../ui/AuthLayout.js";
 
 export default function Login() {
   const nav = useNavigate();
@@ -26,11 +27,7 @@ export default function Login() {
         phoneHint?: string;
       }>("/auth/login", {
         method: "POST",
-        body: JSON.stringify({
-          email,
-          password,
-          turnstileToken,
-        }),
+        body: JSON.stringify({ email, password, turnstileToken }),
       });
       const target = r.step === "verify_phone" ? "/signup/verify" : "/2fa";
       const qs = new URLSearchParams({ cid: r.challengeId });
@@ -44,25 +41,44 @@ export default function Login() {
   }
 
   return (
-    <div className="max-w-sm mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold">Sign in</h1>
-      <form onSubmit={submit} className="mt-6 space-y-4">
-        <input
-          type="email"
-          required
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded border border-neutral-300 px-3 py-2"
-        />
-        <input
-          type="password"
-          required
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded border border-neutral-300 px-3 py-2"
-        />
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to post trades, negotiate, and manage your account."
+      footer={
+        <>
+          New here?{" "}
+          <Link
+            to="/signup"
+            className="font-medium text-brand-700 hover:underline"
+          >
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={submit} className="space-y-4">
+        <label className="block">
+          <span className="label">Email</span>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="input mt-1"
+            autoComplete="email"
+          />
+        </label>
+        <label className="block">
+          <span className="label">Password</span>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="input mt-1"
+            autoComplete="current-password"
+          />
+        </label>
         <Turnstile
           onVerify={setTurnstileToken}
           onExpire={() => setTurnstileToken(null)}
@@ -72,11 +88,11 @@ export default function Login() {
         <button
           type="submit"
           disabled={busy || !turnstileToken}
-          className="w-full rounded bg-brand text-white py-2.5 disabled:opacity-50"
+          className="btn-primary w-full"
         >
-          {busy ? "Sending code…" : "Sign in (SMS 2FA next)"}
+          {busy ? "Sending code…" : "Sign in — SMS code next"}
         </button>
       </form>
-    </div>
+    </AuthLayout>
   );
 }

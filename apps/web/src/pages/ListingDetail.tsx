@@ -1,44 +1,234 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { Container } from "../ui/Container.js";
+import { CATEGORIES } from "../ui/CategoryTile.js";
 import { api } from "../lib/api.js";
 import { useSession } from "../lib/session.js";
+import { photoUrl } from "../lib/photoUrl.js";
+
+interface ListingFull {
+  id: string;
+  title: string;
+  description: string;
+  wants: string;
+  kind: "good" | "service";
+  category: string;
+  condition?: string | null;
+  postal_code?: string;
+  postalCode?: string;
+  user_id?: string;
+  userId?: string;
+  date_created?: number;
+  dateCreated?: number;
+}
+interface Photo {
+  id: string;
+  r2_key?: string;
+  r2Key?: string;
+}
 
 export default function ListingDetail() {
   const { id } = useParams();
   const nav = useNavigate();
   const { session } = useSession();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<{
+    listing: ListingFull;
+    photos: Photo[];
+  } | null>(null);
+  const [idx, setIdx] = useState(0);
+  const [showPropose, setShowPropose] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    api<{ listing: ListingFull; photos: Photo[] }>(`/listings/${id}`)
+      .then(setData)
+      .catch(console.error);
+  }, [id]);
+
+  if (!data)
+    return (
+      <Container size="lg" className="py-10">
+        <div className="card h-72 animate-pulse" />
+      </Container>
+    );
+
+  const { listing: l, photos } = data;
+  const cat = CATEGORIES.find((c) => c.slug === l.category);
+  const photoKeys = photos.map((p) => p.r2_key ?? p.r2Key!).filter(Boolean);
+  const current = photoKeys[idx];
+
+  return (
+    <Container size="lg" className="py-6">
+      <Link
+        to="/browse"
+        className="text-sm text-ink-500 hover:text-brand-700"
+      >
+        ← Back to browse
+      </Link>
+
+      <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
+        {/* Photo carousel */}
+        <div>
+          <div
+            className={`card relative aspect-[4/3] w-full overflow-hidden ${cat?.tint ?? "bg-sand-100"}`}
+          >
+            {current ? (
+              <img
+                src={photoUrl(current)}
+                alt={l.title}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-7xl" aria-hidden>
+                {cat?.emoji ?? "✨"}
+              </div>
+            )}
+            {photoKeys.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Previous photo"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-card hover:bg-white"
+                  onClick={() =>
+                    setIdx((i) => (i - 1 + photoKeys.length) % photoKeys.length)
+                  }
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next photo"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-card hover:bg-white"
+                  onClick={() => setIdx((i) => (i + 1) % photoKeys.length)}
+                >
+                  ›
+                </button>
+              </>
+            )}
+          </div>
+          {photoKeys.length > 1 && (
+            <ul className="mt-3 grid grid-cols-5 gap-2 sm:grid-cols-8">
+              {photoKeys.map((k, i) => (
+                <li key={k}>
+                  <button
+                    type="button"
+                    onClick={() => setIdx(i)}
+                    className={`block aspect-square w-full overflow-hidden rounded-lg border ${
+                      i === idx ? "border-brand-500" : "border-transparent"
+                    }`}
+                  >
+                    <img
+                      src={photoUrl(k)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Detail panel */}
+        <aside className="space-y-4">
+          <div className="card p-5">
+            <div className="flex items-center gap-2 text-xs text-ink-400">
+              <span className="chip">{l.kind}</span>
+              {cat && <span className="chip">{cat.emoji} {cat.label}</span>}
+            </div>
+            <h1 className="mt-2 text-2xl font-bold text-ink-900 sm:text-3xl">
+              {l.title}
+            </h1>
+            <p className="mt-1 text-sm text-ink-500">
+              📍 {l.postalCode ?? l.postal_code ?? "—"}
+              {l.dateCreated || l.date_created
+                ? ` · posted ${formatRelative(l.dateCreated ?? l.date_created!)}`
+                : ""}
+            </p>
+
+            <div className="mt-5 rounded-xl bg-brand-50 p-4 text-sm">
+              <div className="text-xs font-semibold uppercase tracking-wider text-brand-700">
+                Wants in trade
+              </div>
+              <p className="mt-1 text-ink-900">{l.wants}</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                session?.authenticated ? setShowPropose(true) : nav("/login")
+              }
+              className="btn-primary mt-5 w-full"
+            >
+              Propose a trade
+            </button>
+            <p className="mt-2 text-center text-xs text-ink-400">
+              You'll chat to negotiate before signing anything.
+            </p>
+          </div>
+
+          <div className="card p-5">
+            <h3 className="text-sm font-semibold text-ink-700">Description</h3>
+            <p className="mt-2 whitespace-pre-wrap text-sm text-ink-700">
+              {l.description}
+            </p>
+          </div>
+
+          <div className="card p-5">
+            <h3 className="text-sm font-semibold text-ink-700">
+              Before you trade
+            </h3>
+            <ul className="mt-2 space-y-1.5 text-xs text-ink-500">
+              <li>✓ Meet in a public place, ideally during daylight.</li>
+              <li>✓ Inspect the item or scope the service before exchanging.</li>
+              <li>✓ Both sides sign the social contract in chat — keep the record.</li>
+              <li>
+                ✗ unscrewed.lol is not party to the trade — see{" "}
+                <Link to="/tos" className="underline">
+                  Terms
+                </Link>
+                .
+              </li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+
+      {showPropose && (
+        <ProposeModal
+          listingId={l.id}
+          onClose={() => setShowPropose(false)}
+          onSent={(negId) => nav(`/n/${negId}`)}
+        />
+      )}
+    </Container>
+  );
+}
+
+function ProposeModal({
+  listingId,
+  onClose,
+  onSent,
+}: {
+  listingId: string;
+  onClose: () => void;
+  onSent: (negotiationId: string) => void;
+}) {
   const [offering, setOffering] = useState("");
   const [openingMessage, setOpeningMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!id) return;
-    api(`/listings/${id}`).then(setData).catch(console.error);
-  }, [id]);
-
-  if (!data) return <div className="p-8 text-neutral-500">Loading…</div>;
-  const l = data.listing;
-
-  async function propose(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!session?.authenticated) {
-      nav("/login");
-      return;
-    }
-    setError(null);
     setBusy(true);
+    setError(null);
     try {
-      const r = await api<{ id: string }>(`/negotiations`, {
+      const r = await api<{ id: string }>("/negotiations", {
         method: "POST",
-        body: JSON.stringify({
-          listingId: id,
-          offering,
-          openingMessage,
-        }),
+        body: JSON.stringify({ listingId, offering, openingMessage }),
       });
-      nav(`/n/${r.id}`);
+      onSent(r.id);
     } catch (e: any) {
       setError(e?.body?.error ?? e?.message ?? "Failed");
     } finally {
@@ -47,46 +237,63 @@ export default function ListingDetail() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <Link to="/browse" className="text-sm text-neutral-500 hover:text-brand">
-        ← back
-      </Link>
-      <h1 className="text-3xl font-bold mt-2">{l.title}</h1>
-      <p className="text-sm text-neutral-500">
-        {l.kind} · {l.category} · {l.postal_code ?? l.postalCode}
-      </p>
-      <p className="mt-4 whitespace-pre-wrap">{l.description}</p>
-      <div className="mt-4 rounded bg-amber-50 border border-amber-200 p-4 text-sm">
-        <span className="font-semibold">Wants in trade:</span> {l.wants}
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-3 sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        className="card w-full max-w-lg p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-xl font-bold text-ink-900">Propose a trade</h2>
+        <p className="mt-1 text-sm text-ink-500">
+          Tell the lister what you're offering and start the conversation.
+        </p>
+        <form onSubmit={submit} className="mt-4 space-y-3">
+          <label className="block">
+            <span className="label">What are you offering?</span>
+            <textarea
+              required
+              rows={2}
+              value={offering}
+              onChange={(e) => setOffering(e.target.value)}
+              className="input mt-1"
+              placeholder="e.g. 4 hours of lawn care, or my old Stratocaster"
+            />
+          </label>
+          <label className="block">
+            <span className="label">Opening message</span>
+            <textarea
+              required
+              rows={4}
+              value={openingMessage}
+              onChange={(e) => setOpeningMessage(e.target.value)}
+              className="input mt-1"
+              placeholder="Say hi — explain the trade and ask any questions."
+            />
+          </label>
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="btn-ghost">
+              Cancel
+            </button>
+            <button type="submit" disabled={busy} className="btn-primary">
+              {busy ? "Sending…" : "Send proposal"}
+            </button>
+          </div>
+        </form>
       </div>
-
-      <h2 className="mt-10 text-xl font-semibold">Propose a trade</h2>
-      <form onSubmit={propose} className="mt-3 space-y-3">
-        <textarea
-          required
-          rows={2}
-          value={offering}
-          onChange={(e) => setOffering(e.target.value)}
-          placeholder="What are you offering?"
-          className="w-full rounded border border-neutral-300 px-3 py-2"
-        />
-        <textarea
-          required
-          rows={4}
-          value={openingMessage}
-          onChange={(e) => setOpeningMessage(e.target.value)}
-          placeholder="Say hi — explain why this trade makes sense."
-          className="w-full rounded border border-neutral-300 px-3 py-2"
-        />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="rounded bg-brand text-white px-4 py-2 disabled:opacity-50"
-        >
-          {busy ? "Sending…" : "Send proposal"}
-        </button>
-      </form>
     </div>
   );
+}
+
+function formatRelative(ms: number): string {
+  const diff = Date.now() - ms;
+  const m = Math.floor(diff / 60_000);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}d ago`;
+  return new Date(ms).toLocaleDateString();
 }

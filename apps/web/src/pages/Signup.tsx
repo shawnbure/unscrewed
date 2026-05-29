@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import Turnstile from "../components/Turnstile.js";
+import { AuthLayout } from "../ui/AuthLayout.js";
 
-const TOS_VERSION = "2026-05-28"; // must match TOS_VERSION in the Worker
+const TOS_VERSION = "2026-05-28";
 
 export default function Signup() {
   const nav = useNavigate();
@@ -46,12 +47,19 @@ export default function Signup() {
   }
 
   return (
-    <div className="max-w-md mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold">Create your account</h1>
-      <p className="mt-1 text-sm text-neutral-600">
-        We'll text you a 6-digit code to verify your phone.
-      </p>
-      <form onSubmit={submit} className="mt-6 space-y-4">
+    <AuthLayout
+      title="Create your account"
+      subtitle="We'll text a 6-digit code to verify your phone."
+      footer={
+        <>
+          Already a member?{" "}
+          <Link to="/login" className="font-medium text-brand-700 hover:underline">
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={submit} className="space-y-4">
         <Field label="Display name">
           <input
             required
@@ -59,6 +67,7 @@ export default function Signup() {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             className="input"
+            autoComplete="nickname"
           />
         </Field>
         <Field label="Email">
@@ -68,9 +77,10 @@ export default function Signup() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="input"
+            autoComplete="email"
           />
         </Field>
-        <Field label="Password (12+ chars)">
+        <Field label="Password" hint="12 characters minimum.">
           <input
             required
             type="password"
@@ -78,31 +88,34 @@ export default function Signup() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="input"
+            autoComplete="new-password"
           />
         </Field>
-        <Field label="Mobile (E.164, e.g. +14155551234)">
+        <Field label="Mobile number" hint="E.164, e.g. +14155551234">
           <input
             required
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="input"
             pattern="^\+[1-9]\d{7,14}$"
+            autoComplete="tel"
+            inputMode="tel"
           />
         </Field>
-        <label className="flex items-start gap-2 text-sm text-neutral-700">
+        <label className="flex items-start gap-2 text-sm text-ink-700">
           <input
             type="checkbox"
             checked={accepted}
             onChange={(e) => setAccepted(e.target.checked)}
-            className="mt-1"
+            className="mt-1 h-4 w-4 rounded border-sand-300 text-brand-600 focus:ring-brand-500"
           />
           <span>
             I agree to the{" "}
-            <Link to="/tos" className="text-brand underline">
+            <Link to="/tos" className="text-brand-700 underline">
               Terms of Service
-            </Link>{" "}
-            including the indemnification clause. I understand unscrewed.lol is
-            not a party to any trade I make.
+            </Link>
+            , including indemnification. I understand unscrewed.lol isn't a
+            party to any trade I make.
           </span>
         </label>
         <Turnstile
@@ -114,27 +127,29 @@ export default function Signup() {
         <button
           type="submit"
           disabled={!accepted || busy || !turnstileToken}
-          className="w-full rounded bg-brand text-white py-2.5 disabled:opacity-50"
+          className="btn-primary w-full"
         >
           {busy ? "Sending code…" : "Create account & send SMS"}
         </button>
       </form>
-      <style>{`.input { @apply w-full rounded border border-neutral-300 px-3 py-2; }`}</style>
-    </div>
+    </AuthLayout>
   );
 }
 
 function Field({
   label,
+  hint,
   children,
 }: {
   label: string;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <label className="block">
-      <span className="text-sm text-neutral-700">{label}</span>
+      <span className="label">{label}</span>
       <div className="mt-1">{children}</div>
+      {hint && <p className="mt-1 text-xs text-ink-400">{hint}</p>}
     </label>
   );
 }

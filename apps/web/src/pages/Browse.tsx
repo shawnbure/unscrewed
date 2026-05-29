@@ -1,40 +1,258 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { Container } from "../ui/Container.js";
+import { SearchBar } from "../ui/SearchBar.js";
+import { ListingCard, type ListingCardData } from "../ui/ListingCard.js";
+import { CATEGORIES } from "../ui/CategoryTile.js";
 import { api } from "../lib/api.js";
 
-interface ListingRow {
-  id: string;
-  title: string;
-  description: string;
-  wants: string;
-  kind: "good" | "service";
-  category: string;
-  lat: number;
-  lng: number;
-  postal_code?: string;
-  postalCode?: string;
-}
+type View = "grid" | "map";
 
 export default function Browse() {
+  const [sp, setSp] = useSearchParams();
+  const cat = sp.get("cat") ?? "";
+  const kind = sp.get("kind") ?? "";
+  const q = sp.get("q") ?? "";
+  const [view, setView] = useState<View>("grid");
+  const [items, setItems] = useState<ListingCardData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Build the API query from URL params
+  const apiPath = useMemo(() => {
+    const u = new URLSearchParams();
+    if (cat) u.set("category", cat);
+    if (kind) u.set("kind", kind);
+    if (q) u.set("q", q);
+    u.set("limit", "40");
+    return `/listings?${u.toString()}`;
+  }, [cat, kind, q]);
+
+  useEffect(() => {
+    setLoading(true);
+    api<{ items: ListingCardData[] }>(apiPath)
+      .then((r) => setItems(r.items))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, [apiPath]);
+
+  const setParam = (key: string, val: string | null) => {
+    const next = new URLSearchParams(sp);
+    if (val) next.set(key, val);
+    else next.delete(key);
+    setSp(next);
+  };
+
+  return (
+    <Container size="xl" className="py-6">
+      <div className="mb-4">
+        <SearchBar initial={q} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
+        {/* Filter rail */}
+        <aside className="space-y-5 lg:sticky lg:top-20 lg:self-start">
+          <FilterGroup title="What kind?">
+            <FilterChip
+              active={!kind}
+              onClick={() => setParam("kind", null)}
+              label="All"
+            />
+            <FilterChip
+              active={kind === "good"}
+              onClick={() => setParam("kind", "good")}
+              label="Goods"
+            />
+            <FilterChip
+              active={kind === "service"}
+              onClick={() => setParam("kind", "service")}
+              label="Services"
+            />
+          </FilterGroup>
+
+          <FilterGroup title="Categories">
+            <ul className="space-y-1">
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setParam("cat", null)}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm ${
+                    !cat
+                      ? "bg-brand-50 font-semibold text-brand-700"
+                      : "text-ink-700 hover:bg-sand-100"
+                  }`}
+                >
+                  <span>All categories</span>
+                </button>
+              </li>
+              {CATEGORIES.map((c) => (
+                <li key={c.slug}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setParam("cat", c.slug === cat ? null : c.slug)
+                    }
+                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm ${
+                      cat === c.slug
+                        ? "bg-brand-50 font-semibold text-brand-700"
+                        : "text-ink-700 hover:bg-sand-100"
+                    }`}
+                  >
+                    <span aria-hidden>{c.emoji}</span>
+                    <span>{c.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </FilterGroup>
+        </aside>
+
+        {/* Results */}
+        <div className="min-w-0">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="text-sm text-ink-500">
+              {loading ? "Loading…" : `${items.length} trade${items.length === 1 ? "" : "s"}`}
+              {cat ? ` · ${CATEGORIES.find((c) => c.slug === cat)?.label}` : ""}
+              {kind ? ` · ${kind}` : ""}
+              {q ? ` · "${q}"` : ""}
+            </div>
+            <ViewToggle view={view} onChange={setView} />
+          </div>
+
+          {view === "grid" ? (
+            <GridView items={items} loading={loading} />
+          ) : (
+            <MapView items={items} />
+          )}
+        </div>
+      </div>
+    </Container>
+  );
+}
+
+function FilterGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="card p-4">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-400">
+        {title}
+      </h3>
+      <div className="mt-2 flex flex-wrap gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+function FilterChip({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-sm transition-colors ${
+        active
+          ? "bg-brand-500 text-white"
+          : "bg-sand-100 text-ink-700 hover:bg-sand-200"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function ViewToggle({
+  view,
+  onChange,
+}: {
+  view: View;
+  onChange: (v: View) => void;
+}) {
+  return (
+    <div className="inline-flex rounded-xl bg-sand-100 p-1 text-sm">
+      <button
+        type="button"
+        onClick={() => onChange("grid")}
+        className={`rounded-lg px-3 py-1.5 font-medium ${
+          view === "grid" ? "bg-white shadow-sm text-ink-900" : "text-ink-500"
+        }`}
+      >
+        Grid
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("map")}
+        className={`rounded-lg px-3 py-1.5 font-medium ${
+          view === "map" ? "bg-white shadow-sm text-ink-900" : "text-ink-500"
+        }`}
+      >
+        Map
+      </button>
+    </div>
+  );
+}
+
+function GridView({
+  items,
+  loading,
+}: {
+  items: ListingCardData[];
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="card h-72 animate-pulse bg-sand-100" />
+        ))}
+      </div>
+    );
+  }
+  if (items.length === 0) {
+    return (
+      <div className="card p-10 text-center text-ink-500">
+        <div className="text-3xl">🤷</div>
+        <p className="mt-2">No trades match your filters yet.</p>
+        <Link to="/post" className="btn-primary mt-4 inline-flex">
+          Post the first one
+        </Link>
+      </div>
+    );
+  }
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {items.map((l) => (
+        <ListingCard key={l.id} l={l} />
+      ))}
+    </div>
+  );
+}
+
+function MapView({ items }: { items: ListingCardData[] }) {
   const mapEl = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
-  const [items, setItems] = useState<ListingRow[]>([]);
 
   useEffect(() => {
     if (!mapEl.current) return;
     const map = new maplibregl.Map({
       container: mapEl.current,
-      // Free OSM raster tiles — swap to Protomaps PMTiles served from R2 later.
       style: {
         version: 8,
         sources: {
           osm: {
             type: "raster",
-            tiles: [
-              "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            ],
+            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
             tileSize: 256,
             attribution: "© OpenStreetMap contributors",
           },
@@ -46,26 +264,6 @@ export default function Browse() {
     });
     map.addControl(new maplibregl.NavigationControl(), "top-right");
     mapRef.current = map;
-
-    const reload = async () => {
-      const b = map.getBounds();
-      const url = new URL("/listings", "http://x");
-      url.searchParams.set("north", String(b.getNorth()));
-      url.searchParams.set("south", String(b.getSouth()));
-      url.searchParams.set("east", String(b.getEast()));
-      url.searchParams.set("west", String(b.getWest()));
-      url.searchParams.set("limit", "50");
-      try {
-        const r = await api<{ items: ListingRow[] }>(
-          url.pathname + url.search
-        );
-        setItems(r.items);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    map.on("moveend", reload);
-    map.on("load", reload);
     return () => map.remove();
   }, []);
 
@@ -73,55 +271,28 @@ export default function Browse() {
     const map = mapRef.current;
     if (!map) return;
     markersRef.current.forEach((m) => m.remove());
-    markersRef.current = items.map((l) =>
-      new maplibregl.Marker({ color: "#1f7a4d" })
+    if (items.length === 0) return;
+    const bounds = new maplibregl.LngLatBounds();
+    markersRef.current = items.map((l) => {
+      bounds.extend([l.lng, l.lat]);
+      return new maplibregl.Marker({ color: "#1f9d57" })
         .setLngLat([l.lng, l.lat])
         .setPopup(
           new maplibregl.Popup({ offset: 16 }).setHTML(
-            `<a href="/listing/${l.id}" style="font-weight:600;color:#155534">${escapeHtml(l.title)}</a><br/><span style="font-size:12px;color:#666">wants: ${escapeHtml(l.wants).slice(0, 80)}</span>`
+            `<a href="/listing/${l.id}" style="font-weight:600;color:#106437">${escapeHtml(l.title)}</a><br/><span style="font-size:12px;color:#5b6470">wants: ${escapeHtml(l.wants).slice(0, 80)}</span>`
           )
         )
-        .addTo(map)
-    );
+        .addTo(map);
+    });
+    if (!bounds.isEmpty())
+      map.fitBounds(bounds, { padding: 60, maxZoom: 12, duration: 400 });
   }, [items]);
 
   return (
-    <div className="h-[calc(100vh-3.5rem-3rem)] grid grid-cols-1 md:grid-cols-[400px_1fr]">
-      <aside className="overflow-y-auto border-r bg-white">
-        <div className="px-4 py-3 border-b sticky top-0 bg-white z-10">
-          <h2 className="font-semibold">Trades in view ({items.length})</h2>
-        </div>
-        <ul>
-          {items.map((l) => (
-            <li key={l.id} className="border-b">
-              <Link
-                to={`/listing/${l.id}`}
-                className="block px-4 py-3 hover:bg-neutral-50"
-              >
-                <div className="font-medium text-brand-dark">{l.title}</div>
-                <div className="text-xs text-neutral-500">
-                  {l.kind} · {l.category}
-                </div>
-                <div className="text-sm mt-1 line-clamp-2">{l.description}</div>
-                <div className="text-xs text-neutral-500 mt-1">
-                  Wants: {l.wants}
-                </div>
-              </Link>
-            </li>
-          ))}
-          {items.length === 0 && (
-            <li className="px-4 py-8 text-sm text-neutral-500">
-              No trades in this area yet. Be the first —{" "}
-              <Link to="/post" className="text-brand underline">
-                post one
-              </Link>
-              .
-            </li>
-          )}
-        </ul>
-      </aside>
-      <div ref={mapEl} className="w-full h-full" />
-    </div>
+    <div
+      ref={mapEl}
+      className="h-[70vh] w-full overflow-hidden rounded-2xl shadow-card"
+    />
   );
 }
 
