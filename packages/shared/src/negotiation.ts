@@ -1,7 +1,10 @@
 import { z } from "zod";
 
+// Listing IDs are stored as TEXT in D1 — most are UUIDs (production signup)
+// but demo/seed rows use prefixed ids like "demo:l:01". Validate as a non-empty
+// bounded string rather than strict UUID.
 export const NegotiationStartSchema = z.object({
-  listingId: z.string().uuid(),
+  listingId: z.string().min(1).max(64),
   openingMessage: z.string().min(2).max(2000),
   // What the requester is offering in trade (text for now; later: link to one of their listings)
   offering: z.string().min(2).max(1000),

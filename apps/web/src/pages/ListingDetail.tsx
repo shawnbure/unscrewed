@@ -244,7 +244,15 @@ function ProposeModal({
       });
       onSent(r.id);
     } catch (e: any) {
-      setError(e?.body?.error ?? e?.message ?? "Failed");
+      // Surface zod field issues if the API returned them
+      const fieldErr = e?.body?.issues?.[0];
+      const msg =
+        fieldErr?.message ??
+        e?.body?.message ??
+        e?.body?.error ??
+        e?.message ??
+        "Could not send the proposal.";
+      setError(msg);
     } finally {
       setBusy(false);
     }
