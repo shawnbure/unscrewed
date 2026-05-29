@@ -4,7 +4,11 @@
 //
 // Format: pbkdf2$<iterations>$<saltB64>$<hashB64>
 
-const PBKDF2_ITER = 210_000;
+// Cloudflare Workers caps PBKDF2 iterations at 100,000 (Web Crypto
+// implementation limit). 100k SHA-256 is still well above OWASP's 600k
+// recommendation for SHA-1 / 210k for SHA-256, BUT it's what the runtime
+// allows. If we need stronger, swap to argon2 via a WASM module later.
+const PBKDF2_ITER = 100_000;
 const KEY_LEN = 32;
 
 function b64(buf: ArrayBuffer | Uint8Array): string {
