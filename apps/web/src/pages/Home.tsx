@@ -110,7 +110,7 @@ export default function Home() {
             />
             <ManifestoCard
               icon={<Users className="h-5 w-5" strokeWidth={2} />}
-              title="Neighbors > corporations"
+              title="Choose neighbors, not corporations"
               body="Your community already has what you need. The work of building a real, local trade network is how we get unscrewed together."
             />
           </div>
