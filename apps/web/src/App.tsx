@@ -1,9 +1,11 @@
-import { Link, Outlet, NavLink } from "react-router-dom";
+import { Link, Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useSession } from "./lib/session.js";
+import { api } from "./lib/api.js";
 
 export default function App() {
   const { session, refresh } = useSession();
+  const navigate = useNavigate();
   useEffect(() => {
     refresh();
   }, [refresh]);
@@ -30,11 +32,13 @@ export default function App() {
                 <button
                   type="button"
                   onClick={async () => {
-                    await fetch("/api/auth/logout", {
-                      method: "POST",
-                      credentials: "include",
-                    });
-                    refresh();
+                    try {
+                      await api("/auth/logout", { method: "POST" });
+                    } catch {
+                      /* even if the network call fails, drop local state */
+                    }
+                    await refresh();
+                    navigate("/");
                   }}
                   className="text-neutral-500 hover:text-neutral-900"
                 >
