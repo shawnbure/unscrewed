@@ -63,9 +63,17 @@ TOS_VERSION = "2026-05-28"
 # shares D1, KV, R2, Durable Object, AI, and *secrets* with prod for
 # now (one data store, two worker scripts). When we want true data
 # isolation later, create dev-suffixed resources and re-point bindings.
+#
+# NOTE: main / compatibility_date / compatibility_flags are redeclared
+# explicitly. Some wrangler versions (especially in Workers Builds CI)
+# do not inherit these from the top-level block, and omitting them
+# produces "Missing entry-point to Worker script" at deploy time.
 # ======================================================================
 [env.dev]
 name = "unscrewed-api-dev"
+main = "src/index.ts"
+compatibility_date = "2024-11-12"
+compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
 [[env.dev.routes]]
