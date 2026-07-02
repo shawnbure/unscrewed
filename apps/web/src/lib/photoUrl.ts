@@ -5,8 +5,6 @@ const API_HOST = (() => {
   if (typeof window === "undefined") return "";
   const h = window.location.hostname;
   if (h === "localhost" || h === "127.0.0.1") return "/api";
-  if (h === "dev.unscrewed.lol" || h.endsWith(".unscrewed-web.pages.dev"))
-    return "https://api-dev.unscrewed.lol";
   return "https://api.unscrewed.lol";
 })();
 

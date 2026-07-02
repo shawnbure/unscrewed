@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // F5 (Start Debugging) OR Ctrl/⌘+F5 (Run Without Debugging):
+      // 1. VSCode starts "unscrewed: dev servers" as a preLaunchTask.
+      // 2. That task is a background task; VSCode blocks until Vite
+      //    prints "Local: http://localhost:5173", then unblocks.
+      // 3. This launch config runs `open` on that URL, which asks the
+      //    OS to open the site in the system default browser and exits
+      //    immediately. The dev servers keep running in the dedicated
+      //    "unscrewed: dev servers" terminal until you stop them.
+      "name": "Run unscrewed (default browser)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "open",
+      "runtimeArgs": ["http://localhost:5173"],
+      "preLaunchTask": "unscrewed: dev servers",
+      "console": "internalConsole",
+      "internalConsoleOptions": "neverOpen",
+      "presentation": { "hidden": false, "group": "unscrewed", "order": 1 }
+    },
+    {
+      // Optional: attach VSCode's JavaScript debugger to a Chrome
+      // instance. Only useful if Chrome is installed. Ignored on
+      // machines without Chrome.
+      "name": "Debug web (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/apps/web",
+      "preLaunchTask": "unscrewed: dev servers",
+      "presentation": { "hidden": false, "group": "unscrewed", "order": 2 }
+    }
+  ]
+}

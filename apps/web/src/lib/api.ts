@@ -2,17 +2,14 @@
 // through api.unscrewed.lol in prod.
 
 // Pick API base from build-time env if set; otherwise pick by host:
-//   - localhost / 127.0.0.1            → Vite proxy
-//   - dev.unscrewed.lol / preview pages → api-dev.unscrewed.lol (staging)
-//   - unscrewed.lol / www / pages prod  → api.unscrewed.lol (production)
+//   - localhost / 127.0.0.1  → Vite proxy at /api
+//   - anywhere else          → api.unscrewed.lol (production)
 export const API_BASE = (() => {
   const fromEnv = import.meta.env.VITE_API_BASE as string | undefined;
   if (fromEnv) return fromEnv;
   if (typeof window === "undefined") return "/api";
   const host = window.location.hostname;
   if (host === "localhost" || host === "127.0.0.1") return "/api";
-  if (host === "dev.unscrewed.lol" || host.endsWith(".unscrewed-web.pages.dev"))
-    return "https://api-dev.unscrewed.lol";
   return "https://api.unscrewed.lol";
 })();
 const BASE = API_BASE;

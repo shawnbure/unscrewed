@@ -1,0 +1,46 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Runs the whole local stack: Vite (web on :5173) + wrangler dev
+      // (API on :8787) in parallel via the root package.json `dev` script.
+      // Marked as a background task so VSCode considers it "ready" the
+      // moment Vite prints its "Local:" URL, unblocking the browser step.
+      "label": "unscrewed: dev servers",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["dev"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "group": "dev"
+      },
+      "problemMatcher": [
+        {
+          "owner": "unscrewed-dev",
+          "pattern": [
+            { "regexp": ".", "file": 1, "location": 2, "message": 3 }
+          ],
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": ".",
+            "endsPattern": "Local:\\s+http://localhost:5173"
+          }
+        }
+      ]
+    },
+    {
+      // Convenience: run this task from the palette to open the app in
+      // the system default browser without starting the servers.
+      "label": "unscrewed: open in browser",
+      "type": "shell",
+      "command": "open",
+      "args": ["http://localhost:5173"],
+      "presentation": { "reveal": "silent", "panel": "shared" },
+      "problemMatcher": []
+    }
+  ]
+}

@@ -20,11 +20,10 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
-      // Allow prod, staging, and localhost dev origins.
+      // Allow prod + localhost + Pages preview URLs.
       if (!origin) return origin;
       if (origin === "https://unscrewed.lol") return origin;
       if (origin === "https://www.unscrewed.lol") return origin;
-      if (origin === "https://dev.unscrewed.lol") return origin;
       if (origin.startsWith("http://localhost:")) return origin;
       if (origin.endsWith(".unscrewed-web.pages.dev")) return origin;
       return null;
