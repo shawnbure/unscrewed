@@ -5,37 +5,52 @@ import type { AppContext } from "../env.js";
 import { readSession, destroySession } from "../lib/session.js";
 
 /**
- * Block a session whose underlying user has been archived or deleted.
- * Cached check: only re-validates against the DB every 60s per session by
- * piggybacking on session.lastSeenAt (already refreshed periodically).
+ * Verify the session's underlying user is still valid on every
+ * authenticated request. Cheap: one indexed SELECT per hit.
  *
- * We avoid a DB lookup on every request; it runs at sliding-refresh time.
+ * Return values:
+ *   ok        — session is good
+ *   gone      — user was soft-deleted; drop the cookie
+ *   suspended — user is archived; drop the cookie
+ *   stale     — user's sessions_invalidated_at is newer than session.createdAt
+ *               (password / email changed elsewhere) — drop the cookie
  */
 async function ensureUserStillValid(
   c: any,
-  userId: string
-): Promise<"ok" | "gone" | "suspended"> {
+  session: { userId: string; createdAt: number }
+): Promise<"ok" | "gone" | "suspended" | "stale"> {
   const db = getDb(c.env.DB);
   const u = await db
-    .select({ isDeleted: users.isDeleted, isArchived: users.isArchived })
+    .select({
+      isDeleted: users.isDeleted,
+      isArchived: users.isArchived,
+      sessionsInvalidatedAt: users.sessionsInvalidatedAt,
+    })
     .from(users)
-    .where(eq(users.id, userId))
+    .where(eq(users.id, session.userId))
     .limit(1);
   if (!u[0] || u[0].isDeleted === 1) return "gone";
   if (u[0].isArchived === 1) return "suspended";
+  if (
+    u[0].sessionsInvalidatedAt &&
+    u[0].sessionsInvalidatedAt > session.createdAt
+  )
+    return "stale";
   return "ok";
 }
 
 export const requireAuth: MiddlewareHandler<AppContext> = async (c, next) => {
   const s = await readSession(c);
   if (!s) return c.json({ error: "unauthorized" }, 401);
-  const valid = await ensureUserStillValid(c, s.userId);
+  const valid = await ensureUserStillValid(c, s);
   if (valid !== "ok") {
     await destroySession(c);
-    return c.json(
-      { error: valid === "suspended" ? "account_suspended" : "account_gone" },
-      403
-    );
+    const errorMap = {
+      gone: "account_gone",
+      suspended: "account_suspended",
+      stale: "session_invalidated",
+    } as const;
+    return c.json({ error: errorMap[valid] }, 403);
   }
   c.set("userId", s.userId);
   c.set("isAdmin", s.isAdmin);

@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, Plus, Trash2, Phone, Save, Pencil, MapPin } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  KeyRound,
+  Plus,
+  Trash2,
+  Phone,
+  Save,
+  Pencil,
+  MapPin,
+  Mail,
+  User as UserIcon,
+  Lock,
+  AlertTriangle,
+} from "lucide-react";
 import { Container } from "../ui/Container.js";
 import {
   passkeysSupported,
@@ -9,6 +22,7 @@ import {
   type StoredPasskey,
 } from "../lib/passkeys.js";
 import { api } from "../lib/api.js";
+import { useSession } from "../lib/session.js";
 
 interface Me {
   id: string;
@@ -22,6 +36,8 @@ interface Me {
 }
 
 export default function AccountPage() {
+  const nav = useNavigate();
+  const { refresh } = useSession();
   const [me, setMe] = useState<Me | null>(null);
   const [passkeys, setPasskeys] = useState<StoredPasskey[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -194,7 +210,459 @@ export default function AccountPage() {
           onSaved={(next) => setMe({ ...me, homeZip: next })}
         />
       </section>
+
+      <section className="card mt-4 p-6">
+        <h2 className="text-base font-semibold text-ink-900">
+          Display name
+        </h2>
+        <p className="mt-0.5 text-sm text-ink-500">
+          What other traders see when you propose or list.
+        </p>
+        <NameEditor
+          initial={me.displayName}
+          onSaved={(next) => setMe({ ...me, displayName: next })}
+        />
+      </section>
+
+      <section className="card mt-4 p-6">
+        <h2 className="text-base font-semibold text-ink-900">Email</h2>
+        <p className="mt-0.5 text-sm text-ink-500">
+          Your sign-in identifier. Changing it invalidates every other
+          browser you're signed in from.
+        </p>
+        <EmailEditor
+          initial={me.email}
+          onSaved={(next) => setMe({ ...me, email: next })}
+        />
+      </section>
+
+      <section className="card mt-4 p-6">
+        <h2 className="text-base font-semibold text-ink-900">Password</h2>
+        <p className="mt-0.5 text-sm text-ink-500">
+          Changing your password signs you out of every other browser.
+        </p>
+        <PasswordEditor />
+      </section>
+
+      <section className="mt-8 rounded-2xl border-2 border-red-200 bg-red-50/40 p-6">
+        <div className="flex items-start gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-red-100 text-red-700">
+            <AlertTriangle className="h-5 w-5" strokeWidth={2} />
+          </span>
+          <div>
+            <h2 className="text-base font-semibold text-red-800">
+              Danger zone
+            </h2>
+            <p className="mt-1 text-sm text-red-700">
+              Delete your account. Your listings and negotiations will be
+              soft-deleted along with you — an admin can restore later if you
+              change your mind, but nobody will see them once you're gone.
+            </p>
+          </div>
+        </div>
+        <DeleteAccount
+          onDeleted={async () => {
+            await refresh();
+            nav("/");
+          }}
+        />
+      </section>
     </Container>
+  );
+}
+
+// ============================================================
+// Editors
+// ============================================================
+
+function NameEditor({
+  initial,
+  onSaved,
+}: {
+  initial: string;
+  onSaved: (next: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function save() {
+    setError(null);
+    if (name.trim().length < 2) {
+      setError("At least 2 characters.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await api<{ displayName: string }>("/me/name", {
+        method: "PATCH",
+        body: JSON.stringify({ displayName: name.trim() }),
+      });
+      onSaved(r.displayName);
+      setEditing(false);
+    } catch (e: any) {
+      setError(e?.body?.error ?? e?.message ?? "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (!editing) {
+    return (
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <UserIcon className="h-4 w-4 text-ink-400" strokeWidth={2} />
+          <span className="text-sm text-ink-900">{initial}</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(true);
+            setName(initial);
+          }}
+          className="btn-ghost text-sm"
+        >
+          <Pencil className="h-3.5 w-3.5" strokeWidth={2} /> Edit
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-4 space-y-3">
+      <input
+        maxLength={60}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="input"
+        placeholder="Your display name"
+      />
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={save}
+          disabled={busy}
+          className="btn-brand text-sm"
+        >
+          <Save className="h-3.5 w-3.5" strokeWidth={2} />
+          {busy ? "Saving…" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(false);
+            setError(null);
+          }}
+          className="btn-ghost text-sm"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EmailEditor({
+  initial,
+  onSaved,
+}: {
+  initial: string;
+  onSaved: (next: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [email, setEmail] = useState(initial);
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setError(null);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Enter a valid email.");
+      return;
+    }
+    if (!password) {
+      setError("Enter your current password to confirm.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await api<{ email: string }>("/me/email", {
+        method: "PATCH",
+        body: JSON.stringify({ email, currentPassword: password }),
+      });
+      onSaved(r.email);
+      setPassword("");
+      setEditing(false);
+    } catch (e: any) {
+      const code = e?.body?.error;
+      setError(
+        code === "invalid_password"
+          ? "Wrong password."
+          : code === "email_in_use"
+            ? "That email is already in use."
+            : (e?.body?.error ?? e?.message ?? "Save failed")
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Mail className="h-4 w-4 text-ink-400" strokeWidth={2} />
+          <span className="text-sm text-ink-900">{initial}</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(true);
+            setEmail(initial);
+            setPassword("");
+          }}
+          className="btn-ghost text-sm"
+        >
+          <Pencil className="h-3.5 w-3.5" strokeWidth={2} /> Edit
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-4 space-y-3">
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="input"
+        placeholder="you@example.com"
+        autoComplete="email"
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="input"
+        placeholder="Current password"
+        autoComplete="current-password"
+      />
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={save}
+          disabled={busy}
+          className="btn-brand text-sm"
+        >
+          <Save className="h-3.5 w-3.5" strokeWidth={2} />
+          {busy ? "Saving…" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(false);
+            setError(null);
+          }}
+          className="btn-ghost text-sm"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PasswordEditor() {
+  const [editing, setEditing] = useState(false);
+  const [oldPw, setOldPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [ok, setOk] = useState(false);
+
+  async function save() {
+    setError(null);
+    setOk(false);
+    if (newPw.length < 12) {
+      setError("New password must be at least 12 characters.");
+      return;
+    }
+    if (newPw === oldPw) {
+      setError("Choose something different from your current password.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api("/me/password", {
+        method: "PATCH",
+        body: JSON.stringify({ currentPassword: oldPw, newPassword: newPw }),
+      });
+      setOldPw("");
+      setNewPw("");
+      setEditing(false);
+      setOk(true);
+      setTimeout(() => setOk(false), 5000);
+    } catch (e: any) {
+      const code = e?.body?.error;
+      setError(
+        code === "invalid_password"
+          ? "Wrong current password."
+          : code === "same_password"
+            ? "Choose something different from your current password."
+            : (e?.body?.error ?? e?.message ?? "Save failed")
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Lock className="h-4 w-4 text-ink-400" strokeWidth={2} />
+          <span className="text-sm text-ink-500">••••••••••••</span>
+          {ok && (
+            <span className="chip-brand ml-1">Updated</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="btn-ghost text-sm"
+        >
+          <Pencil className="h-3.5 w-3.5" strokeWidth={2} /> Change
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-4 space-y-3">
+      <input
+        type="password"
+        value={oldPw}
+        onChange={(e) => setOldPw(e.target.value)}
+        className="input"
+        placeholder="Current password"
+        autoComplete="current-password"
+      />
+      <input
+        type="password"
+        value={newPw}
+        onChange={(e) => setNewPw(e.target.value)}
+        className="input"
+        placeholder="New password (12+ characters)"
+        autoComplete="new-password"
+      />
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={save}
+          disabled={busy}
+          className="btn-brand text-sm"
+        >
+          <Save className="h-3.5 w-3.5" strokeWidth={2} />
+          {busy ? "Saving…" : "Change password"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(false);
+            setError(null);
+            setOldPw("");
+            setNewPw("");
+          }}
+          className="btn-ghost text-sm"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DeleteAccount({ onDeleted }: { onDeleted: () => void }) {
+  const [confirming, setConfirming] = useState(false);
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function del() {
+    setError(null);
+    if (!password) {
+      setError("Enter your password to confirm.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api("/me", {
+        method: "DELETE",
+        body: JSON.stringify({ currentPassword: password }),
+      });
+      onDeleted();
+    } catch (e: any) {
+      const code = e?.body?.error;
+      setError(
+        code === "invalid_password"
+          ? "Wrong password."
+          : (e?.body?.error ?? e?.message ?? "Delete failed")
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!confirming) {
+    return (
+      <button
+        type="button"
+        onClick={() => setConfirming(true)}
+        className="mt-4 rounded-xl border-2 border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-800 hover:bg-red-100"
+      >
+        <Trash2 className="mr-1.5 inline h-4 w-4" strokeWidth={2} />
+        Delete my account
+      </button>
+    );
+  }
+  return (
+    <div className="mt-4 space-y-3">
+      <p className="text-sm text-red-800">
+        Enter your current password to confirm. This soft-deletes your
+        account — an admin can undo it, but you'll be signed out
+        immediately.
+      </p>
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="input border-red-300 focus:border-red-500 focus:ring-red-500/10"
+        placeholder="Your password"
+        autoComplete="current-password"
+      />
+      {error && <p className="text-sm text-red-700">{error}</p>}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={del}
+          disabled={busy}
+          className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+        >
+          {busy ? "Deleting…" : "Yes, delete my account"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setConfirming(false);
+            setPassword("");
+            setError(null);
+          }}
+          className="btn-ghost text-sm"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }
 

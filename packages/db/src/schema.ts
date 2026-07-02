@@ -24,6 +24,7 @@ export const users = sqliteTable(
     homeZip: text("home_zip"),
     homeLat: real("home_lat"),
     homeLng: real("home_lng"),
+    sessionsInvalidatedAt: integer("sessions_invalidated_at"),
     isAdmin: integer("is_admin").notNull().default(0),
     isArchived: integer("is_archived").notNull().default(0),
     isDeleted: integer("is_deleted").notNull().default(0),

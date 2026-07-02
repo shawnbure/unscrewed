@@ -50,3 +50,31 @@ export const UpdateZipSchema = z.object({
   homeZip: UsZip,
 });
 export type UpdateZipInput = z.infer<typeof UpdateZipSchema>;
+
+// Change display name.
+export const UpdateNameSchema = z.object({
+  displayName: z.string().min(2).max(60),
+});
+export type UpdateNameInput = z.infer<typeof UpdateNameSchema>;
+
+// Change email. Requires re-authentication with the current password so a
+// stolen session cookie can't silently rebind the account to an attacker.
+export const UpdateEmailSchema = z.object({
+  email: z.string().email().max(255),
+  currentPassword: z.string().min(1).max(200),
+});
+export type UpdateEmailInput = z.infer<typeof UpdateEmailSchema>;
+
+// Change password. Verifies the current password AND invalidates every
+// other active session (see users.sessions_invalidated_at).
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(12).max(200),
+});
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
+
+// Delete-my-account. Confirms with current password.
+export const DeleteAccountSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+});
+export type DeleteAccountInput = z.infer<typeof DeleteAccountSchema>;

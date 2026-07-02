@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="340" viewBox="0 0 900 340" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <style>
+      .brand{fill:#e2483a;} .ink{fill:#171613;} .cream{fill:#fbf7f0;} .amber{fill:#f0a04b;}
+      .wht{fill:#ffffff;}
+      .lg{font-weight:800;} .md{font-weight:700;}
+    </style>
+  </defs>
+
+  <!-- Sticker 1: round wordmark -->
+  <g transform="translate(20,20)">
+    <circle cx="150" cy="150" r="150" class="ink"/>
+    <circle cx="150" cy="150" r="138" fill="none" stroke="#e2483a" stroke-width="4" stroke-dasharray="3 9" stroke-linecap="round"/>
+    <text x="150" y="140" text-anchor="middle" class="cream lg" font-size="46" letter-spacing="-1">unscrewed</text>
+    <text x="150" y="140" text-anchor="middle" font-size="46" letter-spacing="-1" class="brand lg" transform="translate(96,0)">.lol</text>
+    <text x="150" y="178" text-anchor="middle" class="amber md" font-size="15" letter-spacing="3">TRADE LIKE HUMANS</text>
+  </g>
+
+  <!-- Sticker 2: slogan bar -->
+  <g transform="translate(360,60)">
+    <rect x="0" y="0" width="520" height="90" rx="45" class="brand"/>
+    <text x="40" y="58" class="wht lg" font-size="40" letter-spacing="-1">Don't dump it. Trade it.</text>
+  </g>
+
+  <!-- Sticker 3: manifesto line -->
+  <g transform="translate(360,180)">
+    <rect x="0" y="0" width="520" height="120" rx="20" class="cream" stroke="#e7e0d5" stroke-width="3"/>
+    <text x="30" y="52" class="ink lg" font-size="30" letter-spacing="-.5">You're not crazy.</text>
+    <text x="30" y="92" class="brand lg" font-size="30" letter-spacing="-.5">You're awake.</text>
+    <text x="352" y="98" class="ink md" font-size="15" letter-spacing="1">unscrewed.lol</text>
+  </g>
+</svg>

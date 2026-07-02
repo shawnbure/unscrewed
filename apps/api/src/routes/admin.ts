@@ -15,6 +15,7 @@ import {
 } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 import { requireAdmin } from "../middleware/auth.js";
+import { geocodeUsZip } from "../lib/geocode.js";
 
 export const adminRoutes = new Hono<AppContext>();
 adminRoutes.use("*", requireAdmin);
@@ -113,7 +114,19 @@ adminRoutes.get("/users", async (c) => {
   return c.json({ items: rows.results });
 });
 
+// Admin can edit any field except the password hash (no bypassing user
+// password verification). E.164 uses the shared regex; empty string clears
+// the phone. displayName re-uses the same 2..60 constraint as signup.
 const UserPatch = z.object({
+  displayName: z.string().min(2).max(60).optional(),
+  email: z.string().email().max(255).optional(),
+  phoneE164: z
+    .union([
+      z.string().regex(/^\+[1-9]\d{7,14}$/),
+      z.literal(""),
+    ])
+    .optional(),
+  homeZip: z.union([z.string().regex(/^\d{5}$/), z.literal("")]).optional(),
   isArchived: z.boolean().optional(),
   isDeleted: z.boolean().optional(),
   isAdmin: z.boolean().optional(),
@@ -134,21 +147,103 @@ adminRoutes.patch("/users/:id", async (c) => {
   const row = await db.select().from(users).where(eq(users.id, id)).limit(1);
   if (!row[0]) return c.json({ error: "not_found" }, 404);
 
-  const upd: Record<string, unknown> = { dateModified: Date.now() };
-  if (parsed.data.isArchived !== undefined)
+  const now = Date.now();
+  const upd: Record<string, unknown> = { dateModified: now };
+
+  if (parsed.data.displayName !== undefined)
+    upd.displayName = parsed.data.displayName.trim();
+  if (parsed.data.email !== undefined) {
+    const newNorm = parsed.data.email.trim().toLowerCase();
+    if (newNorm !== row[0].emailNormalized) {
+      // Uniqueness check against any other row
+      const collision = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.emailNormalized, newNorm))
+        .limit(1);
+      if (collision[0] && collision[0].id !== id)
+        return c.json({ error: "email_in_use" }, 409);
+      upd.email = parsed.data.email.trim();
+      upd.emailNormalized = newNorm;
+      // Rebinding login identifier → kill other sessions.
+      upd.sessionsInvalidatedAt = now;
+    }
+  }
+  if (parsed.data.phoneE164 !== undefined) {
+    upd.phoneE164 = parsed.data.phoneE164;
+    // Admin edit clears any historical "verified" state.
+    upd.phoneVerifiedAt = null;
+  }
+  if (parsed.data.homeZip !== undefined) {
+    upd.homeZip = parsed.data.homeZip;
+    if (parsed.data.homeZip) {
+      const point = await geocodeUsZip(c.env, parsed.data.homeZip);
+      upd.homeLat = point?.lat ?? null;
+      upd.homeLng = point?.lng ?? null;
+    } else {
+      upd.homeLat = null;
+      upd.homeLng = null;
+    }
+  }
+  if (parsed.data.isArchived !== undefined) {
     upd.isArchived = parsed.data.isArchived ? 1 : 0;
-  if (parsed.data.isDeleted !== undefined)
+    if (parsed.data.isArchived) upd.sessionsInvalidatedAt = now;
+  }
+  if (parsed.data.isDeleted !== undefined) {
     upd.isDeleted = parsed.data.isDeleted ? 1 : 0;
-  if (parsed.data.isAdmin !== undefined)
+    if (parsed.data.isDeleted) upd.sessionsInvalidatedAt = now;
+  }
+  if (parsed.data.isAdmin !== undefined) {
     upd.isAdmin = parsed.data.isAdmin ? 1 : 0;
+    // Admin toggle should force a re-login so the isAdmin bit in the
+    // session cookie matches reality.
+    upd.sessionsInvalidatedAt = now;
+  }
 
   await db.update(users).set(upd as any).where(eq(users.id, id));
-
-  // If a user is being archived or deleted, kill their sessions if we can.
-  // We don't track session id by user; best-effort: drop session for the
-  // common case (current admin's session is intact since we early-bailed
-  // self-targeting actions above).
   return c.json({ ok: true });
+});
+
+// ---------- POST /admin/users/bulk ----------
+const BulkAction = z.object({
+  action: z.enum(["archive", "unarchive", "delete", "restore"]),
+  userIds: z.array(z.string().min(1)).min(1).max(500),
+});
+adminRoutes.post("/users/bulk", async (c) => {
+  const json = await c.req.json().catch(() => null);
+  const parsed = BulkAction.safeParse(json);
+  if (!parsed.success) return c.json({ error: "invalid_input" }, 400);
+  const self = c.get("userId");
+  const targetIds = parsed.data.userIds.filter((id) => id !== self);
+  if (targetIds.length === 0)
+    return c.json({ error: "no_valid_targets" }, 400);
+
+  const now = Date.now();
+  const upd: Record<string, unknown> = { dateModified: now };
+  const invalidate = ["archive", "delete"].includes(parsed.data.action);
+  switch (parsed.data.action) {
+    case "archive":
+      upd.isArchived = 1;
+      break;
+    case "unarchive":
+      upd.isArchived = 0;
+      break;
+    case "delete":
+      upd.isDeleted = 1;
+      break;
+    case "restore":
+      upd.isDeleted = 0;
+      break;
+  }
+  if (invalidate) upd.sessionsInvalidatedAt = now;
+
+  // D1 SQL — batched into one prepared statement per user id (D1 caps a
+  // single statement's bindings; simple loop keeps it well within limits).
+  const db = getDb(c.env.DB);
+  for (const id of targetIds) {
+    await db.update(users).set(upd as any).where(eq(users.id, id));
+  }
+  return c.json({ ok: true, affected: targetIds.length });
 });
 
 // ============================================================
