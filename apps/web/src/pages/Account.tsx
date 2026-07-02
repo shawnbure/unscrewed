@@ -195,7 +195,9 @@ export default function AccountPage() {
         </p>
         <PhoneEditor
           initial={me.phoneE164}
-          onSaved={(next) => setMe({ ...me, phoneE164: next })}
+          onSaved={(next) =>
+            setMe((prev) => (prev ? { ...prev, phoneE164: next } : prev))
+          }
         />
       </section>
 
@@ -207,7 +209,9 @@ export default function AccountPage() {
         </p>
         <ZipEditor
           initial={me.homeZip ?? ""}
-          onSaved={(next) => setMe({ ...me, homeZip: next })}
+          onSaved={(next) =>
+            setMe((prev) => (prev ? { ...prev, homeZip: next } : prev))
+          }
         />
       </section>
 
@@ -220,7 +224,9 @@ export default function AccountPage() {
         </p>
         <NameEditor
           initial={me.displayName}
-          onSaved={(next) => setMe({ ...me, displayName: next })}
+          onSaved={(next) =>
+            setMe((prev) => (prev ? { ...prev, displayName: next } : prev))
+          }
         />
       </section>
 
@@ -232,7 +238,9 @@ export default function AccountPage() {
         </p>
         <EmailEditor
           initial={me.email}
-          onSaved={(next) => setMe({ ...me, email: next })}
+          onSaved={(next) =>
+            setMe((prev) => (prev ? { ...prev, email: next } : prev))
+          }
         />
       </section>
 
@@ -286,6 +294,10 @@ function NameEditor({
   const [name, setName] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedFlash, setSavedFlash] = useState(false);
+  useEffect(() => {
+    if (!editing) setName(initial);
+  }, [initial, editing]);
   async function save() {
     setError(null);
     if (name.trim().length < 2) {
@@ -300,6 +312,8 @@ function NameEditor({
       });
       onSaved(r.displayName);
       setEditing(false);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 3000);
     } catch (e: any) {
       setError(e?.body?.error ?? e?.message ?? "Save failed");
     } finally {
@@ -312,6 +326,7 @@ function NameEditor({
         <div className="flex items-center gap-2">
           <UserIcon className="h-4 w-4 text-ink-400" strokeWidth={2} />
           <span className="text-sm text-ink-900">{initial}</span>
+          {savedFlash && <span className="chip-brand ml-1">✓ Saved</span>}
         </div>
         <button
           type="button"
@@ -677,6 +692,14 @@ function ZipEditor({
   const [zip, setZip] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  // Sync local input value with the latest server value whenever the parent
+  // hands us a fresh `initial`. Fixes the classic "state initialized from
+  // props" pitfall so what the user sees always reflects the source of truth.
+  useEffect(() => {
+    if (!editing) setZip(initial);
+  }, [initial, editing]);
 
   async function save() {
     setError(null);
@@ -692,6 +715,8 @@ function ZipEditor({
       });
       onSaved(r.homeZip);
       setEditing(false);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 3000);
     } catch (e: any) {
       setError(e?.body?.error ?? e?.message ?? "Save failed");
     } finally {
@@ -708,6 +733,9 @@ function ZipEditor({
             <span className="font-mono text-sm text-ink-900">{initial}</span>
           ) : (
             <span className="text-sm text-ink-400">No ZIP on file.</span>
+          )}
+          {savedFlash && (
+            <span className="chip-brand ml-1">✓ Saved</span>
           )}
         </div>
         <button
@@ -773,6 +801,10 @@ function PhoneEditor({
   const [display, setDisplay] = useState(initial ? fromE164Us(initial) : "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedFlash, setSavedFlash] = useState(false);
+  useEffect(() => {
+    if (!editing) setDisplay(initial ? fromE164Us(initial) : "");
+  }, [initial, editing]);
 
   async function save() {
     setError(null);
@@ -791,6 +823,8 @@ function PhoneEditor({
       onSaved(r.phoneE164);
       setDisplay(r.phoneE164 ? fromE164Us(r.phoneE164) : "");
       setEditing(false);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 3000);
     } catch (e: any) {
       setError(e?.body?.error ?? e?.message ?? "Save failed");
     } finally {
@@ -808,6 +842,7 @@ function PhoneEditor({
           ) : (
             <span className="text-sm text-ink-400">No phone on file.</span>
           )}
+          {savedFlash && <span className="chip-brand ml-1">✓ Saved</span>}
         </div>
         <button
           type="button"
