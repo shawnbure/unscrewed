@@ -3,10 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import Turnstile from "../components/Turnstile.js";
 import { AuthLayout } from "../ui/AuthLayout.js";
+import { useSession } from "../lib/session.js";
 
 const TOS_VERSION = "2026-05-28";
 
-// Format raw digits as "(NNN) NNN-NNNN" for display.
 function formatUsPhoneDisplay(raw: string): string {
   const d = raw.replace(/\D/g, "").slice(0, 10);
   if (d.length === 0) return "";
@@ -14,8 +14,6 @@ function formatUsPhoneDisplay(raw: string): string {
   if (d.length < 7) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 }
-
-// Pull just the digits and prepend +1 for E.164.
 function toE164Us(display: string): string {
   const d = display.replace(/\D/g, "").slice(-10);
   return d.length === 10 ? `+1${d}` : "";
@@ -23,6 +21,7 @@ function toE164Us(display: string): string {
 
 export default function Signup() {
   const nav = useNavigate();
+  const { refresh } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState("");
@@ -39,28 +38,31 @@ export default function Signup() {
       setError("Please complete the bot check");
       return;
     }
-    const phone = toE164Us(phoneDisplay);
-    if (!phone) {
-      setError("Enter a valid 10-digit US mobile number.");
+    // Phone is optional. If the user typed something, coerce to E.164 — if
+    // it comes back empty, treat it as if they left the field blank.
+    const phone = phoneDisplay.trim() ? toE164Us(phoneDisplay) : "";
+    if (phoneDisplay.trim() && !phone) {
+      setError("If you enter a phone, it must be a 10-digit US number.");
       return;
     }
     setBusy(true);
     try {
-      const r = await api<{ challengeId: string }>("/auth/signup", {
+      await api("/auth/signup", {
         method: "POST",
         body: JSON.stringify({
           email,
           password,
-          phone,
+          phone: phone || undefined,
           displayName,
           tosVersion: TOS_VERSION,
           tosAccepted: true,
           turnstileToken,
         }),
       });
-      nav(`/signup/verify?cid=${encodeURIComponent(r.challengeId)}`);
+      await refresh();
+      nav("/browse");
     } catch (e: any) {
-      setError(e?.body?.message ?? e?.message ?? "Sign up failed");
+      setError(e?.body?.message ?? e?.body?.error ?? e?.message ?? "Sign up failed");
     } finally {
       setBusy(false);
     }
@@ -69,7 +71,7 @@ export default function Signup() {
   return (
     <AuthLayout
       title="Create your account"
-      subtitle="We'll text a 6-digit code to verify your phone."
+      subtitle="Email + password. Phone is optional and never used for verification or messaging."
       footer={
         <>
           Already a member?{" "}
@@ -112,19 +114,16 @@ export default function Signup() {
           />
         </Field>
         <Field
-          label="Mobile number"
-          hint="US mobile only for now. We'll text you a 6-digit code."
+          label="Mobile number (optional)"
+          hint="Contact info only. We never text you, never verify it, never sell or market to it. Feel free to skip."
         >
           <div className="flex items-center gap-2 rounded-xl border border-surface-300 bg-white px-3 py-2 focus-within:border-ink-900 focus-within:ring-4 focus-within:ring-ink-900/10">
             <span className="select-none text-sm text-ink-400">🇺🇸</span>
             <input
-              required
               value={phoneDisplay}
-              onChange={(e) =>
-                setPhoneDisplay(formatUsPhoneDisplay(e.target.value))
-              }
+              onChange={(e) => setPhoneDisplay(formatUsPhoneDisplay(e.target.value))}
               className="flex-1 bg-transparent text-ink-900 placeholder:text-ink-400 focus:outline-none"
-              placeholder="(555) 123-4567"
+              placeholder="(555) 123-4567 — optional"
               autoComplete="tel-national"
               inputMode="tel"
               maxLength={14}
@@ -136,7 +135,7 @@ export default function Signup() {
             type="checkbox"
             checked={accepted}
             onChange={(e) => setAccepted(e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-sand-300 text-brand-600 focus:ring-brand-500"
+            className="mt-1 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
           />
           <span>
             I agree to the{" "}
@@ -158,7 +157,7 @@ export default function Signup() {
           disabled={!accepted || busy || !turnstileToken}
           className="btn-primary w-full"
         >
-          {busy ? "Sending code…" : "Create account & send SMS"}
+          {busy ? "Creating account…" : "Create account"}
         </button>
       </form>
     </AuthLayout>
