@@ -118,12 +118,13 @@ authRoutes.post("/signup", async (c) => {
   const userId = uuidv4();
   const passwordHash = await hashPassword(input.password);
   const now = Date.now();
+  const phone: string = ((input.phone ?? "") as string).trim();
   await db.insert(users).values({
     id: userId,
     email: input.email.trim(),
     emailNormalized: emailNorm,
     passwordHash,
-    phoneE164: input.phone,
+    phoneE164: phone,
     displayName: input.displayName.trim(),
     dateCreated: now,
     dateModified: now,
@@ -136,23 +137,31 @@ authRoutes.post("/signup", async (c) => {
     userAgent: c.req.header("user-agent")?.slice(0, 500),
   });
 
-  // Issue phone-verification SMS. Phone is NOT marked verified until /signup/verify succeeds.
-  const issue = await issueSmsCode({
-    env: c.env,
-    userId,
-    phone: input.phone,
-    purpose: "signup_verify_phone",
-  });
-  if (!issue.sendOk) {
-    return c.json(
-      {
-        error: "sms_send_failed",
-        message: issue.errorMessage ?? "Failed to send verification SMS",
-      },
-      502
-    );
+  // Phone is optional: if the user gave one, kick off SMS verification so
+  // they can pick up the verified-trader badge. Otherwise mint a session
+  // immediately and land them at /browse.
+  if (phone) {
+    const issue = await issueSmsCode({
+      env: c.env,
+      userId,
+      phone,
+      purpose: "signup_verify_phone",
+    });
+    if (!issue.sendOk) {
+      // SMS send failed — don't block signup. Session in, they can retry
+      // phone verify from /account later.
+      await createSession(c, userId, false);
+      return c.json({ ok: true, step: "done", smsError: issue.errorMessage });
+    }
+    return c.json({
+      ok: true,
+      step: "verify_phone",
+      challengeId: issue.challengeId,
+    });
   }
-  return c.json({ ok: true, challengeId: issue.challengeId, step: "verify_phone" });
+
+  await createSession(c, userId, false);
+  return c.json({ ok: true, step: "done" });
 });
 
 // ---------------- signup phone verification ----------------
@@ -243,9 +252,10 @@ authRoutes.post("/login", async (c) => {
   const pwOk = await verifyPassword(input.password, u.passwordHash);
   if (!pwOk) return c.json({ error: "invalid_credentials" }, 401);
 
-  // Phone never verified during signup (likely abandoned). Send an SMS code
-  // so the user can finish phone verification; they cannot log in until then.
-  if (!u.phoneVerifiedAt) {
+  // Accounts with a phone on file that hasn't been verified yet get a
+  // one-shot SMS verify prompt. Accounts with no phone (or already
+  // verified) skip SMS entirely — password + Turnstile is enough.
+  if (u.phoneE164 && !u.phoneVerifiedAt) {
     const phoneRl = await rateLimit(c.env, `sms:${u.phoneE164}`, 5, 3600);
     if (!phoneRl.allowed) return c.json({ error: "sms_rate_limited" }, 429);
     const issue = await issueSmsCode({
@@ -254,19 +264,16 @@ authRoutes.post("/login", async (c) => {
       phone: u.phoneE164,
       purpose: "signup_verify_phone",
     });
-    if (!issue.sendOk)
-      return c.json(
-        { error: "sms_send_failed", message: issue.errorMessage },
-        502
-      );
-    return c.json({
-      ok: true,
-      step: "verify_phone",
-      challengeId: issue.challengeId,
-    });
+    if (issue.sendOk) {
+      return c.json({
+        ok: true,
+        step: "verify_phone",
+        challengeId: issue.challengeId,
+      });
+    }
+    // SMS send failed → fall through to session mint so login isn't gated
   }
 
-  // Phone already verified — issue a session immediately.
   await createSession(c, u.id, u.isAdmin === 1);
   return c.json({ ok: true, step: "done" });
 });

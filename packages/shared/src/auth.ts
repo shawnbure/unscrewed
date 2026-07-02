@@ -5,10 +5,14 @@ export const E164 = z
   .string()
   .regex(/^\+[1-9]\d{7,14}$/, "Phone must be in E.164 format like +14155551234");
 
+// Phone is optional at signup. Users who provide one get SMS phone-verify
+// as a bonus trust signal; users who don't just get their session cookie
+// and go on their way. Passkeys give a third alternative that involves
+// no phone data at all.
 export const SignupSchema = z.object({
   email: z.string().email().max(255),
   password: z.string().min(12).max(200),
-  phone: E164,
+  phone: z.union([E164, z.literal("")]).optional(),
   displayName: z.string().min(2).max(60),
   tosVersion: z.string().min(1),
   tosAccepted: z.literal(true),

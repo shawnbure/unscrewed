@@ -239,6 +239,33 @@ export const negotiationMessages = sqliteTable(
 );
 
 // ============================================================
+// passkeys — WebAuthn credentials
+// ============================================================
+export const passkeys = sqliteTable(
+  "passkeys",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    credentialId: text("credential_id").notNull(),
+    publicKey: text("public_key").notNull(),
+    counter: integer("counter").notNull().default(0),
+    transports: text("transports"),
+    deviceLabel: text("device_label"),
+    isDeleted: integer("is_deleted").notNull().default(0),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateLastUsed: integer("date_last_used"),
+  },
+  (t) => ({
+    uxCredential: uniqueIndex("ux_passkeys_credential_id").on(t.credentialId),
+    ixUser: index("ix_passkeys_user").on(t.userId),
+  })
+);
+
+// ============================================================
 // contracts — immutable once signed
 // ============================================================
 export const contracts = sqliteTable(

@@ -11,16 +11,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@simplewebauthn/server": "^13.3.2",
     "@unscrewed/db": "workspace:*",
     "@unscrewed/shared": "workspace:*",
-    "hono": "^4.6.10",
     "drizzle-orm": "^0.36.4",
-    "zod": "^3.23.8",
-    "ngeohash": "^0.6.3"
+    "hono": "^4.6.10",
+    "ngeohash": "^0.6.3",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241112.0",
-    "wrangler": "^3.90.0",
-    "@types/ngeohash": "^0.6.8"
+    "@types/ngeohash": "^0.6.8",
+    "wrangler": "^3.90.0"
   }
 }

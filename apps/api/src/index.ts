@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import type { AppContext } from "./env.js";
 import { authRoutes } from "./routes/auth.js";
+import { passkeysRoutes } from "./routes/passkeys.js";
 import { listingsRoutes } from "./routes/listings.js";
 import { negotiationRoutes } from "./routes/negotiation.js";
 import { webhookRoutes } from "./routes/webhooks.js";
@@ -38,6 +39,7 @@ app.get("/", (c) => c.json({ ok: true, service: "unscrewed-api" }));
 app.get("/health", (c) => c.json({ ok: true, ts: Date.now() }));
 
 app.route("/auth", authRoutes);
+app.route("/passkeys", passkeysRoutes);
 app.route("/me", meRoutes);
 app.route("/listings", listingsRoutes);
 app.route("/negotiations", negotiationRoutes);

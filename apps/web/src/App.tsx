@@ -9,6 +9,7 @@ import {
   LogIn,
   UserPlus,
   Inbox as InboxIcon,
+  User as UserIcon,
 } from "lucide-react";
 import { useSession } from "./lib/session.js";
 import { api } from "./lib/api.js";
@@ -82,6 +83,16 @@ export default function App() {
                   <NavLink to="/post" className="btn-brand ml-2">
                     <Plus className="h-4 w-4" strokeWidth={2.5} /> Post a trade
                   </NavLink>
+                  <NavLink
+                    to="/account"
+                    className={({ isActive }) =>
+                      `rounded-xl p-2 ${isActive ? "bg-surface-100 text-ink-900" : "text-ink-700 hover:bg-surface-100"}`
+                    }
+                    title="Account"
+                    aria-label="Account"
+                  >
+                    <UserIcon className="h-4 w-4" strokeWidth={2} />
+                  </NavLink>
                   <button
                     type="button"
                     onClick={signOut}
@@ -133,6 +144,11 @@ export default function App() {
                 {session?.authenticated && (
                   <MobileLink to="/trades" onClick={() => setMobileOpen(false)}>
                     <InboxIcon className="h-4 w-4" strokeWidth={2} /> My trades
+                  </MobileLink>
+                )}
+                {session?.authenticated && (
+                  <MobileLink to="/account" onClick={() => setMobileOpen(false)}>
+                    <UserIcon className="h-4 w-4" strokeWidth={2} /> Account
                   </MobileLink>
                 )}
                 {session?.authenticated && session.isAdmin && (
