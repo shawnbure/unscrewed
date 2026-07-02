@@ -26,6 +26,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [homeZip, setHomeZip] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +37,10 @@ export default function Signup() {
     setError(null);
     if (!turnstileToken) {
       setError("Please complete the bot check");
+      return;
+    }
+    if (!/^\d{5}$/.test(homeZip)) {
+      setError("Enter your 5-digit US ZIP code.");
       return;
     }
     // Phone is optional. If the user typed something, coerce to E.164 — if
@@ -53,6 +58,7 @@ export default function Signup() {
           email,
           password,
           phone: phone || undefined,
+          homeZip,
           displayName,
           tosVersion: TOS_VERSION,
           tosAccepted: true,
@@ -111,6 +117,22 @@ export default function Signup() {
             onChange={(e) => setPassword(e.target.value)}
             className="input"
             autoComplete="new-password"
+          />
+        </Field>
+        <Field
+          label="ZIP code"
+          hint="US 5-digit ZIP only. Used to place you on the community map in aggregate — nobody sees your exact ZIP but you."
+        >
+          <input
+            required
+            inputMode="numeric"
+            pattern="\d{5}"
+            maxLength={5}
+            value={homeZip}
+            onChange={(e) => setHomeZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
+            className="input"
+            autoComplete="postal-code"
+            placeholder="85003"
           />
         </Field>
         <Field

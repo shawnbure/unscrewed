@@ -6,7 +6,6 @@ interface Stats {
   users: { total: number; active: number; archived: number; deleted: number };
   listings: { total: number; active: number; archived: number; deleted: number };
   negotiations: { total: number };
-  sms: { outbound: number };
   recentSignups: {
     id: string;
     email: string;
@@ -64,7 +63,6 @@ export default function AdminDashboard() {
         </h2>
         <div className="grid grid-cols-2 gap-3">
           <Stat label="Negotiations started" value={stats.negotiations.total} />
-          <Stat label="Outbound SMS" value={stats.sms.outbound} />
         </div>
       </section>
 

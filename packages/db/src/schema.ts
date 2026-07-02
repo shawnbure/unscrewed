@@ -21,6 +21,9 @@ export const users = sqliteTable(
     phoneE164: text("phone_e164").notNull(),
     phoneVerifiedAt: integer("phone_verified_at"), // epoch ms; null until SMS verified
     displayName: text("display_name").notNull(),
+    homeZip: text("home_zip"),
+    homeLat: real("home_lat"),
+    homeLng: real("home_lng"),
     isAdmin: integer("is_admin").notNull().default(0),
     isArchived: integer("is_archived").notNull().default(0),
     isDeleted: integer("is_deleted").notNull().default(0),
@@ -56,61 +59,6 @@ export const tosAcceptances = sqliteTable(
   },
   (t) => ({
     ixUser: index("ix_tos_user").on(t.userId),
-  })
-);
-
-// ============================================================
-// sms_codes — short-lived 6-digit codes for signup / login 2FA
-// ============================================================
-export const smsCodes = sqliteTable(
-  "sms_codes",
-  {
-    id: text("id").primaryKey(), // == challengeId returned to client
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id),
-    purpose: text("purpose").notNull(), // SmsCodePurpose
-    codeHash: text("code_hash").notNull(), // SHA-256 of "<code>:<id>"
-    expiresAt: integer("expires_at").notNull(), // epoch ms
-    consumedAt: integer("consumed_at"),
-    attempts: integer("attempts").notNull().default(0),
-    sentToPhoneE164: text("sent_to_phone_e164").notNull(),
-    dateCreated: integer("date_created")
-      .notNull()
-      .default(sql`(unixepoch() * 1000)`),
-  },
-  (t) => ({
-    ixUser: index("ix_sms_codes_user").on(t.userId),
-    ixExpires: index("ix_sms_codes_expires").on(t.expiresAt),
-  })
-);
-
-// ============================================================
-// sms_log — outbound + delivery receipts from Telnyx
-// ============================================================
-export const smsLog = sqliteTable(
-  "sms_log",
-  {
-    id: text("id").primaryKey(),
-    userId: text("user_id"),
-    direction: text("direction").notNull(), // 'outbound' | 'inbound'
-    toNumber: text("to_number").notNull(),
-    fromNumber: text("from_number"),
-    telnyxMessageId: text("telnyx_message_id"),
-    status: text("status"), // queued, sending, sent, delivered, sending_failed, delivery_failed
-    errorCode: text("error_code"),
-    errorMessage: text("error_message"),
-    body: text("body"),
-    dateCreated: integer("date_created")
-      .notNull()
-      .default(sql`(unixepoch() * 1000)`),
-    dateModified: integer("date_modified")
-      .notNull()
-      .default(sql`(unixepoch() * 1000)`),
-  },
-  (t) => ({
-    ixTelnyxId: index("ix_sms_log_telnyx_id").on(t.telnyxMessageId),
-    ixUser: index("ix_sms_log_user").on(t.userId),
   })
 );
 

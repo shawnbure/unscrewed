@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, Plus, Trash2, Phone, Save, Pencil } from "lucide-react";
+import { KeyRound, Plus, Trash2, Phone, Save, Pencil, MapPin } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import {
   passkeysSupported,
@@ -16,6 +16,7 @@ interface Me {
   displayName: string;
   phoneE164: string;
   phoneVerifiedAt: number | null;
+  homeZip: string | null;
   isAdmin: number;
   dateCreated: number;
 }
@@ -181,7 +182,115 @@ export default function AccountPage() {
           onSaved={(next) => setMe({ ...me, phoneE164: next })}
         />
       </section>
+
+      <section className="card mt-4 p-6">
+        <h2 className="text-base font-semibold text-ink-900">Home ZIP</h2>
+        <p className="mt-0.5 text-sm text-ink-500">
+          Used only to place you on the community map in aggregate — nobody
+          sees your exact ZIP but you.
+        </p>
+        <ZipEditor
+          initial={me.homeZip ?? ""}
+          onSaved={(next) => setMe({ ...me, homeZip: next })}
+        />
+      </section>
     </Container>
+  );
+}
+
+function ZipEditor({
+  initial,
+  onSaved,
+}: {
+  initial: string;
+  onSaved: (next: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [zip, setZip] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setError(null);
+    if (!/^\d{5}$/.test(zip)) {
+      setError("Enter a valid 5-digit US ZIP.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await api<{ homeZip: string }>("/me/zip", {
+        method: "PATCH",
+        body: JSON.stringify({ homeZip: zip }),
+      });
+      onSaved(r.homeZip);
+      setEditing(false);
+    } catch (e: any) {
+      setError(e?.body?.error ?? e?.message ?? "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-ink-400" strokeWidth={2} />
+          {initial ? (
+            <span className="font-mono text-sm text-ink-900">{initial}</span>
+          ) : (
+            <span className="text-sm text-ink-400">No ZIP on file.</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(true);
+            setZip(initial);
+          }}
+          className="btn-ghost text-sm"
+        >
+          <Pencil className="h-3.5 w-3.5" strokeWidth={2} />
+          {initial ? "Edit" : "Add ZIP"}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-4 space-y-3">
+      <input
+        inputMode="numeric"
+        pattern="\d{5}"
+        maxLength={5}
+        value={zip}
+        onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
+        className="input"
+        placeholder="85003"
+        autoComplete="postal-code"
+      />
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={save}
+          disabled={busy}
+          className="btn-brand text-sm"
+        >
+          <Save className="h-3.5 w-3.5" strokeWidth={2} />
+          {busy ? "Saving…" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(false);
+            setError(null);
+          }}
+          className="btn-ghost text-sm"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }
 

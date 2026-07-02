@@ -16,6 +16,7 @@ import { api } from "./lib/api.js";
 import { Container } from "./ui/Container.js";
 import { Logo } from "./ui/Logo.js";
 import { PhilosophyModal } from "./ui/PhilosophyModal.js";
+import { MembersChip } from "./ui/MembersChip.js";
 
 export default function App() {
   const { session, refresh } = useSession();
@@ -43,9 +44,14 @@ export default function App() {
       <header className="sticky top-0 z-30 border-b border-surface-200/70 bg-surface-50/85 backdrop-blur">
         <Container size="xl">
           <div className="flex h-16 items-center justify-between gap-4">
-            <Link to="/" className="shrink-0">
-              <Logo className="h-7 w-auto" />
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link to="/" className="shrink-0">
+                <Logo className="h-7 w-auto" />
+              </Link>
+              <div className="hidden md:block">
+                <MembersChip />
+              </div>
+            </div>
 
             {/* Desktop nav */}
             <nav className="hidden items-center gap-1 text-sm md:flex">
@@ -56,6 +62,14 @@ export default function App() {
                 }
               >
                 Browse
+              </NavLink>
+              <NavLink
+                to="/community"
+                className={({ isActive }) =>
+                  `rounded-xl px-3 py-2 ${isActive ? "bg-surface-100 text-ink-900" : "text-ink-700 hover:bg-surface-100"}`
+                }
+              >
+                Community
               </NavLink>
               <NavLink
                 to="/thoughts"
@@ -143,6 +157,9 @@ export default function App() {
               <div className="flex flex-col gap-1">
                 <MobileLink to="/browse" onClick={() => setMobileOpen(false)}>
                   Browse
+                </MobileLink>
+                <MobileLink to="/community" onClick={() => setMobileOpen(false)}>
+                  Community
                 </MobileLink>
                 <MobileLink to="/thoughts" onClick={() => setMobileOpen(false)}>
                   Thoughts <span aria-hidden>:)</span>

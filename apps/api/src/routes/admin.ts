@@ -12,7 +12,6 @@ import {
   users,
   listings,
   negotiations,
-  smsLog,
 } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 import { requireAdmin } from "../middleware/auth.js";
@@ -35,7 +34,6 @@ adminRoutes.get("/stats", async (c) => {
     deletedListings,
     archivedListings,
     totalNegotiations,
-    totalSmsOut,
     recentSignups,
   ] = await Promise.all([
     db.prepare("SELECT COUNT(*) AS n FROM users").first<{ n: number }>(),
@@ -51,9 +49,6 @@ adminRoutes.get("/stats", async (c) => {
     db.prepare("SELECT COUNT(*) AS n FROM listings WHERE is_deleted = 1").first<{ n: number }>(),
     db.prepare("SELECT COUNT(*) AS n FROM listings WHERE is_archived = 1").first<{ n: number }>(),
     db.prepare("SELECT COUNT(*) AS n FROM negotiations").first<{ n: number }>(),
-    db
-      .prepare("SELECT COUNT(*) AS n FROM sms_log WHERE direction = 'outbound'")
-      .first<{ n: number }>(),
     db
       .prepare(
         "SELECT id, email, display_name, date_created FROM users ORDER BY date_created DESC LIMIT 5"
@@ -74,7 +69,6 @@ adminRoutes.get("/stats", async (c) => {
       deleted: deletedListings?.n ?? 0,
     },
     negotiations: { total: totalNegotiations?.n ?? 0 },
-    sms: { outbound: totalSmsOut?.n ?? 0 },
     recentSignups: recentSignups.results,
   });
 });
@@ -235,37 +229,6 @@ adminRoutes.patch("/listings/:id", async (c) => {
       .where(eq(negotiations.listingId, id));
   }
   return c.json({ ok: true });
-});
-
-// ============================================================
-// /admin/sms — outbound + inbound log
-// ============================================================
-const SmsQuery = z.object({
-  userId: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(200).default(100),
-});
-
-adminRoutes.get("/sms", async (c) => {
-  const raw: Record<string, string> = {};
-  new URL(c.req.url).searchParams.forEach((v, k) => (raw[k] = v));
-  const parsed = SmsQuery.safeParse(raw);
-  if (!parsed.success) return c.json({ error: "invalid_input" }, 400);
-  const { userId, limit } = parsed.data;
-  const where: string[] = [];
-  const binds: any[] = [];
-  if (userId) {
-    where.push("user_id = ?");
-    binds.push(userId);
-  }
-  binds.push(limit);
-  const sql = `SELECT id, user_id, direction, to_number, from_number,
-                 telnyx_message_id, status, error_code, error_message, body,
-                 date_created, date_modified
-               FROM sms_log
-               ${where.length ? "WHERE " + where.join(" AND ") : ""}
-               ORDER BY date_created DESC LIMIT ?`;
-  const rows = await c.env.DB.prepare(sql).bind(...binds).all();
-  return c.json({ items: rows.results });
 });
 
 // ============================================================

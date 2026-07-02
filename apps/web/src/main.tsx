@@ -12,12 +12,12 @@ import NegotiationPage from "./pages/Negotiation.js";
 import TradesPage from "./pages/Trades.js";
 import AccountPage from "./pages/Account.js";
 import ThoughtsPage from "./pages/Thoughts.js";
+import CommunityPage from "./pages/Community.js";
 import Tos from "./pages/Tos.js";
 import { AdminLayout } from "./pages/admin/AdminLayout.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
 import AdminUsers from "./pages/admin/Users.js";
 import AdminListings from "./pages/admin/Listings.js";
-import AdminSms from "./pages/admin/SmsLog.js";
 import { RequireAdmin } from "./ui/RequireAdmin.js";
 import "./index.css";
 
@@ -36,6 +36,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="trades" element={<TradesPage />} />
           <Route path="account" element={<AccountPage />} />
           <Route path="thoughts" element={<ThoughtsPage />} />
+          <Route path="community" element={<CommunityPage />} />
           <Route path="tos" element={<Tos />} />
           <Route
             path="admin"
@@ -48,7 +49,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="listings" element={<AdminListings />} />
-            <Route path="sms" element={<AdminSms />} />
           </Route>
         </Route>
       </Routes>

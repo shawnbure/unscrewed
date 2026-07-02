@@ -15,6 +15,7 @@ import { hashPassword, verifyPassword, uuidv4 } from "../lib/crypto.js";
 import { verifyTurnstile } from "../lib/turnstile.js";
 import { rateLimit } from "../lib/rateLimit.js";
 import { createSession, destroySession, readSession } from "../lib/session.js";
+import { geocodeUsZip } from "../lib/geocode.js";
 
 export const authRoutes = new Hono<AppContext>();
 
@@ -63,12 +64,19 @@ authRoutes.post("/signup", async (c) => {
   const passwordHash = await hashPassword(input.password);
   const now = Date.now();
   const phone = ((input.phone ?? "") as string).trim();
+  // Best-effort ZIP geocode. If Nominatim is unreachable we still
+  // create the account — user can retry from /account. The stored
+  // (lat, lng) is only ever exposed on the map in aggregated form.
+  const point = await geocodeUsZip(c.env, input.homeZip);
   await db.insert(users).values({
     id: userId,
     email: input.email.trim(),
     emailNormalized: emailNorm,
     passwordHash,
     phoneE164: phone,
+    homeZip: input.homeZip,
+    homeLat: point?.lat ?? null,
+    homeLng: point?.lng ?? null,
     displayName: input.displayName.trim(),
     dateCreated: now,
     dateModified: now,

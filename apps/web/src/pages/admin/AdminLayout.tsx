@@ -5,7 +5,6 @@ const NAV = [
   { to: "/admin", label: "Dashboard", end: true },
   { to: "/admin/users", label: "Users" },
   { to: "/admin/listings", label: "Listings" },
-  { to: "/admin/sms", label: "SMS log" },
 ];
 
 export function AdminLayout() {

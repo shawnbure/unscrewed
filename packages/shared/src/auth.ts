@@ -7,14 +7,24 @@ export const E164 = z
   .string()
   .regex(/^\+[1-9]\d{7,14}$/, "Phone must be in E.164 format like +14155551234");
 
-// Signup is email + password + Turnstile. Phone is a fully optional
-// profile field — collected here so users don't have to visit /account
-// after signing up, but never validated, never texted, never used as
-// an auth factor. Users can also edit / add / remove it from /account.
+// 5-digit US ZIP. Required at signup so we can plot approximate
+// membership on the /community map. Server geocodes it → (lat, lng)
+// and only ever exposes the map data aggregated by the first three
+// digits of the ZIP (~500k people), never per-user.
+export const UsZip = z
+  .string()
+  .regex(/^\d{5}$/, "Enter a 5-digit US ZIP code");
+
+// Signup is email + password + Turnstile + ZIP. Phone is a fully
+// optional profile field — collected here so users don't have to visit
+// /account after signing up, but never validated, never texted, never
+// used as an auth factor. Users can also edit / add / remove it from
+// /account.
 export const SignupSchema = z.object({
   email: z.string().email().max(255),
   password: z.string().min(12).max(200),
   phone: z.union([E164, z.literal("")]).optional(),
+  homeZip: UsZip,
   displayName: z.string().min(2).max(60),
   tosVersion: z.string().min(1),
   tosAccepted: z.literal(true),
@@ -34,3 +44,9 @@ export const UpdatePhoneSchema = z.object({
   phone: z.union([E164, z.literal("")]),
 });
 export type UpdatePhoneInput = z.infer<typeof UpdatePhoneSchema>;
+
+// Profile-level ZIP update.
+export const UpdateZipSchema = z.object({
+  homeZip: UsZip,
+});
+export type UpdateZipInput = z.infer<typeof UpdateZipSchema>;
