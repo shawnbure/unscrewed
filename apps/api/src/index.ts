@@ -5,6 +5,7 @@ import type { AppContext } from "./env.js";
 import { authRoutes } from "./routes/auth.js";
 import { listingsRoutes } from "./routes/listings.js";
 import { negotiationRoutes } from "./routes/negotiation.js";
+import { webhookRoutes } from "./routes/webhooks.js";
 import { meRoutes } from "./routes/me.js";
 import { adminRoutes } from "./routes/admin.js";
 import { contractsRoutes } from "./routes/contracts.js";
@@ -42,6 +43,7 @@ app.route("/listings", listingsRoutes);
 app.route("/negotiations", negotiationRoutes);
 app.route("/contracts", contractsRoutes);
 app.route("/geocode", geocodeRoutes);
+app.route("/webhooks", webhookRoutes);
 app.route("/admin", adminRoutes);
 
 app.onError((err, c) => {

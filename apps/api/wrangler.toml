@@ -51,5 +51,8 @@ PUBLIC_BASE_URL = "https://unscrewed.lol"
 TOS_VERSION = "2026-05-28"
 
 # ---------- Secrets (set via `wrangler secret put`, do NOT commit) ----------
+# TELNYX_API_KEY
+# TELNYX_MESSAGING_PROFILE_ID
+# TELNYX_FROM_NUMBER
 # SESSION_SECRET
 # TURNSTILE_SECRET_KEY

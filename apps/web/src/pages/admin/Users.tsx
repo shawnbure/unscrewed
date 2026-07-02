@@ -109,20 +109,14 @@ export default function AdminUsers() {
                     </div>
                   </td>
                   <td className="p-3">
-                    {u.phone_e164 ? (
-                      <>
-                        <div className="text-ink-700">{u.phone_e164}</div>
-                        <div className="text-xs">
-                          {u.phone_verified_at ? (
-                            <span className="text-brand-700">verified</span>
-                          ) : (
-                            <span className="text-amber-700">unverified</span>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-xs text-ink-400">none</span>
-                    )}
+                    <div className="text-ink-700">{u.phone_e164}</div>
+                    <div className="text-xs">
+                      {u.phone_verified_at ? (
+                        <span className="text-brand-700">verified</span>
+                      ) : (
+                        <span className="text-amber-700">unverified</span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3 text-xs text-ink-500">
                     {new Date(u.date_created).toLocaleString()}
