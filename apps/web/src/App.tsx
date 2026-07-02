@@ -57,6 +57,14 @@ export default function App() {
               >
                 Browse
               </NavLink>
+              <NavLink
+                to="/thoughts"
+                className={({ isActive }) =>
+                  `rounded-xl px-3 py-2 ${isActive ? "bg-surface-100 text-ink-900" : "text-ink-700 hover:bg-surface-100"}`
+                }
+              >
+                Thoughts <span aria-hidden>:)</span>
+              </NavLink>
               {session?.authenticated && (
                 <NavLink
                   to="/trades"
@@ -136,6 +144,9 @@ export default function App() {
                 <MobileLink to="/browse" onClick={() => setMobileOpen(false)}>
                   Browse
                 </MobileLink>
+                <MobileLink to="/thoughts" onClick={() => setMobileOpen(false)}>
+                  Thoughts <span aria-hidden>:)</span>
+                </MobileLink>
                 {session?.authenticated && (
                   <MobileLink to="/post" onClick={() => setMobileOpen(false)}>
                     <Plus className="h-4 w-4" strokeWidth={2.5} /> Post a trade
@@ -200,6 +211,9 @@ export default function App() {
             >
               Our philosophy
             </button>
+            <Link to="/thoughts" className="hover:text-ink-900">
+              Making money :)
+            </Link>
             <Link to="/tos" className="hover:text-ink-900">Terms</Link>
             <a href="mailto:help@unscrewed.lol" className="hover:text-ink-900">
               Contact

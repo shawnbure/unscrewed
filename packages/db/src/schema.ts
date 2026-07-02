@@ -239,6 +239,59 @@ export const negotiationMessages = sqliteTable(
 );
 
 // ============================================================
+// money_ideas + money_idea_votes
+// ============================================================
+export const moneyIdeas = sqliteTable(
+  "money_ideas",
+  {
+    id: text("id").primaryKey(),
+    kind: text("kind").notNull(), // 'trust_stack' | 'community_suggestion'
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    priceHint: text("price_hint"),
+    status: text("status").notNull().default("proposed"),
+    submittedBy: text("submitted_by").references(() => users.id),
+    votesUp: integer("votes_up").notNull().default(0),
+    votesDown: integer("votes_down").notNull().default(0),
+    isDeleted: integer("is_deleted").notNull().default(0),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateModified: integer("date_modified")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    ixKind: index("ix_money_ideas_kind").on(t.kind),
+    ixStatus: index("ix_money_ideas_status").on(t.status),
+  })
+);
+
+export const moneyIdeaVotes = sqliteTable(
+  "money_idea_votes",
+  {
+    id: text("id").primaryKey(),
+    ideaId: text("idea_id")
+      .notNull()
+      .references(() => moneyIdeas.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    vote: integer("vote").notNull(),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateModified: integer("date_modified")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    uxUserIdea: uniqueIndex("ux_money_idea_votes_user_idea").on(t.userId, t.ideaId),
+    ixIdea: index("ix_money_idea_votes_idea").on(t.ideaId),
+  })
+);
+
+// ============================================================
 // passkeys — WebAuthn credentials
 // ============================================================
 export const passkeys = sqliteTable(
