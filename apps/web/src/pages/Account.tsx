@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, Plus, Trash2, ShieldCheck } from "lucide-react";
+import { KeyRound, Plus, Trash2, Phone, Save, Pencil } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import {
   passkeysSupported,
@@ -172,32 +172,132 @@ export default function AccountPage() {
       <section className="card mt-4 p-6">
         <h2 className="text-base font-semibold text-ink-900">Phone</h2>
         <p className="mt-0.5 text-sm text-ink-500">
-          Optional. Adding a verified phone earns you a trust badge but is
-          never required to trade.
+          Optional profile field. We never text you, never verify it, never
+          sell or market to it. This is only shown to counter-parties in a
+          trade if you choose to share it during a negotiation.
         </p>
-        <div className="mt-4 flex items-center gap-3">
-          {me.phoneE164 ? (
-            <>
-              <span className="font-mono text-sm text-ink-900">
-                {me.phoneE164}
-              </span>
-              {me.phoneVerifiedAt ? (
-                <span className="chip-brand">
-                  <ShieldCheck className="h-3 w-3" /> Verified
-                </span>
-              ) : (
-                <span className="chip bg-amber-50 text-amber-800">
-                  Unverified
-                </span>
-              )}
-            </>
-          ) : (
-            <span className="text-sm text-ink-400">
-              No phone on file.
-            </span>
-          )}
-        </div>
+        <PhoneEditor
+          initial={me.phoneE164}
+          onSaved={(next) => setMe({ ...me, phoneE164: next })}
+        />
       </section>
     </Container>
   );
+}
+
+function PhoneEditor({
+  initial,
+  onSaved,
+}: {
+  initial: string;
+  onSaved: (next: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [display, setDisplay] = useState(initial ? fromE164Us(initial) : "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setError(null);
+    const trimmed = display.trim();
+    const phone = trimmed ? toE164Us(trimmed) : "";
+    if (trimmed && !phone) {
+      setError("Enter a valid 10-digit US mobile number, or clear the field.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await api<{ phoneE164: string }>("/me/phone", {
+        method: "PATCH",
+        body: JSON.stringify({ phone }),
+      });
+      onSaved(r.phoneE164);
+      setDisplay(r.phoneE164 ? fromE164Us(r.phoneE164) : "");
+      setEditing(false);
+    } catch (e: any) {
+      setError(e?.body?.error ?? e?.message ?? "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Phone className="h-4 w-4 text-ink-400" strokeWidth={2} />
+          {initial ? (
+            <span className="font-mono text-sm text-ink-900">{initial}</span>
+          ) : (
+            <span className="text-sm text-ink-400">No phone on file.</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(true);
+            setDisplay(initial ? fromE164Us(initial) : "");
+          }}
+          className="btn-ghost text-sm"
+        >
+          <Pencil className="h-3.5 w-3.5" strokeWidth={2} />
+          {initial ? "Edit" : "Add phone"}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex items-center gap-2 rounded-xl border border-surface-300 bg-white px-3 py-2 focus-within:border-ink-900 focus-within:ring-4 focus-within:ring-ink-900/10">
+        <span className="select-none text-sm text-ink-400">🇺🇸</span>
+        <input
+          value={display}
+          onChange={(e) => setDisplay(formatUsPhoneDisplay(e.target.value))}
+          className="flex-1 bg-transparent text-ink-900 placeholder:text-ink-400 focus:outline-none"
+          placeholder="(555) 123-4567 — leave blank to clear"
+          autoComplete="tel-national"
+          inputMode="tel"
+          maxLength={14}
+        />
+      </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={save}
+          disabled={busy}
+          className="btn-brand text-sm"
+        >
+          <Save className="h-3.5 w-3.5" strokeWidth={2} />
+          {busy ? "Saving…" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(false);
+            setError(null);
+          }}
+          className="btn-ghost text-sm"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function formatUsPhoneDisplay(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(0, 10);
+  if (d.length === 0) return "";
+  if (d.length < 4) return `(${d}`;
+  if (d.length < 7) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+function toE164Us(display: string): string {
+  const d = display.replace(/\D/g, "").slice(-10);
+  return d.length === 10 ? `+1${d}` : "";
+}
+function fromE164Us(e164: string): string {
+  const d = e164.replace(/\D/g, "").slice(-10);
+  return d.length === 10 ? formatUsPhoneDisplay(d) : e164;
 }

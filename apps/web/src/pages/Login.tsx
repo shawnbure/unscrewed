@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { KeyRound } from "lucide-react";
 import { api } from "../lib/api.js";
 import Turnstile from "../components/Turnstile.js";
 import { AuthLayout } from "../ui/AuthLayout.js";
 import { useSession } from "../lib/session.js";
+import { passkeysSupported, signInWithPasskey } from "../lib/passkeys.js";
 
 interface LoginResponse {
   ok: true;
-  step: "done" | "verify_phone";
-  challengeId?: string;
+  step: "done";
 }
 
 export default function Login() {
@@ -19,6 +20,12 @@ export default function Login() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [pkSupported, setPkSupported] = useState(false);
+
+  useEffect(() => {
+    setPkSupported(passkeysSupported());
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,23 +36,35 @@ export default function Login() {
     }
     setBusy(true);
     try {
-      const r = await api<LoginResponse>("/auth/login", {
+      await api<LoginResponse>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password, turnstileToken }),
       });
-      if (r.step === "verify_phone" && r.challengeId) {
-        // User signed up but never verified their phone. Bounce them to the
-        // signup phone-verify page to finish.
-        nav(`/signup/verify?cid=${encodeURIComponent(r.challengeId)}`);
-        return;
-      }
-      // step === "done" — session cookie is set, just go.
       await refresh();
       nav("/browse");
     } catch (e: any) {
       setError(e?.body?.error ?? e?.message ?? "Login failed");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function submitPasskey() {
+    setError(null);
+    setPasskeyBusy(true);
+    try {
+      await signInWithPasskey();
+      await refresh();
+      nav("/browse");
+    } catch (e: any) {
+      const name = e?.name ?? "";
+      if (name === "NotAllowedError" || name === "AbortError") {
+        setError("Passkey sign-in cancelled.");
+      } else {
+        setError(e?.body?.error ?? e?.message ?? "Passkey sign-in failed");
+      }
+    } finally {
+      setPasskeyBusy(false);
     }
   }
 
@@ -65,6 +84,24 @@ export default function Login() {
         </>
       }
     >
+      {pkSupported && (
+        <>
+          <button
+            type="button"
+            onClick={submitPasskey}
+            disabled={passkeyBusy}
+            className="btn-outline mb-4 w-full"
+          >
+            <KeyRound className="h-4 w-4" strokeWidth={2} />
+            {passkeyBusy ? "Waiting for passkey…" : "Sign in with a passkey"}
+          </button>
+          <div className="mb-4 flex items-center gap-3 text-xs uppercase tracking-widest text-ink-400">
+            <span className="h-px flex-1 bg-surface-200" />
+            or with email
+            <span className="h-px flex-1 bg-surface-200" />
+          </div>
+        </>
+      )}
       <form onSubmit={submit} className="space-y-4">
         <label className="block">
           <span className="label">Email</span>
