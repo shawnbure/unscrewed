@@ -5,12 +5,6 @@ import Turnstile from "../components/Turnstile.js";
 import { AuthLayout } from "../ui/AuthLayout.js";
 import { useSession } from "../lib/session.js";
 
-interface LoginResponse {
-  ok: true;
-  step: "done" | "verify_phone";
-  challengeId?: string;
-}
-
 export default function Login() {
   const nav = useNavigate();
   const { refresh } = useSession();
@@ -29,17 +23,10 @@ export default function Login() {
     }
     setBusy(true);
     try {
-      const r = await api<LoginResponse>("/auth/login", {
+      await api<{ ok: true; step: "done" }>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password, turnstileToken }),
       });
-      if (r.step === "verify_phone" && r.challengeId) {
-        // User signed up but never verified their phone. Bounce them to the
-        // signup phone-verify page to finish.
-        nav(`/signup/verify?cid=${encodeURIComponent(r.challengeId)}`);
-        return;
-      }
-      // step === "done" — session cookie is set, just go.
       await refresh();
       nav("/browse");
     } catch (e: any) {
