@@ -17,6 +17,7 @@ import { Container } from "./ui/Container.js";
 import { Logo } from "./ui/Logo.js";
 import { PhilosophyModal } from "./ui/PhilosophyModal.js";
 import { MembersChip } from "./ui/MembersChip.js";
+import { Analytics } from "./ui/Analytics.js";
 
 export default function App() {
   const { session, refresh } = useSession();
@@ -240,6 +241,7 @@ export default function App() {
         </Container>
       </footer>
       <PhilosophyModal open={philOpen} onClose={() => setPhilOpen(false)} />
+      <Analytics />
     </div>
   );
 }
