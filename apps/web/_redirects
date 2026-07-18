@@ -1,4 +1,2 @@
 /api/*        https://api.unscrewed.lol/:splat        200
-/sitemap.xml  https://api.unscrewed.lol/sitemap.xml   200
-/robots.txt   https://api.unscrewed.lol/robots.txt    200
 /*            /index.html                             200
