@@ -31,12 +31,24 @@ export const passkeysRoutes = new Hono<AppContext>();
 // ---------- Relying-Party identity ----------
 // rpID must be the *bare* domain (no scheme, no path). Browsers scope
 // credentials by this value, so keep it stable across environments.
+// The Relying-Party ID must be the effective site domain (e.g.
+// "unscrewed.lol"). Browsers scope passkeys by rpID and by origin.
+// Because the site is reachable from both apex and www, we accept
+// EITHER origin at verify time while keeping rpID pinned to the apex —
+// per WebAuthn spec, an origin's registrable-domain suffix (unscrewed.lol)
+// may still match the rpID even when the user is on www.unscrewed.lol.
 function rpInfo(env: { PUBLIC_BASE_URL: string }) {
   const url = new URL(env.PUBLIC_BASE_URL);
+  const apex = url.hostname === "localhost" ? "localhost" : url.hostname;
+  const acceptedOrigins =
+    apex === "localhost"
+      ? [url.origin]
+      : [`https://${apex}`, `https://www.${apex}`];
   return {
-    rpID: url.hostname === "localhost" ? "localhost" : url.hostname,
+    rpID: apex,
     rpName: "unscrewed.lol",
-    origin: url.origin,
+    origin: url.origin, // used only for logging / display
+    acceptedOrigins,
   };
 }
 
@@ -142,11 +154,11 @@ passkeysRoutes.post("/register/finish", requireAuth, async (c) => {
   if (challUserId !== userId) return c.json({ error: "wrong_user" }, 403);
   await c.env.SESSIONS.delete(REG_KEY(body.challengeId));
 
-  const { rpID, origin } = rpInfo(c.env);
+  const { rpID, acceptedOrigins } = rpInfo(c.env);
   const verification = await verifyRegistrationResponse({
     response: body.response,
     expectedChallenge: challenge,
-    expectedOrigin: origin,
+    expectedOrigin: acceptedOrigins,
     expectedRPID: rpID,
     requireUserVerification: false,
   });
@@ -237,11 +249,11 @@ passkeysRoutes.post("/authenticate/finish", async (c) => {
   if (!u || u.isDeleted) return c.json({ error: "invalid_credentials" }, 401);
   if (u.isArchived) return c.json({ error: "account_suspended" }, 403);
 
-  const { rpID, origin } = rpInfo(c.env);
+  const { rpID, acceptedOrigins } = rpInfo(c.env);
   const verification = await verifyAuthenticationResponse({
     response: body.response,
     expectedChallenge: challenge,
-    expectedOrigin: origin,
+    expectedOrigin: acceptedOrigins,
     expectedRPID: rpID,
     credential: rowToAuthenticator(row),
     requireUserVerification: false,
