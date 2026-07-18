@@ -50,6 +50,24 @@ export const ListingCreateSchema = z.object({
 });
 export type ListingCreateInput = z.infer<typeof ListingCreateSchema>;
 
+// Owner-facing partial update. Kind + createdAt are immutable — changing
+// the type of a listing after negotiations have started would be dishonest;
+// people can withdraw and post again if they need that.
+export const ListingUpdateSchema = z.object({
+  title: z.string().min(4).max(120).optional(),
+  description: z.string().min(10).max(5000).optional(),
+  category: ListingCategory.optional(),
+  condition: ListingCondition.optional(),
+  wants: z.string().min(2).max(500).optional(),
+  postalCode: z.string().min(3).max(12).optional(),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  photoKeys: z.array(z.string()).max(8).optional(),
+  // Owner can withdraw or reactivate their own listing.
+  status: z.enum(["active", "withdrawn"]).optional(),
+});
+export type ListingUpdateInput = z.infer<typeof ListingUpdateSchema>;
+
 export const ListingSearchSchema = z.object({
   q: z.string().max(200).optional(),
   category: ListingCategory.optional(),

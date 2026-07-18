@@ -4,6 +4,7 @@ import ngeohash from "ngeohash";
 import {
   ListingCreateSchema,
   ListingSearchSchema,
+  ListingUpdateSchema,
 } from "@unscrewed/shared";
 import { getDb, listings, listingPhotos } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
@@ -157,6 +158,83 @@ listingsRoutes.post("/", requireAuth, async (c) => {
     .run();
 
   return c.json({ id });
+});
+
+// ---------------- edit (owner or admin) ----------------
+listingsRoutes.patch("/:id", requireAuth, async (c) => {
+  const userId = c.get("userId")!;
+  const isAdmin = c.get("isAdmin") === true;
+  const id = c.req.param("id");
+  const json = await c.req.json().catch(() => null);
+  const parsed = ListingUpdateSchema.safeParse(json);
+  if (!parsed.success)
+    return c.json({ error: "invalid_input", issues: parsed.error.issues }, 400);
+  const input = parsed.data;
+
+  const db = getDb(c.env.DB);
+  const [row] = await db
+    .select()
+    .from(listings)
+    .where(eq(listings.id, id))
+    .limit(1);
+  if (!row || row.isDeleted === 1)
+    return c.json({ error: "not_found" }, 404);
+  if (row.userId !== userId && !isAdmin)
+    return c.json({ error: "forbidden" }, 403);
+
+  const now = Date.now();
+  const upd: Record<string, unknown> = { dateModified: now };
+  if (input.title !== undefined) upd.title = input.title.trim();
+  if (input.description !== undefined) upd.description = input.description.trim();
+  if (input.wants !== undefined) upd.wants = input.wants.trim();
+  if (input.category !== undefined) upd.category = input.category;
+  if (input.condition !== undefined) upd.condition = input.condition;
+  if (input.status !== undefined) upd.status = input.status;
+  if (input.postalCode !== undefined) upd.postalCode = input.postalCode;
+  if (input.lat !== undefined) upd.lat = input.lat;
+  if (input.lng !== undefined) upd.lng = input.lng;
+  if (input.lat !== undefined && input.lng !== undefined) {
+    upd.geohash = ngeohash.encode(input.lat, input.lng, 7);
+  }
+
+  await db.update(listings).set(upd as any).where(eq(listings.id, id));
+
+  // Photos: if the client sent an array, treat it as the authoritative new
+  // ordering — wipe existing rows and re-insert in the new order.
+  if (input.photoKeys !== undefined) {
+    await db.delete(listingPhotos).where(eq(listingPhotos.listingId, id));
+    if (input.photoKeys.length > 0) {
+      await db.insert(listingPhotos).values(
+        input.photoKeys.map((key, i) => ({
+          id: uuidv4(),
+          listingId: id,
+          r2Key: key,
+          sortOrder: i,
+        }))
+      );
+    }
+  }
+
+  // Keep FTS in sync when any indexed column changed.
+  if (
+    input.title !== undefined ||
+    input.description !== undefined ||
+    input.wants !== undefined
+  ) {
+    await c.env.DB.prepare(
+      `DELETE FROM listings_fts WHERE rowid = (SELECT rowid FROM listings WHERE id = ?1)`
+    )
+      .bind(id)
+      .run();
+    await c.env.DB.prepare(
+      `INSERT INTO listings_fts(rowid, title, description, wants)
+       SELECT rowid, title, description, wants FROM listings WHERE id = ?1`
+    )
+      .bind(id)
+      .run();
+  }
+
+  return c.json({ ok: true });
 });
 
 // ---------------- photo upload presign ----------------

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, MapPin, Check, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Check, X, Pencil } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
 import { CategoryIcon } from "../ui/CategoryIcons.js";
@@ -161,18 +161,47 @@ export default function ListingDetail() {
               <p className="mt-1 text-ink-900">{l.wants}</p>
             </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                session?.authenticated ? setShowPropose(true) : nav("/login")
+            {(() => {
+              const ownerId = (l as any).user_id ?? (l as any).userId;
+              const canEdit =
+                session?.authenticated &&
+                (session.userId === ownerId || session.isAdmin);
+              if (canEdit) {
+                return (
+                  <>
+                    <Link
+                      to={`/listing/${l.id}/edit`}
+                      className="btn-primary mt-5 flex w-full items-center justify-center gap-2"
+                    >
+                      <Pencil className="h-4 w-4" strokeWidth={2} />
+                      Edit this trade
+                    </Link>
+                    <p className="mt-2 text-center text-xs text-ink-400">
+                      This is your listing. You can update, withdraw, or delete
+                      it.
+                    </p>
+                  </>
+                );
               }
-              className="btn-primary mt-5 w-full"
-            >
-              Propose a trade
-            </button>
-            <p className="mt-2 text-center text-xs text-ink-400">
-              You'll chat to negotiate before signing anything.
-            </p>
+              return (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      session?.authenticated
+                        ? setShowPropose(true)
+                        : nav("/login")
+                    }
+                    className="btn-primary mt-5 w-full"
+                  >
+                    Propose a trade
+                  </button>
+                  <p className="mt-2 text-center text-xs text-ink-400">
+                    You'll chat to negotiate before signing anything.
+                  </p>
+                </>
+              );
+            })()}
           </div>
 
           <div className="card p-5">

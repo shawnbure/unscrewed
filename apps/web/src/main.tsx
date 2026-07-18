@@ -8,6 +8,7 @@ import Login from "./pages/Login.js";
 import Browse from "./pages/Browse.js";
 import ListingDetail from "./pages/ListingDetail.js";
 import NewListing from "./pages/NewListing.js";
+import EditListing from "./pages/EditListing.js";
 import NegotiationPage from "./pages/Negotiation.js";
 import TradesPage from "./pages/Trades.js";
 import AccountPage from "./pages/Account.js";
@@ -32,6 +33,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="browse" element={<Browse />} />
           <Route path="listing/:id" element={<ListingDetail />} />
           <Route path="post" element={<NewListing />} />
+          <Route path="listing/:id/edit" element={<EditListing />} />
           <Route path="n/:id" element={<NegotiationPage />} />
           <Route path="trades" element={<TradesPage />} />
           <Route path="account" element={<AccountPage />} />
