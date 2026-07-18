@@ -48,7 +48,7 @@ new_sqlite_classes = ["NegotiationRoom"]
 # ---------- Public env ----------
 [vars]
 PUBLIC_BASE_URL = "https://unscrewed.lol"
-TOS_VERSION = "2026-05-28"
+TOS_VERSION = "2026-07-18"
 
 # ---------- Secrets (set via `wrangler secret put`, do NOT commit) ----------
 # SESSION_SECRET

@@ -5,7 +5,7 @@ import Turnstile from "../components/Turnstile.js";
 import { AuthLayout } from "../ui/AuthLayout.js";
 import { useSession } from "../lib/session.js";
 
-const TOS_VERSION = "2026-05-28";
+const TOS_VERSION = "2026-07-18";
 
 function formatUsPhoneDisplay(raw: string): string {
   const d = raw.replace(/\D/g, "").slice(0, 10);
@@ -160,12 +160,12 @@ export default function Signup() {
             className="mt-1 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
           />
           <span>
-            I agree to the{" "}
+            I am at least <strong>18 years old</strong> and I agree to the{" "}
             <Link to="/tos" className="text-brand-700 underline">
               Terms of Service
             </Link>
-            , including indemnification. I understand unscrewed.lol isn't a
-            party to any trade I make.
+            , including indemnification and the prohibited-content rules in
+            §9. I understand unscrewed.lol isn't a party to any trade I make.
           </span>
         </label>
         <Turnstile

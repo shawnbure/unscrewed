@@ -4,10 +4,12 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChevronLeft } from "lucide-react";
 import { Container } from "../ui/Container.js";
+import { ReportButton } from "../ui/ReportButton.js";
 import { api } from "../lib/api.js";
 import { useSession } from "../lib/session.js";
 
 interface Post {
+  id: string;
   slug: string;
   title: string;
   excerpt: string | null;
@@ -106,6 +108,10 @@ export default function BlogPostPage() {
       <article className="prose prose-neutral mt-8 max-w-none text-ink-800">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.bodyMd}</ReactMarkdown>
       </article>
+
+      <div className="mt-8 flex justify-end border-t border-surface-200 pt-4">
+        <ReportButton targetType="blog_post" targetId={post.id} variant="link" />
+      </div>
     </Container>
   );
 }

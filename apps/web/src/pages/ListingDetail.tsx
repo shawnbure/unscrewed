@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, MapPin, Check, X, Pencil } from "lucide-reac
 import { Container } from "../ui/Container.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
 import { CategoryIcon } from "../ui/CategoryIcons.js";
+import { ReportButton } from "../ui/ReportButton.js";
 import { api } from "../lib/api.js";
 import { useSession } from "../lib/session.js";
 import { photoUrl } from "../lib/photoUrl.js";
@@ -209,6 +210,9 @@ export default function ListingDetail() {
             <p className="mt-2 whitespace-pre-wrap text-sm text-ink-700">
               {l.description}
             </p>
+            <div className="mt-4 flex justify-end border-t border-surface-200 pt-3">
+              <ReportButton targetType="listing" targetId={l.id} variant="link" />
+            </div>
           </div>
 
           <div className="card p-5">

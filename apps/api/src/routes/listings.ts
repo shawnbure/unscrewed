@@ -6,6 +6,8 @@ import {
   ListingSearchSchema,
   ListingUpdateSchema,
 } from "@unscrewed/shared";
+import { classifyText, classifyImage } from "../lib/moderationAi.js";
+import { logModAction } from "./reports.js";
 import { getDb, listings, listingPhotos } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 import { requireAuth, optionalAuth } from "../middleware/auth.js";
@@ -119,6 +121,16 @@ listingsRoutes.post("/", requireAuth, async (c) => {
     return c.json({ error: "invalid_input", issues: parsed.error.issues }, 400);
   const input = parsed.data;
   const userId = c.get("userId")!;
+
+  // Text safety gate — block on hard "unsafe" verdict from LlamaGuard.
+  const mod = await classifyText(c.env, [input.title, input.description, input.wants]);
+  if (mod.verdict === "block") {
+    return c.json(
+      { error: "content_blocked", categories: mod.categories },
+      422
+    );
+  }
+
   const id = uuidv4();
   const geohash = ngeohash.encode(input.lat, input.lng, 7);
 
@@ -197,6 +209,25 @@ listingsRoutes.patch("/:id", requireAuth, async (c) => {
     upd.geohash = ngeohash.encode(input.lat, input.lng, 7);
   }
 
+  // Re-scan text if any indexed field changed
+  if (
+    input.title !== undefined ||
+    input.description !== undefined ||
+    input.wants !== undefined
+  ) {
+    const modUpd = await classifyText(c.env, [
+      (input.title ?? row.title),
+      (input.description ?? row.description),
+      (input.wants ?? row.wants),
+    ]);
+    if (modUpd.verdict === "block") {
+      return c.json(
+        { error: "content_blocked", categories: modUpd.categories },
+        422
+      );
+    }
+  }
+
   await db.update(listings).set(upd as any).where(eq(listings.id, id));
 
   // Photos: if the client sent an array, treat it as the authoritative new
@@ -256,8 +287,39 @@ listingsRoutes.put("/photos/:key", requireAuth, async (c) => {
   const body = await c.req.arrayBuffer();
   if (body.byteLength > 8 * 1024 * 1024)
     return c.json({ error: "too_large" }, 413);
-  await c.env.PHOTOS.put(key, body, { httpMetadata: { contentType: ct } });
-  return c.json({ ok: true, key });
+
+  // Safety scan before persisting to R2. Cloudflare's CSAM Scanning Tool
+  // handles CSAM at the edge; this is the second layer for NSFW / violence /
+  // hate / etc. Fails OPEN on Workers AI unreachability so we don't hard-fail
+  // uploads when the AI is having a bad day.
+  const bytes = new Uint8Array(body);
+  const mod = await classifyImage(c.env, bytes);
+  if (mod.verdict === "block") {
+    await logModAction(c, {
+      targetType: "photo",
+      targetId: key,
+      actorType: "system",
+      actorId: null,
+      action: "ai_block",
+      reason: mod.categories.join(","),
+      metadata: { score: mod.score, categories: mod.categories },
+    });
+    return c.json(
+      { error: "photo_blocked", categories: mod.categories },
+      422
+    );
+  }
+  const httpMetadata: Record<string, string> = { contentType: ct };
+  const customMetadata: Record<string, string> = {
+    modVerdict: mod.verdict,
+    modScore: String(mod.score ?? 0),
+    modCategories: mod.categories.join(",") || "-",
+  };
+  await c.env.PHOTOS.put(key, body, {
+    httpMetadata: { contentType: httpMetadata.contentType },
+    customMetadata,
+  });
+  return c.json({ ok: true, key, modVerdict: mod.verdict });
 });
 
 listingsRoutes.get("/photos/:key", async (c) => {

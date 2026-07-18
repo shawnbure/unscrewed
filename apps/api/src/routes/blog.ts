@@ -14,6 +14,7 @@ import { getDb, blogPosts, users } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { uuidv4 } from "../lib/crypto.js";
+import { classifyText } from "../lib/moderationAi.js";
 
 export const blogRoutes = new Hono<AppContext>();
 
@@ -57,6 +58,20 @@ blogRoutes.post("/", requireAdmin, async (c) => {
   const parsed = BlogPostCreateSchema.safeParse(json);
   if (!parsed.success)
     return c.json({ error: "invalid_input", issues: parsed.error.issues }, 400);
+  // Only scan when actually publishing — drafts are private notes.
+  if (parsed.data.status === "published") {
+    const mod = await classifyText(c.env, [
+      parsed.data.title,
+      parsed.data.excerpt ?? "",
+      parsed.data.bodyMd,
+    ]);
+    if (mod.verdict === "block")
+      return c.json(
+        { error: "content_blocked", categories: mod.categories },
+        422
+      );
+  }
+
   const db = getDb(c.env.DB);
   // Slug uniqueness check
   const [existing] = await db
@@ -118,11 +133,26 @@ blogRoutes.patch("/:id", requireAdmin, async (c) => {
     upd.heroImageUrl = parsed.data.heroImageUrl || null;
   if (parsed.data.status !== undefined) {
     upd.status = parsed.data.status;
-    // First-time publish gets a datePublished; going back to draft leaves
-    // it as-is so we don't lose the original publish date.
     if (parsed.data.status === "published" && !row.datePublished)
       upd.datePublished = now;
   }
+
+  // Scan the effective post if we're publishing (either newly or via edit).
+  const willBePublished =
+    (parsed.data.status ?? row.status) === "published";
+  if (willBePublished) {
+    const mod = await classifyText(c.env, [
+      (parsed.data.title ?? row.title),
+      (parsed.data.excerpt ?? row.excerpt ?? ""),
+      (parsed.data.bodyMd ?? row.bodyMd),
+    ]);
+    if (mod.verdict === "block")
+      return c.json(
+        { error: "content_blocked", categories: mod.categories },
+        422
+      );
+  }
+
   await db.update(blogPosts).set(upd as any).where(eq(blogPosts.id, id));
   return c.json({ ok: true });
 });

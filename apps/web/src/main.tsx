@@ -18,6 +18,7 @@ import BlogPage from "./pages/Blog.js";
 import BlogPostPage from "./pages/BlogPost.js";
 import AdminBlogList from "./pages/admin/BlogList.js";
 import BlogEdit from "./pages/admin/BlogEdit.js";
+import AdminReports from "./pages/admin/Reports.js";
 import Tos from "./pages/Tos.js";
 import { AdminLayout } from "./pages/admin/AdminLayout.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
@@ -60,6 +61,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="blog" element={<AdminBlogList />} />
             <Route path="blog/new" element={<BlogEdit />} />
             <Route path="blog/:id/edit" element={<BlogEdit />} />
+            <Route path="reports" element={<AdminReports />} />
           </Route>
         </Route>
       </Routes>

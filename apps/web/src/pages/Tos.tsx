@@ -12,7 +12,7 @@ export default function Tos() {
             The rules of the road
           </h1>
           <p className="mt-2 text-sm text-ink-500">
-            Last updated: 2026-05-28 (version 2026-05-28)
+            Last updated: 2026-07-18 (version 2026-07-18)
           </p>
         </header>
 
@@ -140,6 +140,114 @@ export default function Tos() {
             These Terms are governed by the laws of the United States and the
             state in which the Service's operator is principally located,
             without regard to conflict-of-law principles.
+          </p>
+
+          <h2>9. Prohibited content and conduct</h2>
+          <p>
+            You may not post, upload, list, offer, request, describe, transmit,
+            store, or link to any of the following through the Service. This is
+            a non-exhaustive list; use judgment.
+          </p>
+          <ul>
+            <li>
+              <strong>Any sexual content involving a minor</strong>, real or
+              simulated, drawn or photographed, in any form. This includes
+              child sexual abuse material (CSAM) as defined by 18 U.S.C.
+              § 2256 and analogous laws. We report all such content to the
+              National Center for Missing &amp; Exploited Children (NCMEC) as
+              required by 18 U.S.C. § 2258A and preserve associated records
+              for law enforcement.
+            </li>
+            <li>
+              Pornography, nudity, sexually explicit material, or sexual
+              services of any kind. unscrewed.lol is not an adult platform.
+            </li>
+            <li>
+              Content that facilitates human trafficking, forced labor,
+              commercial sexual exploitation, or the smuggling of persons.
+            </li>
+            <li>
+              Content depicting graphic violence, gore, animal cruelty, or the
+              incitement or promotion of self-harm or suicide.
+            </li>
+            <li>
+              Terrorism, violent extremism, credible threats of violence, or
+              content that promotes designated terrorist organizations.
+            </li>
+            <li>
+              Harassment, targeted abuse, doxxing (posting another person's
+              private contact, address, or identifying information without
+              consent), or hate speech attacking people based on protected
+              characteristics.
+            </li>
+            <li>
+              Trading in firearms, ammunition, explosives, controlled
+              substances, prescription drugs, tobacco or vape products to
+              minors, unregistered wildlife, human remains or organs, stolen
+              goods, counterfeit currency or documents, or any other item
+              whose sale, transfer, or possession is restricted by federal,
+              state, or local law where either party is located.
+            </li>
+            <li>
+              Financial fraud, identity theft, phishing, malware, or any
+              scheme designed to deceive another user into transferring money,
+              cryptocurrency, or personal data outside a legitimate trade.
+            </li>
+            <li>
+              Content that infringes another person's copyright, trademark,
+              trade secret, right of publicity, or other intellectual-property
+              or privacy right.
+            </li>
+            <li>
+              Sexually suggestive or exploitative content involving any
+              identifiable person posted without their explicit consent,
+              including so-called "revenge" or non-consensual intimate imagery.
+            </li>
+            <li>
+              Impersonation of another person, business, or public official,
+              or misrepresentation of your affiliation with any organization.
+            </li>
+            <li>
+              Spam, bulk unsolicited postings, artificially inflated listings,
+              or use of the Service to farm engagement, referrals, or reports.
+            </li>
+          </ul>
+          <p>
+            <strong>Enforcement.</strong> We use a combination of user reports,
+            automated classifiers (including machine-learning models applied to
+            text and images), and third-party scanning (including Cloudflare's
+            CSAM Scanning Tool) to detect prohibited content. Content flagged
+            by three or more independent users may be auto-hidden pending human
+            review. We may remove content, suspend or terminate accounts, and
+            report unlawful activity to law enforcement without prior notice.
+            Suspected CSAM is preserved and reported to NCMEC as required by
+            law.
+          </p>
+          <p>
+            <strong>Reports.</strong> Any signed-in user can flag a listing,
+            blog post, or account by clicking the "Report" affordance on that
+            item. Reports are confidential. If you have information about
+            suspected CSAM, please also report it directly to{" "}
+            <a
+              href="https://report.cybertip.org/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              NCMEC's CyberTipline
+            </a>
+            .
+          </p>
+
+          <h2>10. Age of eligibility</h2>
+          <p>
+            The Service is intended for adults. By creating an account you
+            represent and warrant that you are at least <strong>18 years of
+            age</strong> (or the age of majority in your jurisdiction, if
+            higher) and legally competent to enter into these Terms. Accounts
+            found to belong to minors will be terminated. We do not knowingly
+            collect personal information from anyone under 18; if you believe
+            a minor has created an account, contact us via the Report affordance
+            on their profile or listing and we will investigate promptly.
           </p>
         </div>
 

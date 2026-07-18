@@ -241,6 +241,60 @@ export const moneyIdeaVotes = sqliteTable(
 );
 
 // ============================================================
+// reports + moderation_actions
+// ============================================================
+export const reports = sqliteTable(
+  "reports",
+  {
+    id: text("id").primaryKey(),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    reporterId: text("reporter_id")
+      .notNull()
+      .references(() => users.id),
+    reason: text("reason").notNull(),
+    notes: text("notes"),
+    status: text("status").notNull().default("open"),
+    resolvedBy: text("resolved_by").references(() => users.id),
+    resolutionNote: text("resolution_note"),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateResolved: integer("date_resolved"),
+  },
+  (t) => ({
+    ixTarget: index("ix_reports_target").on(t.targetType, t.targetId),
+    ixStatus: index("ix_reports_status").on(t.status),
+    uxUniqueReporter: uniqueIndex("ux_reports_unique_reporter").on(
+      t.targetType,
+      t.targetId,
+      t.reporterId
+    ),
+  })
+);
+
+export const moderationActions = sqliteTable(
+  "moderation_actions",
+  {
+    id: text("id").primaryKey(),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    actorType: text("actor_type").notNull(),
+    actorId: text("actor_id").references(() => users.id),
+    action: text("action").notNull(),
+    reason: text("reason"),
+    metadata: text("metadata"),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    ixTarget: index("ix_moderation_actions_target").on(t.targetType, t.targetId),
+    ixDate: index("ix_moderation_actions_date").on(t.dateCreated),
+  })
+);
+
+// ============================================================
 // blog_posts — markdown-body blog posts
 // ============================================================
 export const blogPosts = sqliteTable(
