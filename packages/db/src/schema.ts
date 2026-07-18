@@ -241,6 +241,35 @@ export const moneyIdeaVotes = sqliteTable(
 );
 
 // ============================================================
+// blog_posts — markdown-body blog posts
+// ============================================================
+export const blogPosts = sqliteTable(
+  "blog_posts",
+  {
+    id: text("id").primaryKey(),
+    slug: text("slug").notNull(),
+    title: text("title").notNull(),
+    excerpt: text("excerpt"),
+    bodyMd: text("body_md").notNull(),
+    heroImageUrl: text("hero_image_url"),
+    authorId: text("author_id").references(() => users.id),
+    status: text("status").notNull().default("draft"),
+    datePublished: integer("date_published"),
+    isDeleted: integer("is_deleted").notNull().default(0),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateModified: integer("date_modified")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    uxSlug: uniqueIndex("ux_blog_posts_slug").on(t.slug),
+    ixStatusDate: index("ix_blog_posts_status_date").on(t.status, t.datePublished),
+  })
+);
+
+// ============================================================
 // passkeys — WebAuthn credentials
 // ============================================================
 export const passkeys = sqliteTable(

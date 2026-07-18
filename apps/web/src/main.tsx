@@ -14,6 +14,10 @@ import TradesPage from "./pages/Trades.js";
 import AccountPage from "./pages/Account.js";
 import ThoughtsPage from "./pages/Thoughts.js";
 import CommunityPage from "./pages/Community.js";
+import BlogPage from "./pages/Blog.js";
+import BlogPostPage from "./pages/BlogPost.js";
+import AdminBlogList from "./pages/admin/BlogList.js";
+import BlogEdit from "./pages/admin/BlogEdit.js";
 import Tos from "./pages/Tos.js";
 import { AdminLayout } from "./pages/admin/AdminLayout.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
@@ -39,6 +43,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="account" element={<AccountPage />} />
           <Route path="thoughts" element={<ThoughtsPage />} />
           <Route path="community" element={<CommunityPage />} />
+          <Route path="blog" element={<BlogPage />} />
+          <Route path="blog/:slug" element={<BlogPostPage />} />
           <Route path="tos" element={<Tos />} />
           <Route
             path="admin"
@@ -51,6 +57,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="listings" element={<AdminListings />} />
+            <Route path="blog" element={<AdminBlogList />} />
+            <Route path="blog/new" element={<BlogEdit />} />
+            <Route path="blog/:id/edit" element={<BlogEdit />} />
           </Route>
         </Route>
       </Routes>

@@ -73,6 +73,14 @@ export default function App() {
                 Community
               </NavLink>
               <NavLink
+                to="/blog"
+                className={({ isActive }) =>
+                  `rounded-xl px-3 py-2 ${isActive ? "bg-surface-100 text-ink-900" : "text-ink-700 hover:bg-surface-100"}`
+                }
+              >
+                Blog
+              </NavLink>
+              <NavLink
                 to="/thoughts"
                 className={({ isActive }) =>
                   `rounded-xl px-3 py-2 ${isActive ? "bg-surface-100 text-ink-900" : "text-ink-700 hover:bg-surface-100"}`
@@ -161,6 +169,9 @@ export default function App() {
                 </MobileLink>
                 <MobileLink to="/community" onClick={() => setMobileOpen(false)}>
                   Community
+                </MobileLink>
+                <MobileLink to="/blog" onClick={() => setMobileOpen(false)}>
+                  Blog
                 </MobileLink>
                 <MobileLink to="/thoughts" onClick={() => setMobileOpen(false)}>
                   Thoughts <span aria-hidden>:)</span>
