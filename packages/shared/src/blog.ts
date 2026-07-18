@@ -13,9 +13,9 @@ export const Slug = z
 export const BlogPostCreateSchema = z.object({
   slug: Slug,
   title: z.string().min(2).max(200),
-  excerpt: z.string().max(500).optional(),
+  excerpt: z.string().max(500).nullable().optional(),
   bodyMd: z.string().min(1).max(200_000),
-  heroImageUrl: z.string().url().max(500).optional(),
+  heroImageUrl: z.string().url().max(500).nullable().optional(),
   status: z.enum(["draft", "published"]).default("draft"),
 });
 export type BlogPostCreateInput = z.infer<typeof BlogPostCreateSchema>;
@@ -23,7 +23,7 @@ export type BlogPostCreateInput = z.infer<typeof BlogPostCreateSchema>;
 export const BlogPostUpdateSchema = z.object({
   slug: Slug.optional(),
   title: z.string().min(2).max(200).optional(),
-  excerpt: z.string().max(500).optional(),
+  excerpt: z.string().max(500).nullable().optional(),
   bodyMd: z.string().min(1).max(200_000).optional(),
   heroImageUrl: z.string().url().max(500).nullable().optional(),
   status: z.enum(["draft", "published"]).optional(),
