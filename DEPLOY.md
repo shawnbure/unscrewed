@@ -1,13 +1,14 @@
 # Deploying unscrewed.lol
 
-Both Cloudflare projects pull straight from `shawnbure/unscrewed` on push to
-`dev`. There is no GitHub Actions workflow — Cloudflare's own Git integration
-handles the builds.
+Both Cloudflare projects pull straight from `shawnbure/unscrewed`. There is no
+GitHub Actions workflow — Cloudflare's own Git integration handles the builds.
 
 ## Production branch
 
-`dev` is the production branch for both projects. Pushes to any other branch
-produce **preview** deployments (free, no traffic to prod).
+`main` is the production branch. Do implementation work on `dev`, verify it in
+the preview deployment, then fast-forward `main` to release. Cloudflare Pages
+deploys `dev` as a preview; production traffic remains on `main` until that
+promotion happens.
 
 ## Pages: `unscrewed-web`
 
@@ -15,7 +16,7 @@ Connected via Cloudflare dashboard → Pages → Git integration.
 
 | Setting | Value |
 | --- | --- |
-| Production branch | `dev` |
+| Production branch | `main` |
 | Framework preset | Vite |
 | Build command | `pnpm install && pnpm --filter @unscrewed/web build` |
 | Build output | `apps/web/dist` |
@@ -43,7 +44,7 @@ Connected via Workers & Pages → unscrewed-api → Settings → Build → Conne
 
 | Setting | Value |
 | --- | --- |
-| Production branch | `dev` |
+| Production branch | `main` |
 | Build command | `pnpm install` |
 | Deploy command | `npx wrangler deploy` |
 | Root directory | `apps/api` |
