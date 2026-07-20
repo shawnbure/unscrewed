@@ -47,9 +47,7 @@ function iso(ts: number | null | undefined): string {
   return d.toISOString().slice(0, 10);
 }
 
-sitemapRoutes.get("/sitemap.xml", async (c) => {
-  const db = getDb(c.env.DB);
-
+async function loadSitemapEntries(db: ReturnType<typeof getDb>) {
   const [pubBlog, activeListings] = await Promise.all([
     db
       .select({
@@ -71,6 +69,21 @@ sitemapRoutes.get("/sitemap.xml", async (c) => {
       .orderBy(desc(listings.dateModified))
       .limit(45_000),
   ]);
+
+  return {
+    pubBlog,
+    activeListings,
+    urls: [
+      ...STATIC_PAGES.map((p) => `${SITE}${p.path}`),
+      ...pubBlog.map((b) => `${SITE}/blog/${b.slug}`),
+      ...activeListings.map((l) => `${SITE}/listing/${l.id}`),
+    ],
+  };
+}
+
+sitemapRoutes.get("/sitemap.xml", async (c) => {
+  const db = getDb(c.env.DB);
+  const { pubBlog, activeListings } = await loadSitemapEntries(db);
 
   const urls: string[] = [];
 
@@ -104,6 +117,18 @@ ${urls.join("\n")}
   });
 });
 
+sitemapRoutes.get("/sitemap.txt", async (c) => {
+  const db = getDb(c.env.DB);
+  const { urls } = await loadSitemapEntries(db);
+
+  return new Response(`${urls.join("\n")}\n`, {
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, max-age=900, s-maxage=1800",
+    },
+  });
+});
+
 sitemapRoutes.get("/robots.txt", (c) => {
   const body = `User-agent: *
 Disallow: /account
@@ -112,7 +137,7 @@ Disallow: /admin
 Disallow: /n/
 Disallow: /listing/*/edit
 
-Sitemap: ${SITE}/sitemap.xml
+Sitemap: ${SITE}/sitemap.txt
 `;
   return new Response(body, {
     headers: {
