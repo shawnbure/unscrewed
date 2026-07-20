@@ -8,6 +8,7 @@ import { ReportButton } from "../ui/ReportButton.js";
 import { api } from "../lib/api.js";
 import { useSession } from "../lib/session.js";
 import { photoUrl } from "../lib/photoUrl.js";
+import { ShareListing } from "../ui/ShareListing.js";
 
 interface ListingFull {
   id: string;
@@ -203,6 +204,7 @@ export default function ListingDetail() {
                 </>
               );
             })()}
+            <ShareListing id={l.id} title={l.title} wants={l.wants} />
           </div>
 
           <div className="card p-5">
