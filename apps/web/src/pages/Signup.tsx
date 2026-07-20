@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api.js";
 import Turnstile from "../components/Turnstile.js";
 import { AuthLayout } from "../ui/AuthLayout.js";
 import { useSession } from "../lib/session.js";
 import { getStoredAttribution } from "../lib/attribution.js";
+import { safeNextPath, withNext } from "../lib/navigation.js";
 
 const TOS_VERSION = "2026-07-18";
 
@@ -22,7 +23,10 @@ function toE164Us(display: string): string {
 
 export default function Signup() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const { refresh } = useSession();
+  const nextPath = safeNextPath(searchParams);
+  const continuesToPost = nextPath === "/post";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState("");
@@ -68,7 +72,7 @@ export default function Signup() {
         }),
       });
       await refresh();
-      nav("/browse");
+      nav(nextPath);
     } catch (e: any) {
       setError(e?.body?.message ?? e?.body?.error ?? e?.message ?? "Sign up failed");
     } finally {
@@ -79,11 +83,18 @@ export default function Signup() {
   return (
     <AuthLayout
       title="Create your account"
-      subtitle="Email + password. Phone is optional and never used for verification or messaging."
+      subtitle={
+        continuesToPost
+          ? "Then you’ll go straight to posting your first trade. Phone is optional."
+          : "Email + password. Phone is optional and never used for verification or messaging."
+      }
       footer={
         <>
           Already a member?{" "}
-          <Link to="/login" className="font-medium text-brand-700 hover:underline">
+          <Link
+            to={withNext("/login", nextPath)}
+            className="font-medium text-brand-700 hover:underline"
+          >
             Sign in
           </Link>
         </>
@@ -181,7 +192,11 @@ export default function Signup() {
           disabled={!accepted || busy || !turnstileToken}
           className="btn-primary w-full"
         >
-          {busy ? "Creating account…" : "Create account"}
+          {busy
+            ? "Creating account…"
+            : continuesToPost
+              ? "Create account and post"
+              : "Create account"}
         </button>
       </form>
     </AuthLayout>

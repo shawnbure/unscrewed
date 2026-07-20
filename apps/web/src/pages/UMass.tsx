@@ -11,11 +11,18 @@ import {
   Wrench,
 } from "lucide-react";
 import { Container } from "../ui/Container.js";
+import { useSession } from "../lib/session.js";
+import { withNext } from "../lib/navigation.js";
 
 const PAGE_DESCRIPTION =
   "A free UMass Amherst-area barter pilot for dorm gear, textbooks, and skills. No listing fees or transaction fees.";
 
 export default function UMassPage() {
+  const { session } = useSession();
+  const postPath = session?.authenticated
+    ? "/post"
+    : withNext("/signup", "/post");
+
   useEffect(() => {
     const previousTitle = document.title;
     const description = document.querySelector<HTMLMetaElement>(
@@ -56,8 +63,10 @@ export default function UMassPage() {
                 fees. No transaction fees.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link to="/signup" className="btn-brand text-base">
-                  Join the local pilot
+                <Link to={postPath} className="btn-brand text-base">
+                  {session?.authenticated
+                    ? "Post your first trade"
+                    : "Join and post a trade"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link to="/browse" className="btn-outline bg-white text-base">
@@ -190,16 +199,18 @@ export default function UMassPage() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
-              to="/signup"
+              to={postPath}
               className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-brand-900 hover:bg-brand-50"
             >
-              Create a free account
+              {session?.authenticated
+                ? "Post your first trade"
+                : "Join and post"}
             </Link>
             <Link
-              to="/post"
+              to="/browse"
               className="rounded-xl border border-white/25 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
             >
-              Post a trade
+              Browse current trades
             </Link>
           </div>
         </div>

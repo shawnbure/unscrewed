@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { KeyRound } from "lucide-react";
 import { api } from "../lib/api.js";
 import Turnstile from "../components/Turnstile.js";
 import { AuthLayout } from "../ui/AuthLayout.js";
 import { useSession } from "../lib/session.js";
 import { passkeysSupported, signInWithPasskey } from "../lib/passkeys.js";
+import { safeNextPath, withNext } from "../lib/navigation.js";
 
 interface LoginResponse {
   ok: true;
@@ -14,7 +15,9 @@ interface LoginResponse {
 
 export default function Login() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const { refresh } = useSession();
+  const nextPath = safeNextPath(searchParams);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -41,7 +44,7 @@ export default function Login() {
         body: JSON.stringify({ email, password, turnstileToken }),
       });
       await refresh();
-      nav("/browse");
+      nav(nextPath);
     } catch (e: any) {
       setError(e?.body?.error ?? e?.message ?? "Login failed");
     } finally {
@@ -55,7 +58,7 @@ export default function Login() {
     try {
       await signInWithPasskey();
       await refresh();
-      nav("/browse");
+      nav(nextPath);
     } catch (e: any) {
       const name = e?.name ?? "";
       if (name === "NotAllowedError" || name === "AbortError") {
@@ -76,7 +79,7 @@ export default function Login() {
         <>
           New here?{" "}
           <Link
-            to="/signup"
+            to={withNext("/signup", nextPath)}
             className="font-medium text-ink-900 hover:underline"
           >
             Create an account
