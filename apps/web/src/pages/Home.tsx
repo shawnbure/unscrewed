@@ -15,6 +15,7 @@ import { SearchBar } from "../ui/SearchBar.js";
 import { CategoryTile, CATEGORIES } from "../ui/CategoryTile.js";
 import { ListingCard, type ListingCardData } from "../ui/ListingCard.js";
 import { PhilosophyModal } from "../ui/PhilosophyModal.js";
+import { InviteNeighbors } from "../ui/InviteNeighbors.js";
 import { api } from "../lib/api.js";
 
 export default function Home() {
@@ -45,7 +46,7 @@ export default function Home() {
               className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-ink-700 shadow-card ring-1 ring-surface-200 transition-colors hover:bg-surface-50 hover:ring-brand-300"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-              Community-owned · No fees · No middleman
+              Built for public benefit · No fees · No middleman
               <span className="text-ink-400">— read why</span>
             </button>
             <h1 className="display mt-5 text-balance text-5xl leading-[1.02] text-ink-900 sm:text-6xl">
@@ -132,6 +133,11 @@ export default function Home() {
           </div>
         </Container>
       </section>
+
+      {/* A neighbor-to-neighbor growth loop with an explicit public-benefit pledge */}
+      <Container size="xl" className="mt-14">
+        <InviteNeighbors />
+      </Container>
 
       {/* Goods categories */}
       <Container size="xl" className="mt-14">

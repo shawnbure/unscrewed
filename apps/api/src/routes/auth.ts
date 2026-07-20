@@ -78,6 +78,10 @@ authRoutes.post("/signup", async (c) => {
     homeLat: point?.lat ?? null,
     homeLng: point?.lng ?? null,
     displayName: input.displayName.trim(),
+    attributionVisitorId: input.attribution?.visitorId ?? null,
+    attributionSource: input.attribution?.source ?? null,
+    attributionMedium: input.attribution?.medium ?? null,
+    attributionCampaign: input.attribution?.campaign ?? null,
     dateCreated: now,
     dateModified: now,
   });

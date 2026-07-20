@@ -18,6 +18,7 @@ import { Logo } from "./ui/Logo.js";
 import { PhilosophyModal } from "./ui/PhilosophyModal.js";
 import { MembersChip } from "./ui/MembersChip.js";
 import { Analytics } from "./ui/Analytics.js";
+import { AttributionTracker } from "./ui/AttributionTracker.js";
 
 export default function App() {
   const { session, refresh } = useSession();
@@ -252,6 +253,7 @@ export default function App() {
         </Container>
       </footer>
       <PhilosophyModal open={philOpen} onClose={() => setPhilOpen(false)} />
+      <AttributionTracker />
       <Analytics />
     </div>
   );

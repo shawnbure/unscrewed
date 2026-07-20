@@ -15,6 +15,7 @@ import { meRoutes } from "./routes/me.js";
 import { adminRoutes } from "./routes/admin.js";
 import { contractsRoutes } from "./routes/contracts.js";
 import { geocodeRoutes } from "./routes/geocode.js";
+import { growthRoutes } from "./routes/growth.js";
 
 export { NegotiationRoom } from "./lib/negotiationRoom.js";
 
@@ -54,6 +55,7 @@ app.route("/listings", listingsRoutes);
 app.route("/negotiations", negotiationRoutes);
 app.route("/contracts", contractsRoutes);
 app.route("/geocode", geocodeRoutes);
+app.route("/growth", growthRoutes);
 app.route("/admin", adminRoutes);
 
 app.onError((err, c) => {

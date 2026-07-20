@@ -4,6 +4,7 @@ import { api } from "../lib/api.js";
 import Turnstile from "../components/Turnstile.js";
 import { AuthLayout } from "../ui/AuthLayout.js";
 import { useSession } from "../lib/session.js";
+import { getStoredAttribution } from "../lib/attribution.js";
 
 const TOS_VERSION = "2026-07-18";
 
@@ -63,6 +64,7 @@ export default function Signup() {
           tosVersion: TOS_VERSION,
           tosAccepted: true,
           turnstileToken,
+          attribution: getStoredAttribution(),
         }),
       });
       await refresh();

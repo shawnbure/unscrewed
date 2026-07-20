@@ -15,6 +15,14 @@ export const UsZip = z
   .string()
   .regex(/^\d{5}$/, "Enter a 5-digit US ZIP code");
 
+export const AttributionSchema = z.object({
+  visitorId: z.string().uuid(),
+  source: z.string().min(1).max(80),
+  medium: z.string().min(1).max(80),
+  campaign: z.string().min(1).max(120),
+});
+export type AttributionInput = z.infer<typeof AttributionSchema>;
+
 // Signup is email + password + Turnstile + ZIP. Phone is a fully
 // optional profile field — collected here so users don't have to visit
 // /account after signing up, but never validated, never texted, never
@@ -29,6 +37,7 @@ export const SignupSchema = z.object({
   tosVersion: z.string().min(1),
   tosAccepted: z.literal(true),
   turnstileToken: z.string().min(1),
+  attribution: AttributionSchema.optional(),
 });
 export type SignupInput = z.infer<typeof SignupSchema>;
 

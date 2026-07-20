@@ -24,6 +24,10 @@ export const users = sqliteTable(
     homeZip: text("home_zip"),
     homeLat: real("home_lat"),
     homeLng: real("home_lng"),
+    attributionVisitorId: text("attribution_visitor_id"),
+    attributionSource: text("attribution_source"),
+    attributionMedium: text("attribution_medium"),
+    attributionCampaign: text("attribution_campaign"),
     sessionsInvalidatedAt: integer("sessions_invalidated_at"),
     isAdmin: integer("is_admin").notNull().default(0),
     isArchived: integer("is_archived").notNull().default(0),
@@ -38,6 +42,34 @@ export const users = sqliteTable(
   (t) => ({
     uxEmail: uniqueIndex("ux_users_email_normalized").on(t.emailNormalized),
     ixPhone: index("ix_users_phone").on(t.phoneE164),
+  })
+);
+
+// ============================================================
+// growth_visits — anonymous, first-party campaign landings
+// ============================================================
+export const growthVisits = sqliteTable(
+  "growth_visits",
+  {
+    id: text("id").primaryKey(),
+    visitorId: text("visitor_id").notNull(),
+    source: text("source").notNull(),
+    medium: text("medium").notNull(),
+    campaign: text("campaign").notNull(),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    uxVisitorCampaign: uniqueIndex("ux_growth_visits_visitor_campaign").on(
+      t.visitorId,
+      t.campaign
+    ),
+    ixCampaignDate: index("ix_growth_visits_campaign_date").on(
+      t.campaign,
+      t.dateCreated
+    ),
+    ixDate: index("ix_growth_visits_date").on(t.dateCreated),
   })
 );
 

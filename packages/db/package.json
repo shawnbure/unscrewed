@@ -19,8 +19,9 @@
     "drizzle-orm": "^0.36.4"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260527.1",
+    "better-sqlite3": "^11.5.0",
     "drizzle-kit": "^0.28.1",
-    "wrangler": "^3.90.0",
-    "better-sqlite3": "^11.5.0"
+    "wrangler": "^3.90.0"
   }
 }

@@ -36,6 +36,7 @@ adminRoutes.get("/stats", async (c) => {
     archivedListings,
     totalNegotiations,
     recentSignups,
+    growthFunnel,
   ] = await Promise.all([
     db.prepare("SELECT COUNT(*) AS n FROM users").first<{ n: number }>(),
     db
@@ -55,6 +56,30 @@ adminRoutes.get("/stats", async (c) => {
         "SELECT id, email, display_name, date_created FROM users ORDER BY date_created DESC LIMIT 5"
       )
       .all(),
+    db
+      .prepare(
+        `SELECT
+           gv.campaign,
+           gv.source,
+           gv.medium,
+           COUNT(DISTINCT gv.visitor_id) AS visitors,
+           COUNT(DISTINCT u.id) AS signups,
+           COUNT(DISTINCT CASE WHEN activated.user_id IS NOT NULL THEN u.id END) AS first_listings
+         FROM growth_visits gv
+         LEFT JOIN users u
+           ON u.attribution_visitor_id = gv.visitor_id
+          AND u.attribution_campaign = gv.campaign
+          AND u.is_deleted = 0
+         LEFT JOIN (
+           SELECT DISTINCT user_id FROM listings WHERE is_deleted = 0
+         ) activated ON activated.user_id = u.id
+         WHERE gv.date_created >= ?1
+         GROUP BY gv.campaign, gv.source, gv.medium
+         ORDER BY visitors DESC
+         LIMIT 10`
+      )
+      .bind(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .all(),
   ]);
   return c.json({
     users: {
@@ -71,6 +96,10 @@ adminRoutes.get("/stats", async (c) => {
     },
     negotiations: { total: totalNegotiations?.n ?? 0 },
     recentSignups: recentSignups.results,
+    growth: {
+      windowDays: 30,
+      campaigns: growthFunnel.results,
+    },
   });
 });
 
