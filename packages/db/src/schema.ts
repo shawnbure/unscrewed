@@ -333,6 +333,37 @@ export const moderationActions = sqliteTable(
 );
 
 // ============================================================
+// support_requests — private public-contact inbox
+// ============================================================
+export const supportRequests = sqliteTable(
+  "support_requests",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    topic: text("topic").notNull(),
+    message: text("message").notNull(),
+    status: text("status").notNull().default("open"),
+    adminNote: text("admin_note"),
+    resolvedBy: text("resolved_by").references(() => users.id),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateModified: integer("date_modified")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    dateResolved: integer("date_resolved"),
+  },
+  (t) => ({
+    ixStatusDate: index("ix_support_requests_status_date").on(
+      t.status,
+      t.dateCreated
+    ),
+    ixDate: index("ix_support_requests_date").on(t.dateCreated),
+  })
+);
+
+// ============================================================
 // blog_posts — markdown-body blog posts
 // ============================================================
 export const blogPosts = sqliteTable(

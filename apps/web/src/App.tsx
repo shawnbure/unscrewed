@@ -269,7 +269,7 @@ export default function App() {
               Trade what you have for what you need.
             </span>
           </div>
-          <div className="flex items-center gap-5 text-xs">
+          <div className="flex flex-wrap items-center gap-5 text-xs">
             <button
               type="button"
               onClick={() => setPhilOpen(true)}
@@ -281,6 +281,7 @@ export default function App() {
               Making money :)
             </Link>
             <Link to="/safety" className="hover:text-ink-900">Safety</Link>
+            <Link to="/contact" className="hover:text-ink-900">Contact</Link>
             <Link to="/tos" className="hover:text-ink-900">Terms</Link>
             <span className="text-ink-300">© {new Date().getFullYear()}</span>
           </div>

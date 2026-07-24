@@ -22,10 +22,12 @@ import AdminReports from "./pages/admin/Reports.js";
 import Tos from "./pages/Tos.js";
 import UMassPage from "./pages/UMass.js";
 import SafetyPage from "./pages/Safety.js";
+import ContactPage from "./pages/Contact.js";
 import { AdminLayout } from "./pages/admin/AdminLayout.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
 import AdminUsers from "./pages/admin/Users.js";
 import AdminListings from "./pages/admin/Listings.js";
+import AdminSupport from "./pages/admin/Support.js";
 import { RequireAdmin } from "./ui/RequireAdmin.js";
 import { RequireAuth } from "./ui/RequireAuth.js";
 import "./index.css";
@@ -86,6 +88,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="blog/:slug" element={<BlogPostPage />} />
           <Route path="tos" element={<Tos />} />
           <Route path="safety" element={<SafetyPage />} />
+          <Route path="contact" element={<ContactPage />} />
           <Route path="umass" element={<UMassPage />} />
           <Route
             path="admin"
@@ -102,6 +105,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="blog/new" element={<BlogEdit />} />
             <Route path="blog/:id/edit" element={<BlogEdit />} />
             <Route path="reports" element={<AdminReports />} />
+            <Route path="support" element={<AdminSupport />} />
           </Route>
         </Route>
       </Routes>
