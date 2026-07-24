@@ -27,6 +27,7 @@ import AdminDashboard from "./pages/admin/Dashboard.js";
 import AdminUsers from "./pages/admin/Users.js";
 import AdminListings from "./pages/admin/Listings.js";
 import { RequireAdmin } from "./ui/RequireAdmin.js";
+import { RequireAuth } from "./ui/RequireAuth.js";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -39,11 +40,46 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="login" element={<Login />} />
           <Route path="browse" element={<Browse />} />
           <Route path="listing/:id" element={<ListingDetail />} />
-          <Route path="post" element={<NewListing />} />
-          <Route path="listing/:id/edit" element={<EditListing />} />
-          <Route path="n/:id" element={<NegotiationPage />} />
-          <Route path="trades" element={<TradesPage />} />
-          <Route path="account" element={<AccountPage />} />
+          <Route
+            path="post"
+            element={
+              <RequireAuth>
+                <NewListing />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="listing/:id/edit"
+            element={
+              <RequireAuth>
+                <EditListing />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="n/:id"
+            element={
+              <RequireAuth>
+                <NegotiationPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="trades"
+            element={
+              <RequireAuth>
+                <TradesPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="account"
+            element={
+              <RequireAuth>
+                <AccountPage />
+              </RequireAuth>
+            }
+          />
           <Route path="thoughts" element={<ThoughtsPage />} />
           <Route path="community" element={<CommunityPage />} />
           <Route path="blog" element={<BlogPage />} />

@@ -9,6 +9,7 @@ import { api } from "../lib/api.js";
 import { useSession } from "../lib/session.js";
 import { photoUrl } from "../lib/photoUrl.js";
 import { ShareListing } from "../ui/ShareListing.js";
+import { withNext } from "../lib/navigation.js";
 
 interface ListingFull {
   id: string;
@@ -186,7 +187,7 @@ export default function ListingDetail() {
                     onClick={() =>
                       session?.authenticated
                         ? setShowPropose(true)
-                        : nav("/login")
+                        : nav(withNext("/login", `/listing/${l.id}`))
                     }
                     className="btn-primary mt-5 w-full"
                   >

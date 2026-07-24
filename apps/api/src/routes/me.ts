@@ -35,6 +35,8 @@ meRoutes.get("/", async (c) => {
       phoneE164: users.phoneE164,
       phoneVerifiedAt: users.phoneVerifiedAt,
       homeZip: users.homeZip,
+      homeLat: users.homeLat,
+      homeLng: users.homeLng,
       isAdmin: users.isAdmin,
       dateCreated: users.dateCreated,
     })

@@ -40,6 +40,12 @@ export function AddressPicker({ value, onChange }: Props) {
   const debounceRef = useRef<number | undefined>(undefined);
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
+  // The listing form may fill a member's account ZIP after this component
+  // mounts. Reflect that private default without disturbing manual typing.
+  useEffect(() => {
+    if (value?.display) setQ(value.display);
+  }, [value?.display]);
+
   // Close dropdown on outside-click
   useEffect(() => {
     function onDoc(e: MouseEvent) {

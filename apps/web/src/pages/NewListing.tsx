@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container } from "../ui/Container.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
@@ -28,6 +28,34 @@ export default function NewListing() {
   const [photoKeys, setPhotoKeys] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    api<{
+      homeZip: string | null;
+      homeLat: number | null;
+      homeLng: number | null;
+    }>("/me")
+      .then((me) => {
+        if (
+          me.homeZip &&
+          Number.isFinite(me.homeLat) &&
+          Number.isFinite(me.homeLng)
+        ) {
+          setAddress((current) =>
+            current ?? {
+              display: `ZIP ${me.homeZip}`,
+              postcode: me.homeZip!,
+              lat: me.homeLat!,
+              lng: me.homeLng!,
+            }
+          );
+        }
+      })
+      .catch(() => {
+        // The route is auth-gated. A missing ZIP centroid should not prevent
+        // someone from selecting a location manually.
+      });
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -205,7 +233,7 @@ export default function NewListing() {
 
         <Section
           title="6. Where are you?"
-          subtitle="Pick a neighborhood, ZIP, or street. We only show approximate location to buyers."
+          subtitle="Your account ZIP is filled in when available. Keep it or pick a different neighborhood, ZIP, or street. We only show an approximate area."
         >
           <AddressPicker value={address} onChange={setAddress} />
         </Section>
