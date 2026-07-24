@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Container } from "../ui/Container.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
 import { CategoryIcon } from "../ui/CategoryIcons.js";
 import { PhotoUploader } from "../ui/PhotoUploader.js";
 import { AddressPicker, type AddressValue } from "../ui/AddressPicker.js";
 import { api } from "../lib/api.js";
+import { getListingStarter } from "../lib/listingStarters.js";
 
 const CONDITIONS = [
   { value: "new", label: "New" },
@@ -18,12 +19,16 @@ const CONDITIONS = [
 
 export default function NewListing() {
   const nav = useNavigate();
-  const [kind, setKind] = useState<"good" | "service">("good");
-  const [category, setCategory] = useState("other");
-  const [title, setTitle] = useState("");
+  const [searchParams] = useSearchParams();
+  const starter = getListingStarter(searchParams.get("starter"));
+  const [kind, setKind] = useState<"good" | "service">(
+    starter?.kind ?? "good"
+  );
+  const [category, setCategory] = useState(starter?.category ?? "other");
+  const [title, setTitle] = useState(starter?.title ?? "");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("good");
-  const [wants, setWants] = useState("");
+  const [wants, setWants] = useState(starter?.wants ?? "");
   const [address, setAddress] = useState<AddressValue | null>(null);
   const [photoKeys, setPhotoKeys] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -105,8 +110,16 @@ export default function NewListing() {
       <header>
         <h1 className="text-3xl font-bold text-ink-900">Post a trade</h1>
         <p className="mt-1 text-sm text-ink-500">
-          Describe what you have, what you want, and where you are. You can edit later.
+          Describe what you have, what you want, and where you are. You can
+          edit later.
         </p>
+        {starter && (
+          <div className="mt-4 rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900">
+            <strong>{starter.label} starter loaded.</strong> We selected a
+            category and suggested editable wording. Add your own accurate
+            details before posting; nothing is posted automatically.
+          </div>
+        )}
       </header>
 
       <form onSubmit={submit} className="mt-6 space-y-6">
@@ -189,7 +202,10 @@ export default function NewListing() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="input mt-1"
-              placeholder="Details, age/condition, any caveats, when you're available…"
+              placeholder={
+                starter?.descriptionPlaceholder ??
+                "Details, age/condition, any caveats, when you're available…"
+              }
             />
           </label>
           {kind === "good" && (

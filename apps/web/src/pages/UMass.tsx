@@ -13,6 +13,10 @@ import {
 import { Container } from "../ui/Container.js";
 import { InviteNeighbors } from "../ui/InviteNeighbors.js";
 import { useSession } from "../lib/session.js";
+import {
+  listingStarterPath,
+  type ListingStarterId,
+} from "../lib/listingStarters.js";
 import { withNext } from "../lib/navigation.js";
 
 const PAGE_DESCRIPTION =
@@ -25,6 +29,10 @@ export default function UMassPage() {
   const postPath = session?.authenticated
     ? "/post"
     : withNext("/signup", "/post");
+  const starterPath = (id: ListingStarterId) => {
+    const path = listingStarterPath(id);
+    return session?.authenticated ? path : withNext("/signup", path);
+  };
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -94,21 +102,25 @@ export default function UMassPage() {
                   icon={<PackageOpen className="h-5 w-5" />}
                   have="Mini-fridge"
                   want="Desk lamp + storage bins"
+                  to={starterPath("dorm_fridge")}
                 />
                 <Example
                   icon={<BookOpen className="h-5 w-5" />}
                   have="Calc textbook"
                   want="Chemistry textbook"
+                  to={starterPath("course_textbook")}
                 />
                 <Example
                   icon={<Wrench className="h-5 w-5" />}
                   have="Bike repair"
                   want="Help moving"
+                  to={starterPath("bike_repair")}
                 />
               </div>
               <p className="mt-5 text-sm leading-relaxed text-white/60">
-                These are examples, not fabricated listings. Real neighbors
-                decide what a fair trade looks like.
+                These are editable starters, not fabricated listings. Nothing
+                is posted until a real person adds accurate details and
+                submits it.
               </p>
             </div>
           </div>
@@ -233,22 +245,31 @@ function Example({
   icon,
   have,
   want,
+  to,
 }: {
   icon: React.ReactNode;
   have: string;
   want: string;
+  to: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+    <Link
+      to={to}
+      className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition-colors hover:border-brand-300/40 hover:bg-white/[0.1] focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-300/30"
+    >
       <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-300/15 text-brand-200">
         {icon}
       </span>
-      <div className="min-w-0 text-sm">
+      <div className="min-w-0 flex-1 text-sm">
         <span className="font-semibold text-white">{have}</span>
         <span className="mx-2 text-white/35">for</span>
         <span className="text-white/70">{want}</span>
+        <span className="mt-1 block text-xs font-semibold text-brand-200 group-hover:text-white">
+          Use this starter
+        </span>
       </div>
-    </div>
+      <ArrowRight className="h-4 w-4 shrink-0 text-white/40 transition-transform group-hover:translate-x-0.5 group-hover:text-white" />
+    </Link>
   );
 }
 

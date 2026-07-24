@@ -26,7 +26,8 @@ export default function Signup() {
   const [searchParams] = useSearchParams();
   const { refresh } = useSession();
   const nextPath = safeNextPath(searchParams);
-  const continuesToPost = nextPath === "/post";
+  const continuesToPost =
+    new URL(nextPath, window.location.origin).pathname === "/post";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState("");
