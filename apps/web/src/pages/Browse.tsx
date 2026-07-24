@@ -1,21 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { Link, useSearchParams } from "react-router-dom";
-import { PackageOpen } from "lucide-react";
+import { MapPin, PackageOpen } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { SearchBar } from "../ui/SearchBar.js";
 import { ListingCard, type ListingCardData } from "../ui/ListingCard.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
 import { CategoryIcon } from "../ui/CategoryIcons.js";
 import { api } from "../lib/api.js";
+import { useSession } from "../lib/session.js";
+import { withNext } from "../lib/navigation.js";
 
 type View = "grid" | "map";
+interface BrowseLocation {
+  lat: number;
+  lng: number;
+  radiusKm: number;
+  place: string;
+}
 
 export default function Browse() {
   const [sp, setSp] = useSearchParams();
+  const { session } = useSession();
   const cat = sp.get("cat") ?? "";
   const kind = sp.get("kind") ?? "";
   const q = sp.get("q") ?? "";
+  const location = useMemo(() => readLocation(sp), [sp]);
   const [view, setView] = useState<View>("grid");
   const [items, setItems] = useState<ListingCardData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,9 +36,14 @@ export default function Browse() {
     if (cat) u.set("category", cat);
     if (kind) u.set("kind", kind);
     if (q) u.set("q", q);
+    if (location) {
+      u.set("lat", String(location.lat));
+      u.set("lng", String(location.lng));
+      u.set("radiusKm", String(location.radiusKm));
+    }
     u.set("limit", "40");
     return `/listings?${u.toString()}`;
-  }, [cat, kind, q]);
+  }, [cat, kind, q, location]);
 
   useEffect(() => {
     setLoading(true);
@@ -44,12 +59,38 @@ export default function Browse() {
     else next.delete(key);
     setSp(next);
   };
+  const clearLocation = () => {
+    const next = new URLSearchParams(sp);
+    for (const key of ["lat", "lng", "radiusKm", "place"]) next.delete(key);
+    setSp(next);
+  };
+  const postPath = session?.authenticated
+    ? "/post"
+    : withNext("/signup", "/post");
 
   return (
     <Container size="xl" className="py-6">
       <div className="mb-4">
         <SearchBar initial={q} />
       </div>
+
+      {location && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm">
+          <div className="flex items-center gap-2 text-brand-900">
+            <MapPin className="h-4 w-4 shrink-0" />
+            <span>
+              Showing trades around <strong>{location.place}</strong>
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={clearLocation}
+            className="font-medium text-brand-700 hover:underline"
+          >
+            Browse all locations
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
         {/* Filter rail */}
@@ -117,14 +158,20 @@ export default function Browse() {
               {cat ? ` · ${CATEGORIES.find((c) => c.slug === cat)?.label}` : ""}
               {kind ? ` · ${kind}` : ""}
               {q ? ` · "${q}"` : ""}
+              {location ? ` · ${location.place}` : ""}
             </div>
             <ViewToggle view={view} onChange={setView} />
           </div>
 
           {view === "grid" ? (
-            <GridView items={items} loading={loading} />
+            <GridView
+              items={items}
+              loading={loading}
+              location={location}
+              postPath={postPath}
+            />
           ) : (
-            <MapView items={items} />
+            <MapView items={items} location={location} />
           )}
         </div>
       </div>
@@ -207,9 +254,13 @@ function ViewToggle({
 function GridView({
   items,
   loading,
+  location,
+  postPath,
 }: {
   items: ListingCardData[];
   loading: boolean;
+  location: BrowseLocation | null;
+  postPath: string;
 }) {
   if (loading) {
     return (
@@ -224,9 +275,19 @@ function GridView({
     return (
       <div className="card flex flex-col items-center p-10 text-center text-ink-500">
         <PackageOpen className="h-10 w-10 text-ink-300" strokeWidth={1.5} />
-        <p className="mt-3">No trades match your filters yet.</p>
-        <Link to="/post" className="btn-brand mt-4 inline-flex">
-          Post the first one
+        <p className="mt-3">
+          {location
+            ? `No real trades are posted around ${location.place} yet.`
+            : "No trades match your filters yet."}
+        </p>
+        {location && (
+          <p className="mt-1 max-w-md text-sm text-ink-400">
+            This pilot becomes useful when nearby people add things or skills
+            they would genuinely trade.
+          </p>
+        )}
+        <Link to={postPath} className="btn-brand mt-4 inline-flex">
+          {location ? "Post the first local trade" : "Post the first one"}
         </Link>
       </div>
     );
@@ -240,7 +301,13 @@ function GridView({
   );
 }
 
-function MapView({ items }: { items: ListingCardData[] }) {
+function MapView({
+  items,
+  location,
+}: {
+  items: ListingCardData[];
+  location: BrowseLocation | null;
+}) {
   const mapEl = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -261,13 +328,13 @@ function MapView({ items }: { items: ListingCardData[] }) {
         },
         layers: [{ id: "osm", type: "raster", source: "osm" }],
       },
-      center: [-98.5, 39.5],
-      zoom: 3.5,
+      center: location ? [location.lng, location.lat] : [-98.5, 39.5],
+      zoom: location ? 10 : 3.5,
     });
     map.addControl(new maplibregl.NavigationControl(), "top-right");
     mapRef.current = map;
     return () => map.remove();
-  }, []);
+  }, [location]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -296,6 +363,32 @@ function MapView({ items }: { items: ListingCardData[] }) {
       className="h-[70vh] w-full overflow-hidden rounded-2xl shadow-card"
     />
   );
+}
+
+function readLocation(params: URLSearchParams): BrowseLocation | null {
+  const lat = Number(params.get("lat"));
+  const lng = Number(params.get("lng"));
+  const radiusKm = Number(params.get("radiusKm"));
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    !Number.isFinite(radiusKm) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180 ||
+    radiusKm < 1 ||
+    radiusKm > 500
+  ) {
+    return null;
+  }
+  const rawPlace = params.get("place")?.trim();
+  return {
+    lat,
+    lng,
+    radiusKm,
+    place: rawPlace?.slice(0, 80) || "this area",
+  };
 }
 
 function escapeHtml(s: string) {

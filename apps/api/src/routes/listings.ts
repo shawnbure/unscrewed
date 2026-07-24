@@ -79,29 +79,21 @@ listingsRoutes.get("/", optionalAuth, async (c) => {
     ORDER BY lp.sort_order ASC LIMIT 1
   ) AS firstPhotoKey`;
 
-  // FTS5 full-text query
-  if (q.q && q.q.trim().length > 0) {
-    const term = q.q.trim().replace(/[^\w\s]/g, " ");
-    const rows = await c.env.DB.prepare(
-      `SELECT l.*, ${photoSubquery} FROM listings l
-       JOIN listings_fts ON listings_fts.rowid = l.rowid
-       WHERE listings_fts MATCH ?1
-         AND l.status = 'active' AND l.is_deleted = 0
-       ORDER BY rank LIMIT ?2`
-    )
-      .bind(term, q.limit)
-      .all();
-    return c.json({
-      items: (rows.results as Record<string, any>[]).map((row) =>
-        publicListing(row)
-      ),
-    });
-  }
-
-  // Build the equivalent of drizzle's filter via raw SQL so we can add the
-  // photo subquery in the same trip.
+  // Build one query for both browsing and FTS so category, kind, and location
+  // keep applying when someone types a search term.
   const where: string[] = ["l.status = 'active'", "l.is_deleted = 0"];
   const binds: any[] = [];
+  let join = "";
+  let orderBy = "l.date_created DESC";
+
+  if (q.q && q.q.trim().length > 0) {
+    const term = q.q.trim().replace(/[^\w\s]/g, " ").trim();
+    if (!term) return c.json({ items: [] });
+    join = "JOIN listings_fts ON listings_fts.rowid = l.rowid";
+    where.push("listings_fts MATCH ?");
+    binds.push(term);
+    orderBy = "rank";
+  }
   if (q.category) {
     where.push("l.category = ?");
     binds.push(q.category);
@@ -123,17 +115,36 @@ listingsRoutes.get("/", optionalAuth, async (c) => {
     where.push("ROUND(l.lng, 1) BETWEEN ? AND ?");
     binds.push(q.west, q.east);
   } else if (q.lat !== undefined && q.lng !== undefined) {
-    const precision = q.radiusKm && q.radiusKm > 50 ? 3 : 4;
-    const center = ngeohash.encode(q.lat, q.lng, precision);
-    where.push(`substr(l.geohash, 1, ${precision}) = ?`);
-    binds.push(center);
+    // Filter on coordinates quantized to roughly 11 km latitude cells. This
+    // keeps local discovery useful without allowing repeated radius queries
+    // to reveal the exact location stored for a listing. A coarse bounding
+    // box also avoids the hard cell-edge exclusions caused by geohash-prefix
+    // filtering around a campus or neighborhood.
+    const radiusKm = q.radiusKm ?? 25;
+    const latitudeDelta = radiusKm / 111.32;
+    const longitudeScale = Math.max(
+      Math.cos((q.lat * Math.PI) / 180),
+      0.1
+    );
+    const longitudeDelta = radiusKm / (111.32 * longitudeScale);
+    where.push("ROUND(l.lat, 1) BETWEEN ? AND ?");
+    binds.push(
+      Math.max(-90, q.lat - latitudeDelta),
+      Math.min(90, q.lat + latitudeDelta)
+    );
+    where.push("ROUND(l.lng, 1) BETWEEN ? AND ?");
+    binds.push(
+      Math.max(-180, q.lng - longitudeDelta),
+      Math.min(180, q.lng + longitudeDelta)
+    );
   }
   binds.push(q.limit);
 
   const rows = await c.env.DB.prepare(
     `SELECT l.*, ${photoSubquery} FROM listings l
+     ${join}
      WHERE ${where.join(" AND ")}
-     ORDER BY l.date_created DESC
+     ORDER BY ${orderBy}
      LIMIT ?`
   )
     .bind(...binds)

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 
 interface Props {
@@ -10,10 +10,17 @@ interface Props {
 export function SearchBar({ initial = "", size = "md" }: Props) {
   const [q, setQ] = useState(initial);
   const nav = useNavigate();
+  const location = useLocation();
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
+    // Searches made from Browse keep the active location and category
+    // context. Searches from other pages begin a fresh browse.
+    const params =
+      location.pathname === "/browse"
+        ? new URLSearchParams(location.search)
+        : new URLSearchParams();
     if (q.trim()) params.set("q", q.trim());
+    else params.delete("q");
     nav(`/browse?${params.toString()}`);
   };
   const isLg = size === "lg";

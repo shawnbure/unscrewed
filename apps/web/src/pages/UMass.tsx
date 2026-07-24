@@ -16,6 +16,8 @@ import { withNext } from "../lib/navigation.js";
 
 const PAGE_DESCRIPTION =
   "A free UMass Amherst-area barter pilot for dorm gear, textbooks, and skills. No listing fees or transaction fees.";
+const UMASS_BROWSE_PATH =
+  "/browse?lat=42.389326&lng=-72.528361&radiusKm=20&place=UMass+Amherst+area";
 
 export default function UMassPage() {
   const { session } = useSession();
@@ -69,8 +71,11 @@ export default function UMassPage() {
                     : "Join and post a trade"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link to="/browse" className="btn-outline bg-white text-base">
-                  Browse current trades
+                <Link
+                  to={UMASS_BROWSE_PATH}
+                  className="btn-outline bg-white text-base"
+                >
+                  Browse UMass-area trades
                 </Link>
               </div>
               <p className="mt-4 max-w-2xl text-xs leading-relaxed text-ink-400">
@@ -207,10 +212,10 @@ export default function UMassPage() {
                 : "Join and post"}
             </Link>
             <Link
-              to="/browse"
+              to={UMASS_BROWSE_PATH}
               className="rounded-xl border border-white/25 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
             >
-              Browse current trades
+              Browse UMass-area trades
             </Link>
           </div>
         </div>
