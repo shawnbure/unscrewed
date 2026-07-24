@@ -101,7 +101,9 @@ adminRoutes.get("/stats", async (c) => {
            gv.medium,
            COUNT(DISTINCT gv.visitor_id) AS visitors,
            COUNT(DISTINCT u.id) AS signups,
-           COUNT(DISTINCT CASE WHEN activated.user_id IS NOT NULL THEN u.id END) AS first_listings
+           COUNT(DISTINCT CASE WHEN listers.user_id IS NOT NULL THEN u.id END) AS first_listings,
+           COUNT(DISTINCT CASE WHEN initiators.user_id IS NOT NULL THEN u.id END) AS negotiation_starters,
+           COUNT(DISTINCT CASE WHEN traders.user_id IS NOT NULL THEN u.id END) AS completed_traders
          FROM growth_visits gv
          LEFT JOIN users u
            ON u.attribution_visitor_id = gv.visitor_id
@@ -109,7 +111,21 @@ adminRoutes.get("/stats", async (c) => {
           AND u.is_deleted = 0
          LEFT JOIN (
            SELECT DISTINCT user_id FROM listings WHERE is_deleted = 0
-         ) activated ON activated.user_id = u.id
+         ) listers ON listers.user_id = u.id
+         LEFT JOIN (
+           SELECT DISTINCT requester_user_id AS user_id
+             FROM negotiations
+            WHERE is_deleted = 0
+         ) initiators ON initiators.user_id = u.id
+         LEFT JOIN (
+           SELECT party_a_user_id AS user_id
+             FROM contracts
+            WHERE status = 'signed'
+           UNION
+           SELECT party_b_user_id AS user_id
+             FROM contracts
+            WHERE status = 'signed'
+         ) traders ON traders.user_id = u.id
          WHERE gv.date_created >= ?1
          GROUP BY gv.campaign, gv.source, gv.medium
          ORDER BY visitors DESC

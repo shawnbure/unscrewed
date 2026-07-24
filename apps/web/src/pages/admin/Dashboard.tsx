@@ -21,6 +21,8 @@ interface Stats {
       visitors: number;
       signups: number;
       first_listings: number;
+      negotiation_starters: number;
+      completed_traders: number;
     }[];
   };
   marketplace: {
@@ -165,8 +167,9 @@ export default function AdminDashboard() {
             Invite funnel
           </h2>
           <p className="mt-1 text-sm text-ink-500">
-            Anonymous campaign visits → members → members who posted a first
-            listing, over the last {stats.growth.windowDays} days.
+            Anonymous campaign visits and the real marketplace actions taken
+            by attributed members, for campaigns visited in the last{" "}
+            {stats.growth.windowDays} days.
           </p>
         </div>
         {stats.growth.campaigns.length === 0 ? (
@@ -175,14 +178,15 @@ export default function AdminDashboard() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="w-full min-w-[920px] text-left text-sm">
               <thead className="bg-surface-50 text-xs uppercase tracking-wider text-ink-400">
                 <tr>
                   <th className="px-5 py-3 font-semibold">Campaign</th>
                   <th className="px-4 py-3 font-semibold">Visits</th>
                   <th className="px-4 py-3 font-semibold">Members</th>
-                  <th className="px-4 py-3 font-semibold">First listings</th>
-                  <th className="px-5 py-3 font-semibold">Activation</th>
+                  <th className="px-4 py-3 font-semibold">Posted</th>
+                  <th className="px-4 py-3 font-semibold">Started talks</th>
+                  <th className="px-5 py-3 font-semibold">Completed trade</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-200">
@@ -207,11 +211,35 @@ export default function AdminDashboard() {
                         {percent(campaign.signups, campaign.visitors)} of visits
                       </div>
                     </td>
-                    <td className="px-4 py-4 font-medium text-ink-900">
-                      {campaign.first_listings.toLocaleString()}
+                    <td className="px-4 py-4">
+                      <div className="font-medium text-ink-900">
+                        {campaign.first_listings.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-ink-400">
+                        {percent(campaign.first_listings, campaign.signups)} of
+                        members
+                      </div>
                     </td>
-                    <td className="px-5 py-4 font-semibold text-brand-700">
-                      {percent(campaign.first_listings, campaign.signups)}
+                    <td className="px-4 py-4">
+                      <div className="font-medium text-ink-900">
+                        {campaign.negotiation_starters.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-ink-400">
+                        {percent(
+                          campaign.negotiation_starters,
+                          campaign.signups
+                        )}{" "}
+                        of members
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="font-semibold text-brand-700">
+                        {campaign.completed_traders.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-ink-400">
+                        {percent(campaign.completed_traders, campaign.signups)}{" "}
+                        of members
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -219,6 +247,13 @@ export default function AdminDashboard() {
             </table>
           </div>
         )}
+        <p className="border-t border-surface-200 px-5 py-3 text-xs leading-5 text-ink-500">
+          “Posted” means at least one non-deleted listing. “Started talks”
+          means the member initiated at least one non-deleted negotiation.
+          “Completed trade” means they are a party to at least one contract
+          signed by both sides. These outcome columns can overlap; they are not
+          assumed to happen in a fixed order.
+        </p>
       </section>
 
       <section>
