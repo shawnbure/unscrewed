@@ -43,6 +43,17 @@ interface Stats {
       membersWithCompletedTrade: number;
     };
     tradesPerActiveTrader30Days: number | null;
+    ownerResponse: {
+      windowDays: number;
+      observationHours: number;
+      eligibleNegotiations: number;
+      respondedWithin72h: number;
+      rate: number | null;
+      medianHours: number | null;
+      overdueAfterHours: number;
+      overdueWaitingOnLister: number;
+      overdueWaitingOnRequester: number;
+    };
   };
 }
 
@@ -69,7 +80,7 @@ export default function AdminDashboard() {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ink-400">
           Marketplace health
         </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric
             label="Completed trades · 7d"
             value={stats.marketplace.completedTrades.last7Days.toLocaleString()}
@@ -105,13 +116,34 @@ export default function AdminDashboard() {
             }
             detail="Signed trades ÷ active traders"
           />
+          <Metric
+            label="Owner response · 72h"
+            value={
+              stats.marketplace.ownerResponse.rate === null
+                ? "—"
+                : `${Math.round(stats.marketplace.ownerResponse.rate * 100)}%`
+            }
+            detail={`${stats.marketplace.ownerResponse.respondedWithin72h}/${stats.marketplace.ownerResponse.eligibleNegotiations} mature proposals · median ${formatDuration(stats.marketplace.ownerResponse.medianHours)}`}
+            tone="brand"
+          />
+          <Metric
+            label={`Overdue replies · ${stats.marketplace.ownerResponse.overdueAfterHours}h`}
+            value={(
+              stats.marketplace.ownerResponse.overdueWaitingOnLister +
+              stats.marketplace.ownerResponse.overdueWaitingOnRequester
+            ).toLocaleString()}
+            detail={`${stats.marketplace.ownerResponse.overdueWaitingOnLister} listing owners · ${stats.marketplace.ownerResponse.overdueWaitingOnRequester} requesters`}
+          />
         </div>
         <div className="mt-3 rounded-xl bg-surface-50 px-4 py-3 text-xs leading-5 text-ink-500">
           A completed trade has both signatures. Liquidity includes non-deleted
           listings posted in the last {stats.marketplace.liquidity.windowDays}{" "}
           days that have had a full {stats.marketplace.liquidity.observationHours}
           -hour observation window. Active traders started a negotiation, sent
-          a message, or completed a trade during the period.
+          a message, or completed a trade during the period. Owner response
+          measures whether the listing owner sent a first reply within{" "}
+          {stats.marketplace.ownerResponse.observationHours} hours; proposals
+          younger than that are excluded from its denominator.
         </div>
       </section>
 

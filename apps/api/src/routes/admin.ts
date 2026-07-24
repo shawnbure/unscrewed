@@ -71,6 +71,9 @@ adminRoutes.get("/stats", async (c) => {
     activeTraders7,
     activeTraders30,
     firstTradeDurations,
+    ownerResponse,
+    ownerResponseDurations,
+    overdueReplies,
   ] = await Promise.all([
     db.prepare("SELECT COUNT(*) AS n FROM users").first<{ n: number }>(),
     db
@@ -178,6 +181,101 @@ adminRoutes.get("/stats", async (c) => {
           ORDER BY elapsed_ms`
       )
       .all<{ elapsed_ms: number }>(),
+    db
+      .prepare(
+        `WITH response_cohort AS (
+           SELECT
+             negotiations.id,
+             negotiations.date_created,
+             MIN(negotiation_messages.date_created) AS first_response_at
+           FROM negotiations
+           LEFT JOIN negotiation_messages
+             ON negotiation_messages.negotiation_id = negotiations.id
+            AND negotiation_messages.sender_user_id = negotiations.lister_user_id
+           WHERE negotiations.is_deleted = 0
+             AND negotiations.date_created >= ?1
+             AND negotiations.date_created <= ?2
+           GROUP BY negotiations.id
+         )
+         SELECT
+           COUNT(*) AS eligible_negotiations,
+           COALESCE(
+             SUM(
+               CASE
+                 WHEN first_response_at <= date_created + ?3 THEN 1
+                 ELSE 0
+               END
+             ),
+             0
+           ) AS responded_within_72h
+         FROM response_cohort`
+      )
+      .bind(now - 30 * day, now - 72 * 60 * 60 * 1000, 72 * 60 * 60 * 1000)
+      .first<{
+        eligible_negotiations: number;
+        responded_within_72h: number;
+      }>(),
+    db
+      .prepare(
+        `SELECT
+           MIN(negotiation_messages.date_created) - negotiations.date_created AS elapsed_ms
+         FROM negotiations
+         JOIN negotiation_messages
+           ON negotiation_messages.negotiation_id = negotiations.id
+          AND negotiation_messages.sender_user_id = negotiations.lister_user_id
+         WHERE negotiations.is_deleted = 0
+           AND negotiations.date_created >= ?1
+         GROUP BY negotiations.id
+         HAVING elapsed_ms >= 0
+         ORDER BY elapsed_ms`
+      )
+      .bind(now - 30 * day)
+      .all<{ elapsed_ms: number }>(),
+    db
+      .prepare(
+        `WITH latest_message AS (
+           SELECT
+             negotiation_id,
+             sender_user_id,
+             date_created,
+             ROW_NUMBER() OVER (
+               PARTITION BY negotiation_id
+               ORDER BY date_created DESC
+             ) AS position
+           FROM negotiation_messages
+         )
+         SELECT
+           COALESCE(
+             SUM(
+               CASE
+                 WHEN latest_message.sender_user_id = negotiations.requester_user_id
+                 THEN 1 ELSE 0
+               END
+             ),
+             0
+           ) AS waiting_on_lister,
+           COALESCE(
+             SUM(
+               CASE
+                 WHEN latest_message.sender_user_id = negotiations.lister_user_id
+                 THEN 1 ELSE 0
+               END
+             ),
+             0
+           ) AS waiting_on_requester
+         FROM negotiations
+         JOIN latest_message
+           ON latest_message.negotiation_id = negotiations.id
+          AND latest_message.position = 1
+         WHERE negotiations.is_deleted = 0
+           AND negotiations.status NOT IN ('signed', 'closed')
+           AND latest_message.date_created <= ?1`
+      )
+      .bind(now - day)
+      .first<{
+        waiting_on_lister: number;
+        waiting_on_requester: number;
+      }>(),
   ]);
   const tradeDurations = firstTradeDurations.results.map((row) => row.elapsed_ms);
   const midpoint = Math.floor(tradeDurations.length / 2);
@@ -192,6 +290,20 @@ adminRoutes.get("/stats", async (c) => {
     listingLiquidity?.listings_with_negotiation ?? 0;
   const active30 = activeTraders30?.n ?? 0;
   const completed30 = completedTrades?.last_30_days ?? 0;
+  const responseDurations = ownerResponseDurations.results.map(
+    (row) => row.elapsed_ms
+  );
+  const responseMidpoint = Math.floor(responseDurations.length / 2);
+  const medianOwnerResponseMs =
+    responseDurations.length === 0
+      ? null
+      : responseDurations.length % 2 === 1
+        ? responseDurations[responseMidpoint]!
+        : (responseDurations[responseMidpoint - 1]! +
+            responseDurations[responseMidpoint]!) /
+          2;
+  const eligibleNegotiations = ownerResponse?.eligible_negotiations ?? 0;
+  const respondedWithin72h = ownerResponse?.responded_within_72h ?? 0;
 
   return c.json({
     users: {
@@ -242,6 +354,23 @@ adminRoutes.get("/stats", async (c) => {
       },
       tradesPerActiveTrader30Days:
         active30 === 0 ? null : completed30 / active30,
+      ownerResponse: {
+        windowDays: 30,
+        observationHours: 72,
+        eligibleNegotiations,
+        respondedWithin72h,
+        rate:
+          eligibleNegotiations === 0
+            ? null
+            : respondedWithin72h / eligibleNegotiations,
+        medianHours:
+          medianOwnerResponseMs === null
+            ? null
+            : medianOwnerResponseMs / (60 * 60 * 1000),
+        overdueAfterHours: 24,
+        overdueWaitingOnLister: overdueReplies?.waiting_on_lister ?? 0,
+        overdueWaitingOnRequester: overdueReplies?.waiting_on_requester ?? 0,
+      },
     },
   });
 });
