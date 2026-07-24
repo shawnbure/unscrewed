@@ -220,13 +220,15 @@ export default function SafetyPage() {
               <p className="mt-3 text-sm leading-relaxed text-ink-600">
                 Use the Report action on a listing or beside a negotiation to
                 flag scams, harassment, illegal activity, or other safety
-                concerns. Reports are confidential. For behavior that cannot be
-                reported in-product, email{" "}
+                concerns. Reports are confidential. If a suspected scam involves
+                money or financial information, preserve the messages and{" "}
                 <a
-                  href="mailto:help@unscrewed.lol"
+                  href="https://reportfraud.ftc.gov/"
+                  target="_blank"
+                  rel="noreferrer"
                   className="font-semibold text-brand-700 underline"
                 >
-                  help@unscrewed.lol
+                  report it to the FTC
                 </a>
                 . If anyone is in immediate danger, leave and contact the
                 appropriate local emergency service.
