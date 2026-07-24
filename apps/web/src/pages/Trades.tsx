@@ -17,6 +17,7 @@ import { CATEGORIES } from "../ui/CategoryTile.js";
 import { CategoryIcon } from "../ui/CategoryIcons.js";
 import { photoUrl } from "../lib/photoUrl.js";
 import { api } from "../lib/api.js";
+import { ShareCompletedTrade } from "../ui/ShareCompletedTrade.js";
 
 interface NegoRow {
   id: string;
@@ -496,6 +497,7 @@ function ContractsSection({ me }: { me: { id: string } | null }) {
                       </button>
                     )}
                   </div>
+                  {c.status === "signed" && <ShareCompletedTrade />}
                 </div>
               </li>
             );

@@ -10,6 +10,7 @@ import {
 import { Container } from "../ui/Container.js";
 import { api } from "../lib/api.js";
 import { ReportButton } from "../ui/ReportButton.js";
+import { ShareCompletedTrade } from "../ui/ShareCompletedTrade.js";
 
 interface Message {
   id: string;
@@ -545,7 +546,8 @@ function ContractCard({
 
         {contract.status === "signed" ? (
           <div className="rounded-xl bg-brand-50 p-3 text-center text-xs text-brand-700">
-            🎉 Trade agreed. Meet, swap, and good luck.
+            <p>🎉 Trade agreed. Meet, swap, and good luck.</p>
+            <ShareCompletedTrade />
           </div>
         ) : (
           <div className="flex flex-wrap gap-2 pt-1">
