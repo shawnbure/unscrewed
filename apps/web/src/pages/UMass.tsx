@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -18,14 +18,34 @@ import {
   type ListingStarterId,
 } from "../lib/listingStarters.js";
 import { withNext } from "../lib/navigation.js";
+import { api } from "../lib/api.js";
 
 const PAGE_DESCRIPTION =
   "A free UMass Amherst-area barter pilot for dorm gear, textbooks, and skills. No listing fees or transaction fees.";
 const UMASS_BROWSE_PATH =
   "/browse?lat=42.389326&lng=-72.528361&radiusKm=20&place=UMass+Amherst+area";
 
+interface PilotProgress {
+  area: string;
+  radiusKm: number;
+  current: {
+    foundingTraders: number;
+    activeListings: number;
+    twoSidedConversations: number;
+    completedTrades: number;
+  };
+  targets: {
+    foundingTraders: number;
+    activeListings: number;
+    twoSidedConversations: number;
+    completedTrades: number;
+  };
+  updatedAt: number;
+}
+
 export default function UMassPage() {
   const { session } = useSession();
+  const [progress, setProgress] = useState<PilotProgress | null>(null);
   const postPath = session?.authenticated
     ? "/post"
     : withNext("/signup", "/post");
@@ -33,6 +53,15 @@ export default function UMassPage() {
     const path = listingStarterPath(id);
     return session?.authenticated ? path : withNext("/signup", path);
   };
+
+  useEffect(() => {
+    api<PilotProgress>("/growth/umass-progress")
+      .then(setProgress)
+      .catch(() => {
+        // The page and its core actions remain useful if the public aggregate
+        // is temporarily unavailable.
+      });
+  }, []);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -203,6 +232,7 @@ export default function UMassPage() {
               body="Success means new members post listings—not merely that they click a link."
             />
           </div>
+          <PilotScoreboard progress={progress} />
         </div>
       </Container>
 
@@ -237,6 +267,97 @@ export default function UMassPage() {
           </div>
         </div>
       </Container>
+    </div>
+  );
+}
+
+function PilotScoreboard({ progress }: { progress: PilotProgress | null }) {
+  if (!progress) {
+    return (
+      <div
+        className="mt-8 h-36 animate-pulse rounded-2xl bg-surface-100"
+        aria-label="Loading live pilot progress"
+      />
+    );
+  }
+
+  const metrics = [
+    {
+      label: "Founding traders",
+      current: progress.current.foundingTraders,
+      target: progress.targets.foundingTraders,
+    },
+    {
+      label: "Active listings",
+      current: progress.current.activeListings,
+      target: progress.targets.activeListings,
+    },
+    {
+      label: "Two-sided conversations",
+      current: progress.current.twoSidedConversations,
+      target: progress.targets.twoSidedConversations,
+    },
+    {
+      label: "Completed trades",
+      current: progress.current.completedTrades,
+      target: progress.targets.completedTrades,
+    },
+  ];
+
+  return (
+    <div className="mt-10 rounded-2xl border border-surface-200 bg-surface-50 p-5 sm:p-6">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+            Live first-sprint progress
+          </p>
+          <h3 className="mt-1 text-lg font-semibold text-ink-900">
+            Every number below comes from real activity.
+          </h3>
+        </div>
+        <p className="text-xs text-ink-400">
+          {progress.radiusKm} km around UMass Amherst
+        </p>
+      </div>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        {metrics.map((metric) => {
+          const percentage = Math.min(
+            100,
+            Math.round((metric.current / metric.target) * 100)
+          );
+          return (
+            <div key={metric.label}>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-sm font-medium text-ink-700">
+                  {metric.label}
+                </span>
+                <span className="text-sm font-semibold tabular-nums text-ink-900">
+                  {metric.current} / {metric.target}
+                </span>
+              </div>
+              <div
+                className="mt-2 h-2 overflow-hidden rounded-full bg-surface-200"
+                role="progressbar"
+                aria-label={metric.label}
+                aria-valuemin={0}
+                aria-valuemax={metric.target}
+                aria-valuenow={Math.min(metric.current, metric.target)}
+              >
+                <div
+                  className="h-full rounded-full bg-brand-500 transition-[width]"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-5 text-xs leading-relaxed text-ink-500">
+        A trader is counted after posting a genuine local listing. A
+        conversation counts only after both people reply. A completed trade
+        requires both signatures. This checkpoint is not a claim of campus
+        adoption or UMass endorsement.
+      </p>
     </div>
   );
 }
