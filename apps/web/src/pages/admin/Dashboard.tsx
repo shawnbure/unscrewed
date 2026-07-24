@@ -110,8 +110,8 @@ export default function AdminDashboard() {
           A completed trade has both signatures. Liquidity includes non-deleted
           listings posted in the last {stats.marketplace.liquidity.windowDays}{" "}
           days that have had a full {stats.marketplace.liquidity.observationHours}
-          -hour observation window. Active traders negotiated, messaged, or
-          completed a trade during the period.
+          -hour observation window. Active traders started a negotiation, sent
+          a message, or completed a trade during the period.
         </div>
       </section>
 

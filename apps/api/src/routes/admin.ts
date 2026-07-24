@@ -31,13 +31,9 @@ adminRoutes.get("/stats", async (c) => {
     db
       .prepare(
         `WITH active_ids AS (
-           SELECT lister_user_id AS user_id
-             FROM negotiations
-            WHERE is_deleted = 0 AND (date_created >= ?1 OR date_modified >= ?1)
-           UNION
            SELECT requester_user_id AS user_id
              FROM negotiations
-            WHERE is_deleted = 0 AND (date_created >= ?1 OR date_modified >= ?1)
+            WHERE is_deleted = 0 AND date_created >= ?1
            UNION
            SELECT sender_user_id AS user_id
              FROM negotiation_messages

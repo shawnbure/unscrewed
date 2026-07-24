@@ -68,6 +68,7 @@ export default function NegotiationPage() {
     if (!id) return;
     const r = await api<any>(`/negotiations/${id}`);
     setData(r);
+    window.dispatchEvent(new Event("unscrewed:unread-changed"));
   }
 
   useEffect(() => {
@@ -87,11 +88,22 @@ export default function NegotiationPage() {
           : "api.unscrewed.lol";
       const ws = new WebSocket(`${proto}://${host}/negotiations/${id}/ws`);
       wsRef.current = ws;
-      ws.onmessage = () => load();
+      ws.onmessage = () => {
+        // Do not mark a reply read merely because this thread is open in a
+        // background tab. The visibility handler will load it on return.
+        if (document.visibilityState === "visible") load();
+      };
     } catch {
       /* ws optional */
     }
-    return () => wsRef.current?.close();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") load().catch(console.error);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      wsRef.current?.close();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [id]);
 
   useEffect(() => {

@@ -174,6 +174,8 @@ export const negotiations = sqliteTable(
     requesterUserId: text("requester_user_id")
       .notNull()
       .references(() => users.id),
+    listerLastReadAt: integer("lister_last_read_at"),
+    requesterLastReadAt: integer("requester_last_read_at"),
     offering: text("offering").notNull(),
     status: text("status").notNull().default("open"), // open | contract_drafted | signed | closed
     isArchived: integer("is_archived").notNull().default(0),
@@ -216,6 +218,10 @@ export const negotiationMessages = sqliteTable(
   },
   (t) => ({
     ixNeg: index("ix_msg_neg").on(t.negotiationId),
+    ixNegCreated: index("ix_negotiation_messages_created").on(
+      t.negotiationId,
+      t.dateCreated
+    ),
   })
 );
 

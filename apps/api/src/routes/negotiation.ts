@@ -56,6 +56,17 @@ negotiationRoutes.get("/", async (c) => {
        (SELECT nm.date_created FROM negotiation_messages nm
          WHERE nm.negotiation_id = n.id ORDER BY nm.date_created DESC LIMIT 1)
                                                                           AS last_message_at,
+       (SELECT COUNT(*) FROM negotiation_messages nm
+         WHERE nm.negotiation_id = n.id
+           AND nm.sender_user_id != ?1
+           AND nm.date_created >
+             COALESCE(
+               CASE
+                 WHEN ?1 = n.lister_user_id THEN n.lister_last_read_at
+                 ELSE n.requester_last_read_at
+               END,
+               0
+             ))                                                           AS unread_count,
        (SELECT c.status FROM contracts c
          WHERE c.negotiation_id = n.id AND c.status != 'cancelled'
          ORDER BY c.date_created DESC LIMIT 1)                            AS active_contract_status,
@@ -74,6 +85,43 @@ negotiationRoutes.get("/", async (c) => {
     .bind(userId)
     .all();
   return c.json({ items: rows.results });
+});
+
+// Persistent unread totals for navigation badges. WebSocket fanout is only
+// realtime convenience; these D1 cursors remain authoritative across devices
+// and disconnected sessions.
+negotiationRoutes.get("/unread-count", async (c) => {
+  const userId = c.get("userId")!;
+  const row = await c.env.DB.prepare(
+    `WITH mine AS (
+       SELECT
+         id,
+         CASE
+           WHEN lister_user_id = ?1 THEN lister_last_read_at
+           ELSE requester_last_read_at
+         END AS last_read_at
+       FROM negotiations
+       WHERE is_deleted = 0
+         AND (lister_user_id = ?1 OR requester_user_id = ?1)
+     ),
+     unread AS (
+       SELECT negotiation_messages.negotiation_id
+       FROM negotiation_messages
+       JOIN mine ON mine.id = negotiation_messages.negotiation_id
+       WHERE negotiation_messages.sender_user_id != ?1
+         AND negotiation_messages.date_created > COALESCE(mine.last_read_at, 0)
+     )
+     SELECT
+       COUNT(*) AS messages,
+       COUNT(DISTINCT negotiation_id) AS threads
+     FROM unread`
+  )
+    .bind(userId)
+    .first<{ messages: number; threads: number }>();
+  return c.json({
+    messages: row?.messages ?? 0,
+    threads: row?.threads ?? 0,
+  });
 });
 
 // User-facing PATCH — currently only archive / unarchive their own row.
@@ -139,6 +187,7 @@ negotiationRoutes.post("/", async (c) => {
     .limit(1);
 
   let negotiationId: string;
+  const now = Date.now();
   if (existing[0]) {
     negotiationId = existing[0].id;
   } else {
@@ -148,6 +197,7 @@ negotiationRoutes.post("/", async (c) => {
       listingId: listing.id,
       listerUserId: listing.userId,
       requesterUserId: userId,
+      requesterLastReadAt: now,
       offering: parsed.data.offering,
     });
   }
@@ -157,6 +207,10 @@ negotiationRoutes.post("/", async (c) => {
     senderUserId: userId,
     body: parsed.data.openingMessage,
   });
+  await db
+    .update(negotiations)
+    .set({ requesterLastReadAt: now, dateModified: now })
+    .where(eq(negotiations.id, negotiationId));
 
   return c.json({ id: negotiationId });
 });
@@ -166,6 +220,7 @@ negotiationRoutes.get("/:id", async (c) => {
   const userId = c.get("userId")!;
   const id = c.req.param("id");
   const db = getDb(c.env.DB);
+  const readAt = Date.now();
   const row = await db
     .select()
     .from(negotiations)
@@ -177,14 +232,25 @@ negotiationRoutes.get("/:id", async (c) => {
   if (n.listerUserId !== userId && n.requesterUserId !== userId)
     return c.json({ error: "forbidden" }, 403);
 
-  const msgs = await db
-    .select()
-    .from(negotiationMessages)
-    .where(eq(negotiationMessages.negotiationId, id));
-  const cs = await db
-    .select()
-    .from(contracts)
-    .where(eq(contracts.negotiationId, id));
+  const [msgs, cs] = await Promise.all([
+    db
+      .select()
+      .from(negotiationMessages)
+      .where(eq(negotiationMessages.negotiationId, id))
+      .orderBy(negotiationMessages.dateCreated),
+    db
+      .select()
+      .from(contracts)
+      .where(eq(contracts.negotiationId, id)),
+    db
+      .update(negotiations)
+      .set(
+        n.listerUserId === userId
+          ? { listerLastReadAt: readAt }
+          : { requesterLastReadAt: readAt }
+      )
+      .where(eq(negotiations.id, id)),
+  ]);
   return c.json({ negotiation: n, messages: msgs, contracts: cs });
 });
 
@@ -208,12 +274,21 @@ negotiationRoutes.post("/:id/messages", async (c) => {
     return c.json({ error: "forbidden" }, 403);
 
   const msgId = uuidv4();
+  const now = Date.now();
   await db.insert(negotiationMessages).values({
     id: msgId,
     negotiationId: id,
     senderUserId: userId,
     body: parsed.data.body,
   });
+  await db
+    .update(negotiations)
+    .set(
+      n.listerUserId === userId
+        ? { listerLastReadAt: now, dateModified: now }
+        : { requesterLastReadAt: now, dateModified: now }
+    )
+    .where(eq(negotiations.id, id));
 
   // Fan out to Durable Object subscribers if any are listening.
   try {
@@ -226,7 +301,7 @@ negotiationRoutes.post("/:id/messages", async (c) => {
           id: msgId,
           senderUserId: userId,
           body: parsed.data.body,
-          at: Date.now(),
+          at: now,
         }),
       })
     );

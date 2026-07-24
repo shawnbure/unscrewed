@@ -25,10 +25,41 @@ export default function App() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [philOpen, setPhilOpen] = useState(false);
+  const [unreadTrades, setUnreadTrades] = useState(0);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (!session?.authenticated) {
+      setUnreadTrades(0);
+      return;
+    }
+    let active = true;
+    const loadUnread = () => {
+      api<{ messages: number }>("/negotiations/unread-count")
+        .then((result) => {
+          if (active) setUnreadTrades(result.messages);
+        })
+        .catch(() => {});
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") loadUnread();
+    };
+    loadUnread();
+    const timer = window.setInterval(loadUnread, 60_000);
+    window.addEventListener("focus", loadUnread);
+    window.addEventListener("unscrewed:unread-changed", loadUnread);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", loadUnread);
+      window.removeEventListener("unscrewed:unread-changed", loadUnread);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [session?.authenticated]);
 
   async function signOut() {
     try {
@@ -97,6 +128,7 @@ export default function App() {
                   }
                 >
                   <InboxIcon className="h-4 w-4" strokeWidth={2} /> My trades
+                  {unreadTrades > 0 && <UnreadBadge count={unreadTrades} />}
                 </NavLink>
               )}
               {session?.authenticated && session.isAdmin && (
@@ -188,6 +220,7 @@ export default function App() {
                 {session?.authenticated && (
                   <MobileLink to="/trades" onClick={() => setMobileOpen(false)}>
                     <InboxIcon className="h-4 w-4" strokeWidth={2} /> My trades
+                    {unreadTrades > 0 && <UnreadBadge count={unreadTrades} />}
                   </MobileLink>
                 )}
                 {session?.authenticated && (
@@ -260,6 +293,17 @@ export default function App() {
       <AttributionTracker />
       <Analytics />
     </div>
+  );
+}
+
+function UnreadBadge({ count }: { count: number }) {
+  return (
+    <span
+      className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"
+      aria-label={`${count} unread trade message${count === 1 ? "" : "s"}`}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
   );
 }
 

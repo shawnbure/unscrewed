@@ -34,6 +34,7 @@ interface NegoRow {
   other_name: string;
   firstPhotoKey: string | null;
   message_count: number;
+  unread_count: number;
   last_message_body: string | null;
   last_message_at: number | null;
   active_contract_status:
@@ -235,7 +236,11 @@ function NegoCard({
   const cat = CATEGORIES.find((c) => c.slug === n.listing_category);
   const youAreLister = me?.id === n.lister_user_id;
   return (
-    <li className="card flex gap-3 p-3">
+    <li
+      className={`card flex gap-3 p-3 ${
+        n.unread_count > 0 ? "ring-2 ring-brand-200" : ""
+      }`}
+    >
       <Link
         to={`/listing/${n.listing_id}`}
         className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl ${cat?.tint ?? "bg-surface-100"}`}
@@ -257,9 +262,14 @@ function NegoCard({
           <div className="min-w-0">
             <Link
               to={`/n/${n.id}`}
-              className="line-clamp-1 font-semibold text-ink-900 hover:text-ink-700"
+              className="flex items-center gap-2 font-semibold text-ink-900 hover:text-ink-700"
             >
-              {n.listing_title}
+              <span className="line-clamp-1">{n.listing_title}</span>
+              {n.unread_count > 0 && (
+                <span className="shrink-0 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                  {n.unread_count} new
+                </span>
+              )}
             </Link>
             <p className="text-xs text-ink-500">
               With <span className="font-medium text-ink-700">{n.other_name}</span>
