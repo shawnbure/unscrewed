@@ -4,6 +4,7 @@ import { getDb, growthVisits } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 import { uuidv4 } from "../lib/crypto.js";
 import { rateLimit } from "../lib/rateLimit.js";
+import { requireAuth } from "../middleware/auth.js";
 
 export const growthRoutes = new Hono<AppContext>();
 
@@ -16,15 +17,22 @@ const FIRST_SPRINT_TARGETS = {
   completedTrades: 1,
 } as const;
 
-growthRoutes.get("/umass-progress", async (c) => {
+function umassBounds() {
   const latitudeDelta = UMASS_RADIUS_KM / 111.32;
   const longitudeScale = Math.max(
     Math.cos((UMASS_CENTER.lat * Math.PI) / 180),
     0.1
   );
-  const longitudeDelta =
-    UMASS_RADIUS_KM / (111.32 * longitudeScale);
+  const longitudeDelta = UMASS_RADIUS_KM / (111.32 * longitudeScale);
+  return [
+    Math.max(-90, UMASS_CENTER.lat - latitudeDelta),
+    Math.min(90, UMASS_CENTER.lat + latitudeDelta),
+    Math.max(-180, UMASS_CENTER.lng - longitudeDelta),
+    Math.min(180, UMASS_CENTER.lng + longitudeDelta),
+  ] as const;
+}
 
+growthRoutes.get("/umass-progress", async (c) => {
   const row = await c.env.DB.prepare(
     `WITH local_listings AS (
        SELECT id, user_id, status
@@ -56,12 +64,7 @@ growthRoutes.get("/umass-progress", async (c) => {
          WHERE c.status = 'signed')
          AS completed_trades`
   )
-    .bind(
-      Math.max(-90, UMASS_CENTER.lat - latitudeDelta),
-      Math.min(90, UMASS_CENTER.lat + latitudeDelta),
-      Math.max(-180, UMASS_CENTER.lng - longitudeDelta),
-      Math.min(180, UMASS_CENTER.lng + longitudeDelta)
-    )
+    .bind(...umassBounds())
     .first<{
       founding_traders: number;
       active_listings: number;
@@ -81,6 +84,78 @@ growthRoutes.get("/umass-progress", async (c) => {
     },
     targets: FIRST_SPRINT_TARGETS,
     updatedAt: Date.now(),
+  });
+});
+
+growthRoutes.get("/umass-me", requireAuth, async (c) => {
+  const userId = c.get("userId")!;
+  const bounds = umassBounds();
+  const localListingsSql = `
+    SELECT id, user_id, title, wants, status, date_created
+      FROM listings
+     WHERE is_deleted = 0
+       AND is_archived = 0
+       AND ROUND(lat, 1) BETWEEN ?1 AND ?2
+       AND ROUND(lng, 1) BETWEEN ?3 AND ?4`;
+
+  const [summary, listingRows] = await Promise.all([
+    c.env.DB.prepare(
+      `WITH local_listings AS (${localListingsSql}),
+       mine AS (
+         SELECT * FROM local_listings WHERE user_id = ?5
+       ),
+       my_conversations AS (
+         SELECT n.id
+           FROM negotiations n
+           JOIN local_listings l ON l.id = n.listing_id
+           JOIN negotiation_messages m ON m.negotiation_id = n.id
+          WHERE n.is_deleted = 0
+            AND (n.lister_user_id = ?5 OR n.requester_user_id = ?5)
+          GROUP BY n.id
+         HAVING COUNT(DISTINCT m.sender_user_id) >= 2
+       )
+       SELECT
+         (SELECT COUNT(*) FROM mine) AS posted_listings,
+         (SELECT COUNT(*) FROM mine WHERE status = 'active')
+           AS active_listings,
+         (SELECT COUNT(*) FROM my_conversations)
+           AS two_sided_conversations,
+         (SELECT COUNT(*)
+            FROM contracts c
+            JOIN local_listings l ON l.id = c.listing_id
+           WHERE c.status = 'signed'
+             AND (c.party_a_user_id = ?5 OR c.party_b_user_id = ?5))
+           AS completed_trades`
+    )
+      .bind(...bounds, userId)
+      .first<{
+        posted_listings: number;
+        active_listings: number;
+        two_sided_conversations: number;
+        completed_trades: number;
+      }>(),
+    c.env.DB.prepare(
+      `WITH local_listings AS (${localListingsSql})
+       SELECT id, title, wants
+         FROM local_listings
+        WHERE user_id = ?5
+          AND status = 'active'
+        ORDER BY date_created DESC
+        LIMIT 10`
+    )
+      .bind(...bounds, userId)
+      .all<{ id: string; title: string; wants: string }>(),
+  ]);
+
+  c.header("Cache-Control", "private, no-store");
+  return c.json({
+    current: {
+      postedListings: summary?.posted_listings ?? 0,
+      activeListings: summary?.active_listings ?? 0,
+      twoSidedConversations: summary?.two_sided_conversations ?? 0,
+      completedTrades: summary?.completed_trades ?? 0,
+    },
+    activeListings: listingRows.results,
   });
 });
 

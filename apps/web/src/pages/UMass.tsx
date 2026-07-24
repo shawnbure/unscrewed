@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   BookOpen,
+  CheckCircle2,
   Clock3,
   Handshake,
   PackageOpen,
@@ -19,6 +20,7 @@ import {
 } from "../lib/listingStarters.js";
 import { withNext } from "../lib/navigation.js";
 import { api } from "../lib/api.js";
+import { ShareListing } from "../ui/ShareListing.js";
 
 const PAGE_DESCRIPTION =
   "A free UMass Amherst-area barter pilot for dorm gear, textbooks, and skills. No listing fees or transaction fees.";
@@ -43,9 +45,25 @@ interface PilotProgress {
   updatedAt: number;
 }
 
+interface PersonalPilotProgress {
+  current: {
+    postedListings: number;
+    activeListings: number;
+    twoSidedConversations: number;
+    completedTrades: number;
+  };
+  activeListings: {
+    id: string;
+    title: string;
+    wants: string;
+  }[];
+}
+
 export default function UMassPage() {
   const { session } = useSession();
   const [progress, setProgress] = useState<PilotProgress | null>(null);
+  const [personalProgress, setPersonalProgress] =
+    useState<PersonalPilotProgress | null>(null);
   const postPath = session?.authenticated
     ? "/post"
     : withNext("/signup", "/post");
@@ -62,6 +80,16 @@ export default function UMassPage() {
         // is temporarily unavailable.
       });
   }, []);
+
+  useEffect(() => {
+    if (!session?.authenticated) {
+      setPersonalProgress(null);
+      return;
+    }
+    api<PersonalPilotProgress>("/growth/umass-me")
+      .then(setPersonalProgress)
+      .catch(() => setPersonalProgress(null));
+  }, [session?.authenticated]);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -232,6 +260,12 @@ export default function UMassPage() {
               body="Success means new members post listings—not merely that they click a link."
             />
           </div>
+          {session?.authenticated && (
+            <PersonalPilotChecklist
+              progress={personalProgress}
+              postPath={postPath}
+            />
+          )}
           <PilotScoreboard progress={progress} />
         </div>
       </Container>
@@ -268,6 +302,137 @@ export default function UMassPage() {
         </div>
       </Container>
     </div>
+  );
+}
+
+function PersonalPilotChecklist({
+  progress,
+  postPath,
+}: {
+  progress: PersonalPilotProgress | null;
+  postPath: string;
+}) {
+  if (!progress) {
+    return (
+      <div
+        className="mt-8 h-40 animate-pulse rounded-2xl bg-brand-50"
+        aria-label="Loading your founding-trader checklist"
+      />
+    );
+  }
+
+  const posted = Math.min(progress.current.postedListings, 2);
+  const hasConversation = progress.current.twoSidedConversations > 0;
+  const hasTrade = progress.current.completedTrades > 0;
+
+  return (
+    <div className="mt-10 rounded-2xl border border-brand-200 bg-brand-50 p-5 text-left sm:p-6">
+      <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+        Your founding-trader checklist
+      </p>
+      <h3 className="mt-1 text-xl font-semibold text-ink-900">
+        Turn your account into one useful local connection.
+      </h3>
+      <ol className="mt-5 space-y-4">
+        <ChecklistItem
+          complete={posted >= 2}
+          title={`Post two genuine local offers · ${posted}/2`}
+          body="A good plus a skill usually creates more possible matches than two similar items."
+        >
+          {posted < 2 && (
+            <Link to={postPath} className="btn-brand mt-3 inline-flex">
+              {posted === 0 ? "Post your first offer" : "Post a different second offer"}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
+        </ChecklistItem>
+        <ChecklistItem
+          complete={null}
+          title="Manual step: invite one plausible person per active listing"
+          body="This is a human step, so the checklist does not pretend a copied link was opened. Send each listing only to someone who may genuinely want it."
+        >
+          {progress.activeListings.length > 0 && (
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {progress.activeListings.slice(0, 4).map((listing) => (
+                <div
+                  key={listing.id}
+                  className="rounded-xl border border-brand-200 bg-white p-3"
+                >
+                  <Link
+                    to={`/listing/${listing.id}`}
+                    className="line-clamp-1 text-sm font-semibold text-ink-900 hover:text-brand-700"
+                  >
+                    {listing.title}
+                  </Link>
+                  <ShareListing
+                    id={listing.id}
+                    title={listing.title}
+                    wants={listing.wants}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </ChecklistItem>
+        <ChecklistItem
+          complete={hasConversation}
+          title={`Have a two-sided conversation · ${progress.current.twoSidedConversations}`}
+          body="A proposal alone does not count. This completes only after both people have replied."
+        >
+          {!hasConversation && (
+            <Link
+              to="/trades"
+              className="mt-2 inline-flex text-sm font-semibold text-brand-700 hover:underline"
+            >
+              Check My trades
+            </Link>
+          )}
+        </ChecklistItem>
+        <ChecklistItem
+          complete={hasTrade}
+          title={`Complete a fair trade · ${progress.current.completedTrades}`}
+          body="Only a contract signed by both people counts. Never complete a bad match for the metric."
+        />
+      </ol>
+    </div>
+  );
+}
+
+function ChecklistItem({
+  complete,
+  title,
+  body,
+  children,
+}: {
+  complete: boolean | null;
+  title: string;
+  body: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-start gap-3">
+      <span
+        className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full ${
+          complete === true
+            ? "bg-brand-600 text-white"
+            : complete === null
+              ? "bg-accent-lemon text-ink-700"
+            : "border-2 border-brand-300 bg-white text-transparent"
+        }`}
+        aria-hidden="true"
+      >
+        {complete === null ? (
+          <ArrowRight className="h-4 w-4" />
+        ) : (
+          <CheckCircle2 className="h-4 w-4" />
+        )}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-ink-900">{title}</p>
+        <p className="mt-0.5 text-xs leading-relaxed text-ink-500">{body}</p>
+        {children}
+      </div>
+    </li>
   );
 }
 
