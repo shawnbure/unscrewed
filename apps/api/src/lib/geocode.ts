@@ -9,7 +9,7 @@
 
 import type { Env } from "../env.js";
 
-const UA = "unscrewed.lol/1.0 (https://unscrewed.lol; help@unscrewed.lol)";
+const UA = "unscrewed.lol/1.0 (https://unscrewed.lol; smb@workrr.ai)";
 
 export interface GeoPoint {
   lat: number;

@@ -282,9 +282,6 @@ export default function App() {
             </Link>
             <Link to="/safety" className="hover:text-ink-900">Safety</Link>
             <Link to="/tos" className="hover:text-ink-900">Terms</Link>
-            <a href="mailto:help@unscrewed.lol" className="hover:text-ink-900">
-              Contact
-            </a>
             <span className="text-ink-300">© {new Date().getFullYear()}</span>
           </div>
         </Container>

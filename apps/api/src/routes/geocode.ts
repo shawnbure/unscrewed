@@ -22,7 +22,7 @@ import { rateLimit } from "../lib/rateLimit.js";
 export const geocodeRoutes = new Hono<AppContext>();
 
 const UA =
-  "unscrewed.lol/1.0 (https://unscrewed.lol; help@unscrewed.lol)";
+  "unscrewed.lol/1.0 (https://unscrewed.lol; smb@workrr.ai)";
 
 geocodeRoutes.get("/search", async (c) => {
   const url = new URL(c.req.url);
