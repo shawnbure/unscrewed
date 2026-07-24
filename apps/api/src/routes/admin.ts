@@ -25,6 +25,39 @@ adminRoutes.use("*", requireAdmin);
 // ============================================================
 adminRoutes.get("/stats", async (c) => {
   const db = c.env.DB;
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  const activeTraders = (cutoff: number) =>
+    db
+      .prepare(
+        `WITH active_ids AS (
+           SELECT lister_user_id AS user_id
+             FROM negotiations
+            WHERE is_deleted = 0 AND (date_created >= ?1 OR date_modified >= ?1)
+           UNION
+           SELECT requester_user_id AS user_id
+             FROM negotiations
+            WHERE is_deleted = 0 AND (date_created >= ?1 OR date_modified >= ?1)
+           UNION
+           SELECT sender_user_id AS user_id
+             FROM negotiation_messages
+            WHERE date_created >= ?1
+           UNION
+           SELECT party_a_user_id AS user_id
+             FROM contracts
+            WHERE status = 'signed' AND date_modified >= ?1
+           UNION
+           SELECT party_b_user_id AS user_id
+             FROM contracts
+            WHERE status = 'signed' AND date_modified >= ?1
+         )
+         SELECT COUNT(DISTINCT active_ids.user_id) AS n
+           FROM active_ids
+           JOIN users ON users.id = active_ids.user_id
+          WHERE users.is_deleted = 0 AND users.is_archived = 0`
+      )
+      .bind(cutoff)
+      .first<{ n: number }>();
   const [
     totalUsers,
     activeUsers,
@@ -37,6 +70,11 @@ adminRoutes.get("/stats", async (c) => {
     totalNegotiations,
     recentSignups,
     growthFunnel,
+    completedTrades,
+    listingLiquidity,
+    activeTraders7,
+    activeTraders30,
+    firstTradeDurations,
   ] = await Promise.all([
     db.prepare("SELECT COUNT(*) AS n FROM users").first<{ n: number }>(),
     db
@@ -78,9 +116,87 @@ adminRoutes.get("/stats", async (c) => {
          ORDER BY visitors DESC
          LIMIT 10`
       )
-      .bind(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .bind(now - 30 * day)
       .all(),
+    db
+      .prepare(
+        `SELECT
+           COALESCE(SUM(CASE WHEN date_modified >= ?1 THEN 1 ELSE 0 END), 0) AS last_7_days,
+           COALESCE(SUM(CASE WHEN date_modified >= ?2 AND date_modified < ?1 THEN 1 ELSE 0 END), 0) AS previous_7_days,
+           COALESCE(SUM(CASE WHEN date_modified >= ?3 THEN 1 ELSE 0 END), 0) AS last_30_days,
+           COUNT(*) AS all_time
+         FROM contracts
+         WHERE status = 'signed'`
+      )
+      .bind(now - 7 * day, now - 14 * day, now - 30 * day)
+      .first<{
+        last_7_days: number;
+        previous_7_days: number;
+        last_30_days: number;
+        all_time: number;
+      }>(),
+    db
+      .prepare(
+        `WITH eligible AS (
+           SELECT id, date_created
+             FROM listings
+            WHERE is_deleted = 0
+              AND date_created >= ?1
+              AND date_created <= ?2
+         ),
+         responded AS (
+           SELECT DISTINCT eligible.id
+             FROM eligible
+             JOIN negotiations ON negotiations.listing_id = eligible.id
+            WHERE negotiations.is_deleted = 0
+              AND negotiations.date_created >= eligible.date_created
+              AND negotiations.date_created <= eligible.date_created + ?3
+         )
+         SELECT
+           (SELECT COUNT(*) FROM eligible) AS eligible_listings,
+           (SELECT COUNT(*) FROM responded) AS listings_with_negotiation`
+      )
+      .bind(now - 30 * day, now - 72 * 60 * 60 * 1000, 72 * 60 * 60 * 1000)
+      .first<{
+        eligible_listings: number;
+        listings_with_negotiation: number;
+      }>(),
+    activeTraders(now - 7 * day),
+    activeTraders(now - 30 * day),
+    db
+      .prepare(
+        `WITH first_trade AS (
+           SELECT
+             users.id,
+             MIN(contracts.date_modified) - users.date_created AS elapsed_ms
+           FROM users
+           JOIN contracts
+             ON (contracts.party_a_user_id = users.id OR contracts.party_b_user_id = users.id)
+            AND contracts.status = 'signed'
+           WHERE users.is_deleted = 0 AND users.is_archived = 0
+           GROUP BY users.id
+         )
+         SELECT elapsed_ms
+           FROM first_trade
+          WHERE elapsed_ms >= 0
+          ORDER BY elapsed_ms`
+      )
+      .all<{ elapsed_ms: number }>(),
   ]);
+  const tradeDurations = firstTradeDurations.results.map((row) => row.elapsed_ms);
+  const midpoint = Math.floor(tradeDurations.length / 2);
+  const medianFirstTradeMs =
+    tradeDurations.length === 0
+      ? null
+      : tradeDurations.length % 2 === 1
+        ? tradeDurations[midpoint]!
+        : (tradeDurations[midpoint - 1]! + tradeDurations[midpoint]!) / 2;
+  const eligibleListings = listingLiquidity?.eligible_listings ?? 0;
+  const listingsWithNegotiation =
+    listingLiquidity?.listings_with_negotiation ?? 0;
+  const active30 = activeTraders30?.n ?? 0;
+  const completed30 = completedTrades?.last_30_days ?? 0;
+
   return c.json({
     users: {
       total: totalUsers?.n ?? 0,
@@ -99,6 +215,37 @@ adminRoutes.get("/stats", async (c) => {
     growth: {
       windowDays: 30,
       campaigns: growthFunnel.results,
+    },
+    marketplace: {
+      completedTrades: {
+        last7Days: completedTrades?.last_7_days ?? 0,
+        previous7Days: completedTrades?.previous_7_days ?? 0,
+        last30Days: completed30,
+        allTime: completedTrades?.all_time ?? 0,
+      },
+      liquidity: {
+        windowDays: 30,
+        observationHours: 72,
+        eligibleListings,
+        listingsWithNegotiation,
+        rate:
+          eligibleListings === 0
+            ? null
+            : listingsWithNegotiation / eligibleListings,
+      },
+      activeTraders: {
+        last7Days: activeTraders7?.n ?? 0,
+        last30Days: active30,
+      },
+      timeToFirstTrade: {
+        medianHours:
+          medianFirstTradeMs === null
+            ? null
+            : medianFirstTradeMs / (60 * 60 * 1000),
+        membersWithCompletedTrade: tradeDurations.length,
+      },
+      tradesPerActiveTrader30Days:
+        active30 === 0 ? null : completed30 / active30,
     },
   });
 });
