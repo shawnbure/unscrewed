@@ -21,6 +21,7 @@ import BlogEdit from "./pages/admin/BlogEdit.js";
 import AdminReports from "./pages/admin/Reports.js";
 import Tos from "./pages/Tos.js";
 import UMassPage from "./pages/UMass.js";
+import SafetyPage from "./pages/Safety.js";
 import { AdminLayout } from "./pages/admin/AdminLayout.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
 import AdminUsers from "./pages/admin/Users.js";
@@ -48,6 +49,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="blog" element={<BlogPage />} />
           <Route path="blog/:slug" element={<BlogPostPage />} />
           <Route path="tos" element={<Tos />} />
+          <Route path="safety" element={<SafetyPage />} />
           <Route path="umass" element={<UMassPage />} />
           <Route
             path="admin"

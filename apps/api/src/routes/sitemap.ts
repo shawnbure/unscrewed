@@ -24,6 +24,7 @@ const STATIC_PAGES: Array<{ path: string; changefreq: string; priority: string }
   { path: "/thoughts", changefreq: "weekly", priority: "0.7" },
   { path: "/community", changefreq: "weekly", priority: "0.6" },
   { path: "/umass", changefreq: "monthly", priority: "0.7" },
+  { path: "/safety", changefreq: "monthly", priority: "0.7" },
   { path: "/signup", changefreq: "monthly", priority: "0.5" },
   { path: "/login", changefreq: "monthly", priority: "0.4" },
   { path: "/tos", changefreq: "monthly", priority: "0.3" },

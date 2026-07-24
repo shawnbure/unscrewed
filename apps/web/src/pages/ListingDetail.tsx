@@ -18,16 +18,11 @@ interface ListingFull {
   kind: "good" | "service";
   category: string;
   condition?: string | null;
-  postal_code?: string;
   postalCode?: string;
-  user_id?: string;
-  userId?: string;
-  date_created?: number;
   dateCreated?: number;
+  isOwner?: boolean;
 }
 interface Photo {
-  id: string;
-  r2_key?: string;
   r2Key?: string;
 }
 
@@ -58,7 +53,7 @@ export default function ListingDetail() {
 
   const { listing: l, photos } = data;
   const cat = CATEGORIES.find((c) => c.slug === l.category);
-  const photoKeys = photos.map((p) => p.r2_key ?? p.r2Key!).filter(Boolean);
+  const photoKeys = photos.map((p) => p.r2Key!).filter(Boolean);
   const current = photoKeys[idx];
 
   return (
@@ -150,9 +145,9 @@ export default function ListingDetail() {
             </h1>
             <p className="mt-1 inline-flex items-center gap-1 text-sm text-ink-500">
               <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
-              {l.postalCode ?? l.postal_code ?? "—"}
-              {l.dateCreated || l.date_created
-                ? ` · posted ${formatRelative(l.dateCreated ?? l.date_created!)}`
+              {l.postalCode ?? "—"}
+              {l.dateCreated
+                ? ` · posted ${formatRelative(l.dateCreated)}`
                 : ""}
             </p>
 
@@ -164,10 +159,9 @@ export default function ListingDetail() {
             </div>
 
             {(() => {
-              const ownerId = (l as any).user_id ?? (l as any).userId;
               const canEdit =
                 session?.authenticated &&
-                (session.userId === ownerId || session.isAdmin);
+                (l.isOwner === true || session.isAdmin);
               if (canEdit) {
                 return (
                   <>
@@ -239,6 +233,12 @@ export default function ListingDetail() {
                 .
               </SafetyLi>
             </ul>
+            <Link
+              to="/safety"
+              className="mt-3 inline-flex text-xs font-semibold text-brand-700 hover:underline"
+            >
+              Read the safety guide
+            </Link>
           </div>
         </aside>
       </div>

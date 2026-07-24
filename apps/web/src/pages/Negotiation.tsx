@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { api } from "../lib/api.js";
+import { ReportButton } from "../ui/ReportButton.js";
 
 interface Message {
   id: string;
@@ -121,6 +122,8 @@ export default function NegotiationPage() {
     );
 
   const { negotiation: n, messages } = data;
+  const otherUserId =
+    me?.id === n.listerUserId ? n.requesterUserId : n.listerUserId;
   // The "active" contract is the most recent non-cancelled one.
   const active =
     [...data.contracts]
@@ -252,6 +255,21 @@ export default function NegotiationPage() {
                 </li>
               ))}
             </ul>
+            <div className="mt-3 flex items-center justify-between border-t border-surface-200 pt-3">
+              <Link
+                to="/safety"
+                className="text-xs font-semibold text-brand-700 hover:underline"
+              >
+                Full safety guide
+              </Link>
+              {me && (
+                <ReportButton
+                  targetType="user"
+                  targetId={otherUserId}
+                  variant="link"
+                />
+              )}
+            </div>
           </div>
         </aside>
       </div>

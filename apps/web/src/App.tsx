@@ -177,6 +177,9 @@ export default function App() {
                 <MobileLink to="/thoughts" onClick={() => setMobileOpen(false)}>
                   Thoughts <span aria-hidden>:)</span>
                 </MobileLink>
+                <MobileLink to="/safety" onClick={() => setMobileOpen(false)}>
+                  <ShieldCheck className="h-4 w-4" strokeWidth={2} /> Safety
+                </MobileLink>
                 {session?.authenticated && (
                   <MobileLink to="/post" onClick={() => setMobileOpen(false)}>
                     <Plus className="h-4 w-4" strokeWidth={2.5} /> Post a trade
@@ -244,6 +247,7 @@ export default function App() {
             <Link to="/thoughts" className="hover:text-ink-900">
               Making money :)
             </Link>
+            <Link to="/safety" className="hover:text-ink-900">Safety</Link>
             <Link to="/tos" className="hover:text-ink-900">Terms</Link>
             <a href="mailto:help@unscrewed.lol" className="hover:text-ink-900">
               Contact

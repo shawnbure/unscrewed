@@ -23,23 +23,17 @@ const CONDITIONS = [
 
 interface ListingDetail {
   id: string;
-  user_id?: string;
-  userId?: string;
+  isOwner?: boolean;
   kind: "good" | "service";
   title: string;
   description: string;
   category: string;
   condition: string | null;
   wants: string;
-  postal_code?: string;
   postalCode?: string;
-  lat: number;
-  lng: number;
   status: string;
 }
 interface PhotoRow {
-  id: string;
-  r2_key?: string;
   r2Key?: string;
 }
 
@@ -60,8 +54,6 @@ export default function EditListing() {
   const [address, setAddress] = useState<AddressValue | null>(null);
   const [originalAddress, setOriginalAddress] = useState<{
     postalCode: string;
-    lat: number;
-    lng: number;
   } | null>(null);
   const [photoKeys, setPhotoKeys] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -72,10 +64,9 @@ export default function EditListing() {
       .then((r) => {
         const l = r.listing;
         // Ownership check — belt & suspenders; backend enforces too.
-        const ownerId = l.user_id ?? l.userId;
         if (
           session?.authenticated &&
-          ownerId !== session.userId &&
+          l.isOwner !== true &&
           !session.isAdmin
         ) {
           setError("You don't own this listing.");
@@ -89,11 +80,9 @@ export default function EditListing() {
         setCondition(l.condition ?? "good");
         setWants(l.wants);
         setStatus((l.status as "active" | "withdrawn") ?? "active");
-        setPhotoKeys(r.photos.map((p) => p.r2_key ?? p.r2Key!).filter(Boolean));
+        setPhotoKeys(r.photos.map((p) => p.r2Key!).filter(Boolean));
         setOriginalAddress({
-          postalCode: l.postal_code ?? l.postalCode ?? "",
-          lat: l.lat,
-          lng: l.lng,
+          postalCode: l.postalCode ?? "",
         });
         setLoaded(true);
       })

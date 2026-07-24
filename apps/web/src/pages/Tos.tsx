@@ -142,7 +142,7 @@ export default function Tos() {
             without regard to conflict-of-law principles.
           </p>
 
-          <h2>9. Prohibited content and conduct</h2>
+          <h2 id="prohibited">9. Prohibited content and conduct</h2>
           <p>
             You may not post, upload, list, offer, request, describe, transmit,
             store, or link to any of the following through the Service. This is
@@ -238,7 +238,7 @@ export default function Tos() {
             .
           </p>
 
-          <h2>10. Age of eligibility</h2>
+          <h2 id="age">10. Age of eligibility</h2>
           <p>
             The Service is intended for adults. By creating an account you
             represent and warrant that you are at least <strong>18 years of

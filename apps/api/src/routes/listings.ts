@@ -15,6 +15,48 @@ import { uuidv4 } from "../lib/crypto.js";
 
 export const listingsRoutes = new Hono<AppContext>();
 
+/**
+ * Public listing responses never expose the coordinate a member selected.
+ *
+ * A five-character geohash cell is roughly neighborhood scale (about 5 km
+ * wide at mid-latitudes). Returning its center keeps the browse map useful
+ * without turning a listing into a pin on someone's home or dorm.
+ */
+export function publicListing(
+  row: Record<string, any>,
+  options: { isOwner?: boolean } = {}
+) {
+  const geohash = String(row.geohash ?? "");
+  const fallbackLat = Number(row.lat ?? 0);
+  const fallbackLng = Number(row.lng ?? 0);
+  const cell =
+    geohash.length >= 5
+      ? ngeohash.decode(geohash.slice(0, 5))
+      : {
+          latitude: Math.round(fallbackLat * 100) / 100,
+          longitude: Math.round(fallbackLng * 100) / 100,
+        };
+
+  return {
+    id: row.id,
+    kind: row.kind,
+    title: row.title,
+    description: row.description,
+    category: row.category,
+    condition: row.condition ?? null,
+    wants: row.wants,
+    postalCode: row.postalCode ?? row.postal_code,
+    countryCode: row.countryCode ?? row.country_code,
+    lat: cell.latitude,
+    lng: cell.longitude,
+    status: row.status,
+    dateCreated: row.dateCreated ?? row.date_created,
+    dateModified: row.dateModified ?? row.date_modified,
+    firstPhotoKey: row.firstPhotoKey ?? row.first_photo_key,
+    ...(options.isOwner === undefined ? {} : { isOwner: options.isOwner }),
+  };
+}
+
 // ---------------- search (public) ----------------
 listingsRoutes.get("/", optionalAuth, async (c) => {
   const raw: Record<string, unknown> = {};
@@ -49,7 +91,11 @@ listingsRoutes.get("/", optionalAuth, async (c) => {
     )
       .bind(term, q.limit)
       .all();
-    return c.json({ items: rows.results });
+    return c.json({
+      items: (rows.results as Record<string, any>[]).map((row) =>
+        publicListing(row)
+      ),
+    });
   }
 
   // Build the equivalent of drizzle's filter via raw SQL so we can add the
@@ -70,9 +116,11 @@ listingsRoutes.get("/", optionalAuth, async (c) => {
     q.east !== undefined &&
     q.west !== undefined
   ) {
-    where.push("l.lat BETWEEN ? AND ?");
+    // Quantize before filtering so repeated public viewport queries cannot be
+    // used as an oracle to reconstruct the stored exact coordinate.
+    where.push("ROUND(l.lat, 1) BETWEEN ? AND ?");
     binds.push(q.south, q.north);
-    where.push("l.lng BETWEEN ? AND ?");
+    where.push("ROUND(l.lng, 1) BETWEEN ? AND ?");
     binds.push(q.west, q.east);
   } else if (q.lat !== undefined && q.lng !== undefined) {
     const precision = q.radiusKm && q.radiusKm > 50 ? 3 : 4;
@@ -90,12 +138,18 @@ listingsRoutes.get("/", optionalAuth, async (c) => {
   )
     .bind(...binds)
     .all();
-  return c.json({ items: rows.results });
+  return c.json({
+    items: (rows.results as Record<string, any>[]).map((row) =>
+      publicListing(row)
+    ),
+  });
 });
 
 // ---------------- get single (public) ----------------
-listingsRoutes.get("/:id", async (c) => {
+listingsRoutes.get("/:id", optionalAuth, async (c) => {
   const id = c.req.param("id");
+  const viewerId = c.get("userId");
+  const isAdmin = c.get("isAdmin") === true;
   const db = getDb(c.env.DB);
   const row = await db
     .select()
@@ -107,10 +161,18 @@ listingsRoutes.get("/:id", async (c) => {
   if (!listing || listing.isDeleted === 1 || listing.isArchived === 1)
     return c.json({ error: "not_found" }, 404);
   const photos = await db
-    .select()
+    .select({
+      r2Key: listingPhotos.r2Key,
+      sortOrder: listingPhotos.sortOrder,
+    })
     .from(listingPhotos)
     .where(eq(listingPhotos.listingId, id));
-  return c.json({ listing, photos });
+  return c.json({
+    listing: publicListing(listing, {
+      isOwner: isAdmin || viewerId === listing.userId,
+    }),
+    photos,
+  });
 });
 
 // ---------------- create ----------------
