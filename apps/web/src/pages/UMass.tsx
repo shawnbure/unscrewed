@@ -11,6 +11,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Container } from "../ui/Container.js";
+import { InviteNeighbors } from "../ui/InviteNeighbors.js";
 import { useSession } from "../lib/session.js";
 import { withNext } from "../lib/navigation.js";
 
@@ -191,6 +192,10 @@ export default function UMassPage() {
             />
           </div>
         </div>
+      </Container>
+
+      <Container size="xl" className="mt-16">
+        <InviteNeighbors audience="umass" />
       </Container>
 
       <Container size="lg" className="mt-16">
