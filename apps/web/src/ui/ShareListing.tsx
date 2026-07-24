@@ -5,9 +5,15 @@ interface ShareListingProps {
   id: string;
   title: string;
   wants: string;
+  variant?: "default" | "success";
 }
 
-export function ShareListing({ id, title, wants }: ShareListingProps) {
+export function ShareListing({
+  id,
+  title,
+  wants,
+  variant = "default",
+}: ShareListingProps) {
   const [copied, setCopied] = useState(false);
   const resetTimer = useRef<number | null>(null);
   const shareUrl = `${window.location.origin}/listing/${encodeURIComponent(id)}?utm_source=listing_share&utm_medium=share&utm_campaign=share_a_trade`;
@@ -51,21 +57,37 @@ export function ShareListing({ id, title, wants }: ShareListingProps) {
   }
 
   return (
-    <div className="mt-5 border-t border-surface-200 pt-4">
-      <p className="text-center text-xs text-ink-500">
-        Help this trade find the right nearby person.
-      </p>
+    <div
+      className={
+        variant === "default"
+          ? "mt-5 border-t border-surface-200 pt-4"
+          : "mt-4"
+      }
+    >
+      {variant === "default" && (
+        <p className="text-center text-xs text-ink-500">
+          Help this trade find the right nearby person.
+        </p>
+      )}
       <button
         type="button"
         onClick={shareListing}
-        className="btn-outline mt-2 flex w-full items-center justify-center gap-2"
+        className={
+          variant === "default"
+            ? "btn-outline mt-2 flex w-full items-center justify-center gap-2"
+            : "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-brand-900 transition-colors hover:bg-brand-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/30 sm:w-auto"
+        }
       >
         {copied ? (
           <Check className="h-4 w-4" strokeWidth={2.25} />
         ) : (
           <Share2 className="h-4 w-4" strokeWidth={2.25} />
         )}
-        {copied ? "Trade link copied" : "Share this trade"}
+        {copied
+          ? "Trade link copied"
+          : variant === "success"
+            ? "Invite a possible trade partner"
+            : "Share this trade"}
       </button>
       <p className="sr-only" aria-live="polite">
         {copied ? "Trade invitation copied to your clipboard." : ""}

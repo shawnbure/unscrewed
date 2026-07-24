@@ -1,6 +1,19 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, MapPin, Check, X, Pencil } from "lucide-react";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
+import {
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Check,
+  CheckCircle2,
+  X,
+  Pencil,
+} from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { CATEGORIES } from "../ui/CategoryTile.js";
 import { CategoryIcon } from "../ui/CategoryIcons.js";
@@ -30,6 +43,7 @@ interface Photo {
 export default function ListingDetail() {
   const { id } = useParams();
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const { session } = useSession();
   const [data, setData] = useState<{
     listing: ListingFull;
@@ -56,6 +70,7 @@ export default function ListingDetail() {
   const cat = CATEGORIES.find((c) => c.slug === l.category);
   const photoKeys = photos.map((p) => p.r2Key!).filter(Boolean);
   const current = photoKeys[idx];
+  const justPosted = searchParams.get("posted") === "1" && l.isOwner === true;
 
   return (
     <Container size="lg" className="py-6">
@@ -65,6 +80,41 @@ export default function ListingDetail() {
       >
         ← Back to browse
       </Link>
+
+      {justPosted && (
+        <section
+          className="mt-4 rounded-3xl bg-brand-800 p-6 text-white shadow-card sm:flex sm:items-center sm:justify-between sm:gap-8 sm:p-8"
+          aria-labelledby="listing-live-heading"
+        >
+          <div className="flex items-start gap-3">
+            <CheckCircle2
+              className="mt-0.5 h-6 w-6 shrink-0 text-brand-200"
+              strokeWidth={2}
+            />
+            <div>
+              <h2
+                id="listing-live-heading"
+                className="text-xl font-bold text-white"
+              >
+                Your trade is live.
+              </h2>
+              <p className="mt-1 max-w-xl text-sm leading-relaxed text-white/70">
+                The fastest path to a real proposal is one relevant nearby
+                person. Send them this listing directly—no mass posting or
+                referral contest needed.
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0 sm:text-right">
+            <ShareListing
+              id={l.id}
+              title={l.title}
+              wants={l.wants}
+              variant="success"
+            />
+          </div>
+        </section>
+      )}
 
       <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
         {/* Photo carousel */}
@@ -199,7 +249,9 @@ export default function ListingDetail() {
                 </>
               );
             })()}
-            <ShareListing id={l.id} title={l.title} wants={l.wants} />
+            {!justPosted && (
+              <ShareListing id={l.id} title={l.title} wants={l.wants} />
+            )}
           </div>
 
           <div className="card p-5">

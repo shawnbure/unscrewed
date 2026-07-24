@@ -89,7 +89,7 @@ export default function NewListing() {
           photoKeys,
         }),
       });
-      nav(`/listing/${r.id}`);
+      nav(`/listing/${r.id}?posted=1`);
     } catch (e: any) {
       const fieldErr = e?.body?.issues?.[0];
       setError(
