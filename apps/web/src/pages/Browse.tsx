@@ -28,6 +28,7 @@ export default function Browse() {
   const { session } = useSession();
   const cat = sp.get("cat") ?? "";
   const kind = sp.get("kind") ?? "";
+  const exchangeMode = sp.get("exchange") ?? "";
   const q = sp.get("q") ?? "";
   const location = useMemo(() => readLocation(sp), [sp]);
   const [view, setView] = useState<View>("grid");
@@ -39,6 +40,7 @@ export default function Browse() {
     const u = new URLSearchParams();
     if (cat) u.set("category", cat);
     if (kind) u.set("kind", kind);
+    if (exchangeMode) u.set("exchangeMode", exchangeMode);
     if (q) u.set("q", q);
     if (location) {
       u.set("lat", String(location.lat));
@@ -47,7 +49,7 @@ export default function Browse() {
     }
     u.set("limit", "40");
     return `/listings?${u.toString()}`;
-  }, [cat, kind, q, location]);
+  }, [cat, kind, exchangeMode, q, location]);
 
   useEffect(() => {
     setLoading(true);
@@ -124,6 +126,24 @@ export default function Browse() {
             />
           </FilterGroup>
 
+          <FilterGroup title="How can we trade?">
+            <FilterChip
+              active={!exchangeMode}
+              onClick={() => setParam("exchange", null)}
+              label="All"
+            />
+            <FilterChip
+              active={exchangeMode === "local"}
+              onClick={() => setParam("exchange", "local")}
+              label="In person"
+            />
+            <FilterChip
+              active={exchangeMode === "remote"}
+              onClick={() => setParam("exchange", "remote")}
+              label="Remote"
+            />
+          </FilterGroup>
+
           <FilterGroup title="Categories">
             <ul className="space-y-1">
               <li>
@@ -168,6 +188,9 @@ export default function Browse() {
               {loading ? "Loading…" : `${items.length} trade${items.length === 1 ? "" : "s"}`}
               {cat ? ` · ${CATEGORIES.find((c) => c.slug === cat)?.label}` : ""}
               {kind ? ` · ${kind}` : ""}
+              {exchangeMode
+                ? ` · ${exchangeMode === "local" ? "in person" : "remote"}`
+                : ""}
               {q ? ` · "${q}"` : ""}
               {location ? ` · ${location.place}` : ""}
             </div>
@@ -393,6 +416,11 @@ function MapView({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
 
+  const mappableItems = useMemo(
+    () => items.filter((item) => item.exchangeMode !== "remote"),
+    [items]
+  );
+
   useEffect(() => {
     if (!mapEl.current) return;
     const map = new maplibregl.Map({
@@ -421,9 +449,9 @@ function MapView({
     const map = mapRef.current;
     if (!map) return;
     markersRef.current.forEach((m) => m.remove());
-    if (items.length === 0) return;
+    if (mappableItems.length === 0) return;
     const bounds = new maplibregl.LngLatBounds();
-    markersRef.current = items.map((l) => {
+    markersRef.current = mappableItems.map((l) => {
       bounds.extend([l.lng, l.lat]);
       return new maplibregl.Marker({ color: "#1f9d57" })
         .setLngLat([l.lng, l.lat])
@@ -436,13 +464,22 @@ function MapView({
     });
     if (!bounds.isEmpty())
       map.fitBounds(bounds, { padding: 60, maxZoom: 12, duration: 400 });
-  }, [items]);
+  }, [mappableItems]);
 
   return (
-    <div
-      ref={mapEl}
-      className="h-[70vh] w-full overflow-hidden rounded-2xl shadow-card"
-    />
+    <div className="space-y-3">
+      {items.length > mappableItems.length && (
+        <p className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-xs leading-relaxed text-brand-900">
+          {items.length - mappableItems.length} remote-only{" "}
+          {items.length - mappableItems.length === 1 ? "offer is" : "offers are"}{" "}
+          listed in the grid instead of being pinned to a misleading location.
+        </p>
+      )}
+      <div
+        ref={mapEl}
+        className="h-[70vh] w-full overflow-hidden rounded-2xl shadow-card"
+      />
+    </div>
   );
 }
 

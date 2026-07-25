@@ -1,7 +1,8 @@
 export function buildListingShareText(
   title: string,
   wants: string,
-  postalCode?: string | null
+  postalCode?: string | null,
+  exchangeMode: "local" | "remote" | "either" = "local"
 ): string {
   const compactWants = wants.replace(/\s+/g, " ").trim();
   const shortenedWants =
@@ -17,5 +18,11 @@ export function buildListingShareText(
     locationLabel && locationLabel.toUpperCase() !== "USA"
       ? ` near ${locationLabel}`
       : "";
-  return `${title} is up for barter${location}. Looking for: ${shortenedWants}. No listing or transaction fees.`;
+  const availability =
+    exchangeMode === "remote"
+      ? " and is available remotely across the United States"
+      : exchangeMode === "either"
+        ? `${location} and can also be exchanged remotely`
+        : location;
+  return `${title} is up for barter${availability}. Looking for: ${shortenedWants}. No listing or transaction fees.`;
 }

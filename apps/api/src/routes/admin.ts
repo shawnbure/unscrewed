@@ -129,10 +129,12 @@ adminRoutes.get("/stats", async (c) => {
              )
              OR (
                substr(gv.campaign, 1, 18) = 'invite_your_block:'
+               AND posted.exchange_mode IN ('local', 'either')
                AND posted.postal_code = substr(gv.campaign, 19)
              )
              OR (
                substr(gv.campaign, 1, 6) = 'umass_'
+               AND posted.exchange_mode IN ('local', 'either')
                AND ROUND(posted.lat, 1) BETWEEN ?2 AND ?3
                AND ROUND(posted.lng, 1) BETWEEN ?4 AND ?5
              )
@@ -140,6 +142,7 @@ adminRoutes.get("/stats", async (c) => {
                gv.source = 'local_watch'
                AND gv.medium = 'email'
                AND substr(gv.campaign, 1, 16) = 'new_local_trade:'
+               AND posted.exchange_mode IN ('local', 'either')
                AND alert_listing.postal_code IS NOT NULL
                AND posted.postal_code = alert_listing.postal_code
              )

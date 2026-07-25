@@ -33,6 +33,7 @@ interface ListingDetail {
   wants: string;
   postalCode?: string;
   status: string;
+  exchangeMode: "local" | "remote" | "either";
 }
 interface PhotoRow {
   r2Key?: string;
@@ -47,6 +48,9 @@ export default function EditListing() {
   const [error, setError] = useState<string | null>(null);
   const [kind, setKind] = useState<"good" | "service">("good");
   const [category, setCategory] = useState("other");
+  const [exchangeMode, setExchangeMode] = useState<
+    "local" | "remote" | "either"
+  >("local");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("good");
@@ -76,6 +80,7 @@ export default function EditListing() {
         }
         setKind(l.kind);
         setCategory(l.category);
+        setExchangeMode(l.exchangeMode ?? "local");
         setTitle(l.title);
         setDescription(l.description);
         setCondition(l.condition ?? "good");
@@ -100,6 +105,7 @@ export default function EditListing() {
     try {
       const body: Record<string, unknown> = {
         title,
+        exchangeMode,
         description,
         category,
         condition: kind === "good" ? condition : undefined,
@@ -246,6 +252,35 @@ export default function EditListing() {
           </div>
         </Section>
 
+        <Section
+          title="Exchange method"
+          subtitle="Choose the real constraint so the offer reaches the right people."
+        >
+          <div className="grid gap-2 sm:grid-cols-3">
+            {(
+              [
+                ["local", "In person", "Near the chosen area"],
+                ["remote", "Remote", "Available across the U.S."],
+                ["either", "Either", "Local or remote"],
+              ] as const
+            ).map(([value, label, detail]) => (
+              <button
+                type="button"
+                key={value}
+                onClick={() => setExchangeMode(value)}
+                className={`rounded-xl border p-3 text-left transition-colors ${
+                  exchangeMode === value
+                    ? "border-brand-500 bg-brand-50 text-brand-900"
+                    : "border-surface-300 text-ink-700 hover:border-brand-400"
+                }`}
+              >
+                <span className="block text-sm font-semibold">{label}</span>
+                <span className="mt-1 block text-xs opacity-70">{detail}</span>
+              </button>
+            ))}
+          </div>
+        </Section>
+
         <Section title="Details">
           <label className="block">
             <span className="label">Title</span>
@@ -315,9 +350,11 @@ export default function EditListing() {
         />
 
         <Section
-          title="Location"
+          title={exchangeMode === "remote" ? "Home base" : "Location"}
           subtitle={
-            originalAddress
+            exchangeMode === "remote" && originalAddress
+              ? `Stored as ZIP ${originalAddress.postalCode}, but this offer is displayed as remote and is not counted as local supply.`
+              : originalAddress
               ? `Current: ZIP ${originalAddress.postalCode}. Pick a new address to change it.`
               : "Pick an address to attach a location."
           }

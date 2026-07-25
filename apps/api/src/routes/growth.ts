@@ -28,6 +28,7 @@ growthRoutes.get("/umass-progress", async (c) => {
          FROM listings
         WHERE is_deleted = 0
           AND is_archived = 0
+          AND exchange_mode IN ('local', 'either')
           AND ROUND(lat, 1) BETWEEN ?1 AND ?2
           AND ROUND(lng, 1) BETWEEN ?3 AND ?4
      ),
@@ -84,6 +85,7 @@ growthRoutes.get("/umass-me", requireAuth, async (c) => {
       FROM listings
      WHERE is_deleted = 0
        AND is_archived = 0
+       AND exchange_mode IN ('local', 'either')
        AND ROUND(lat, 1) BETWEEN ?1 AND ?2
        AND ROUND(lng, 1) BETWEEN ?3 AND ?4`;
 
@@ -186,6 +188,7 @@ growthRoutes.get("/local-me", requireAuth, async (c) => {
       FROM listings
      WHERE is_deleted = 0
        AND is_archived = 0
+       AND exchange_mode IN ('local', 'either')
        AND ROUND(lat, 1) BETWEEN ?1 AND ?2
        AND ROUND(lng, 1) BETWEEN ?3 AND ?4`;
 

@@ -3,6 +3,9 @@ import { z } from "zod";
 export const ListingKind = z.enum(["good", "service"]);
 export type ListingKind = z.infer<typeof ListingKind>;
 
+export const ListingExchangeMode = z.enum(["local", "remote", "either"]);
+export type ListingExchangeMode = z.infer<typeof ListingExchangeMode>;
+
 export const ListingCondition = z.enum([
   "new",
   "like_new",
@@ -34,6 +37,7 @@ export const ListingCategory = z.enum([
 
 export const ListingCreateSchema = z.object({
   kind: ListingKind,
+  exchangeMode: ListingExchangeMode.default("local"),
   title: z.string().min(4).max(120),
   description: z.string().min(10).max(5000),
   category: ListingCategory,
@@ -54,6 +58,7 @@ export type ListingCreateInput = z.infer<typeof ListingCreateSchema>;
 // the type of a listing after negotiations have started would be dishonest;
 // people can withdraw and post again if they need that.
 export const ListingUpdateSchema = z.object({
+  exchangeMode: ListingExchangeMode.optional(),
   title: z.string().min(4).max(120).optional(),
   description: z.string().min(10).max(5000).optional(),
   category: ListingCategory.optional(),
@@ -72,6 +77,7 @@ export const ListingSearchSchema = z.object({
   q: z.string().max(200).optional(),
   category: ListingCategory.optional(),
   kind: ListingKind.optional(),
+  exchangeMode: ListingExchangeMode.optional(),
   // Bounding box for map viewport queries
   north: z.number().optional(),
   south: z.number().optional(),

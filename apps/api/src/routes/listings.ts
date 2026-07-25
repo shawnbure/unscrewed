@@ -41,6 +41,7 @@ export function publicListing(
   return {
     id: row.id,
     kind: row.kind,
+    exchangeMode: row.exchangeMode ?? row.exchange_mode ?? "local",
     title: row.title,
     description: row.description,
     category: row.category,
@@ -103,40 +104,56 @@ listingsRoutes.get("/", optionalAuth, async (c) => {
     where.push("l.kind = ?");
     binds.push(q.kind);
   }
-  if (
+  if (q.exchangeMode === "remote") {
+    where.push("l.exchange_mode IN ('remote', 'either')");
+  } else if (q.exchangeMode === "local") {
+    where.push("l.exchange_mode IN ('local', 'either')");
+  }
+
+  const hasBounds =
     q.north !== undefined &&
     q.south !== undefined &&
     q.east !== undefined &&
-    q.west !== undefined
-  ) {
+    q.west !== undefined;
+  const hasCenter = q.lat !== undefined && q.lng !== undefined;
+  if (q.exchangeMode !== "remote" && hasBounds) {
     // Quantize before filtering so repeated public viewport queries cannot be
     // used as an oracle to reconstruct the stored exact coordinate.
-    where.push("ROUND(l.lat, 1) BETWEEN ? AND ?");
-    binds.push(q.south, q.north);
-    where.push("ROUND(l.lng, 1) BETWEEN ? AND ?");
-    binds.push(q.west, q.east);
-  } else if (q.lat !== undefined && q.lng !== undefined) {
+    const localBounds =
+      "(ROUND(l.lat, 1) BETWEEN ? AND ? AND ROUND(l.lng, 1) BETWEEN ? AND ?)";
+    where.push(
+      q.exchangeMode === "local"
+        ? localBounds
+        : `(l.exchange_mode IN ('remote', 'either') OR (l.exchange_mode = 'local' AND ${localBounds}))`
+    );
+    binds.push(q.south, q.north, q.west, q.east);
+  } else if (q.exchangeMode !== "remote" && hasCenter) {
     // Filter on coordinates quantized to roughly 11 km latitude cells. This
     // keeps local discovery useful without allowing repeated radius queries
     // to reveal the exact location stored for a listing. A coarse bounding
     // box also avoids the hard cell-edge exclusions caused by geohash-prefix
     // filtering around a campus or neighborhood.
+    const centerLat = q.lat!;
+    const centerLng = q.lng!;
     const radiusKm = q.radiusKm ?? 25;
     const latitudeDelta = radiusKm / 111.32;
     const longitudeScale = Math.max(
-      Math.cos((q.lat * Math.PI) / 180),
+      Math.cos((centerLat * Math.PI) / 180),
       0.1
     );
     const longitudeDelta = radiusKm / (111.32 * longitudeScale);
-    where.push("ROUND(l.lat, 1) BETWEEN ? AND ?");
-    binds.push(
-      Math.max(-90, q.lat - latitudeDelta),
-      Math.min(90, q.lat + latitudeDelta)
+    const localBounds =
+      "(ROUND(l.lat, 1) BETWEEN ? AND ? AND ROUND(l.lng, 1) BETWEEN ? AND ?)";
+    where.push(
+      q.exchangeMode === "local"
+        ? localBounds
+        : `(l.exchange_mode IN ('remote', 'either') OR (l.exchange_mode = 'local' AND ${localBounds}))`
     );
-    where.push("ROUND(l.lng, 1) BETWEEN ? AND ?");
     binds.push(
-      Math.max(-180, q.lng - longitudeDelta),
-      Math.min(180, q.lng + longitudeDelta)
+      Math.max(-90, centerLat - latitudeDelta),
+      Math.min(90, centerLat + latitudeDelta),
+      Math.max(-180, centerLng - longitudeDelta),
+      Math.min(180, centerLng + longitudeDelta)
     );
   }
   binds.push(q.limit);
@@ -213,6 +230,7 @@ listingsRoutes.post("/", requireAuth, async (c) => {
     id,
     userId,
     kind: input.kind,
+    exchangeMode: input.exchangeMode,
     title: input.title,
     description: input.description,
     category: input.category,
@@ -252,6 +270,7 @@ listingsRoutes.post("/", requireAuth, async (c) => {
       postalCode: input.postalCode,
       lat: input.lat,
       lng: input.lng,
+      exchangeMode: input.exchangeMode,
     }).catch((error) => {
       console.error("[local-listing-email] send failed", error);
     })
@@ -288,6 +307,7 @@ listingsRoutes.patch("/:id", requireAuth, async (c) => {
   if (input.description !== undefined) upd.description = input.description.trim();
   if (input.wants !== undefined) upd.wants = input.wants.trim();
   if (input.category !== undefined) upd.category = input.category;
+  if (input.exchangeMode !== undefined) upd.exchangeMode = input.exchangeMode;
   if (input.condition !== undefined) upd.condition = input.condition;
   if (input.status !== undefined) upd.status = input.status;
   if (input.postalCode !== undefined) upd.postalCode = input.postalCode;
@@ -403,6 +423,7 @@ function listingColumn(property: string): string {
     description: "description",
     wants: "wants",
     category: "category",
+    exchangeMode: "exchange_mode",
     condition: "condition",
     status: "status",
     postalCode: "postal_code",

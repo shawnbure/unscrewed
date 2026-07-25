@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MapPin,
+  Laptop,
   Check,
   CheckCircle2,
   X,
@@ -36,6 +37,7 @@ interface ListingFull {
   description: string;
   wants: string;
   kind: "good" | "service";
+  exchangeMode: "local" | "remote" | "either";
   category: string;
   condition?: string | null;
   postalCode?: string;
@@ -68,7 +70,9 @@ export default function ListingDetail() {
   useEffect(() => {
     if (!data) return;
     const listing = data.listing;
-    const location = listing.postalCode?.trim()
+    const location = listing.exchangeMode === "remote"
+      ? " remotely"
+      : listing.postalCode?.trim()
       ? ` near ${listing.postalCode.trim()}`
       : "";
     const pageTitle = truncateMeta(
@@ -175,6 +179,7 @@ export default function ListingDetail() {
               title={l.title}
               wants={l.wants}
               postalCode={l.postalCode}
+              exchangeMode={l.exchangeMode}
               variant="success"
             />
           </div>
@@ -260,8 +265,16 @@ export default function ListingDetail() {
               {l.title}
             </h1>
             <p className="mt-1 inline-flex items-center gap-1 text-sm text-ink-500">
-              <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
-              {l.postalCode ?? "—"}
+              {l.exchangeMode === "remote" ? (
+                <Laptop className="h-3.5 w-3.5" strokeWidth={2} />
+              ) : (
+                <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
+              )}
+              {l.exchangeMode === "remote"
+                ? "Remote · available across the U.S."
+                : l.exchangeMode === "either"
+                  ? `${l.postalCode ?? "—"} · local or remote`
+                  : l.postalCode ?? "—"}
               {l.dateCreated
                 ? ` · posted ${formatRelative(l.dateCreated)}`
                 : ""}
@@ -325,6 +338,7 @@ export default function ListingDetail() {
                 title={l.title}
                 wants={l.wants}
                 postalCode={l.postalCode}
+                exchangeMode={l.exchangeMode}
               />
             )}
           </div>
@@ -360,11 +374,21 @@ export default function ListingDetail() {
               Before you trade
             </h3>
             <ul className="mt-2 space-y-1.5 text-xs text-ink-500">
+              {l.exchangeMode === "remote" ? (
+                <SafetyLi tone="good">
+                  Keep the first call on a familiar platform and do not share
+                  account credentials, financial information, or remote-device
+                  access.
+                </SafetyLi>
+              ) : (
+                <SafetyLi tone="good">
+                  Meet in a public place, ideally during daylight.
+                </SafetyLi>
+              )}
               <SafetyLi tone="good">
-                Meet in a public place, ideally during daylight.
-              </SafetyLi>
-              <SafetyLi tone="good">
-                Inspect the item or scope the service before exchanging.
+                {l.exchangeMode === "remote"
+                  ? "Agree on the exact session length, deliverable, and exchange before starting."
+                  : "Inspect the item or scope the service before exchanging."}
               </SafetyLi>
               <SafetyLi tone="good">
                 Both sides sign the social contract in chat — keep the record.

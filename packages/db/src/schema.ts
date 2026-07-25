@@ -117,6 +117,7 @@ export const listings = sqliteTable(
       .notNull()
       .references(() => users.id),
     kind: text("kind").notNull(), // 'good' | 'service'
+    exchangeMode: text("exchange_mode").notNull().default("local"), // local | remote | either
     title: text("title").notNull(),
     description: text("description").notNull(),
     category: text("category").notNull(),
@@ -140,6 +141,7 @@ export const listings = sqliteTable(
   (t) => ({
     ixUser: index("ix_listings_user").on(t.userId),
     ixCategory: index("ix_listings_category").on(t.category),
+    ixExchangeMode: index("ix_listings_exchange_mode").on(t.exchangeMode),
     ixGeohash: index("ix_listings_geohash").on(t.geohash),
     ixStatus: index("ix_listings_status").on(t.status),
   })

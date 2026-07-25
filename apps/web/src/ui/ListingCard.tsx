@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRightLeft, MapPin } from "lucide-react";
+import { ArrowRightLeft, Laptop, MapPin } from "lucide-react";
 import { CATEGORIES } from "./CategoryTile.js";
 import { CategoryIcon } from "./CategoryIcons.js";
 import { photoUrl } from "../lib/photoUrl.js";
@@ -10,6 +10,7 @@ export interface ListingCardData {
   description: string;
   wants: string;
   kind: "good" | "service";
+  exchangeMode: "local" | "remote" | "either";
   category: string;
   lat: number;
   lng: number;
@@ -56,12 +57,22 @@ export function ListingCard({ l }: { l: ListingCardData }) {
             <ArrowRightLeft className="h-3.5 w-3.5" strokeWidth={2} />
             <span className="line-clamp-1 max-w-[10rem]">{l.wants}</span>
           </span>
-          {(l.postalCode || l.postal_code) && (
+          {l.exchangeMode === "remote" ? (
+            <span className="inline-flex items-center gap-1 text-xs text-ink-400">
+              <Laptop className="h-3 w-3" strokeWidth={2} />
+              Remote
+            </span>
+          ) : l.exchangeMode === "either" ? (
+            <span className="inline-flex items-center gap-1 text-xs text-ink-400">
+              <Laptop className="h-3 w-3" strokeWidth={2} />
+              Local + remote
+            </span>
+          ) : (l.postalCode || l.postal_code) ? (
             <span className="inline-flex items-center gap-1 text-xs text-ink-400">
               <MapPin className="h-3 w-3" strokeWidth={2} />
               {l.postalCode ?? l.postal_code}
             </span>
-          )}
+          ) : null}
         </div>
       </div>
     </Link>

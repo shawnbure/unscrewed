@@ -1,6 +1,7 @@
 export interface ListingStarter {
   label: string;
   kind: "good" | "service";
+  exchangeMode?: "local" | "remote" | "either";
   category: string;
   title: string;
   wants: string;
@@ -34,6 +35,7 @@ export const LISTING_STARTERS = {
   remote_skill: {
     label: "30-minute remote skill session",
     kind: "service",
+    exchangeMode: "remote",
     category: "professional_services",
     title: "30-minute remote skill session",
     wants:

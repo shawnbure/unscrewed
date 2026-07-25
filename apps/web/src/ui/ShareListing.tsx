@@ -7,6 +7,7 @@ interface ShareListingProps {
   title: string;
   wants: string;
   postalCode?: string | null;
+  exchangeMode?: "local" | "remote" | "either";
   variant?: "default" | "success";
 }
 
@@ -15,6 +16,7 @@ export function ShareListing({
   title,
   wants,
   postalCode,
+  exchangeMode = "local",
   variant = "default",
 }: ShareListingProps) {
   const [copied, setCopied] = useState(false);
@@ -25,7 +27,12 @@ export function ShareListing({
     utm_campaign: `share_a_trade:${id}`,
   });
   const shareUrl = `${window.location.origin}/listing/${encodeURIComponent(id)}?${shareParams.toString()}`;
-  const shareText = buildListingShareText(title, wants, postalCode);
+  const shareText = buildListingShareText(
+    title,
+    wants,
+    postalCode,
+    exchangeMode
+  );
 
   useEffect(
     () => () => {
@@ -74,7 +81,11 @@ export function ShareListing({
     >
       {variant === "default" && (
         <p className="text-center text-xs text-ink-500">
-          Help this trade find the right nearby person.
+          {exchangeMode === "remote"
+            ? "Help this trade find one relevant person anywhere in the U.S."
+            : exchangeMode === "either"
+              ? "Help this trade find one relevant local or remote partner."
+              : "Help this trade find the right nearby person."}
         </p>
       )}
       <button

@@ -25,6 +25,9 @@ export default function NewListing() {
   const [kind, setKind] = useState<"good" | "service">(
     starter?.kind ?? "good"
   );
+  const [exchangeMode, setExchangeMode] = useState<
+    "local" | "remote" | "either"
+  >(starter?.exchangeMode ?? "local");
   const [category, setCategory] = useState(starter?.category ?? "other");
   const [title, setTitle] = useState(starter?.title ?? "");
   const [description, setDescription] = useState("");
@@ -76,6 +79,7 @@ export default function NewListing() {
         method: "POST",
         body: JSON.stringify({
           kind,
+          exchangeMode,
           title,
           description,
           category,
@@ -176,7 +180,14 @@ export default function NewListing() {
           </div>
         </Section>
 
-        <Section title="3. Tell people about it">
+        <Section
+          title="3. How can you exchange?"
+          subtitle="This controls who can realistically discover and receive this offer."
+        >
+          <ExchangeModePicker value={exchangeMode} onChange={setExchangeMode} />
+        </Section>
+
+        <Section title="4. Tell people about it">
           <label className="block">
             <span className="label">Title</span>
             <input
@@ -227,11 +238,11 @@ export default function NewListing() {
           )}
         </Section>
 
-        <Section title="4. Add photos">
+        <Section title="5. Add photos">
           <PhotoUploader value={photoKeys} onChange={setPhotoKeys} max={8} />
         </Section>
 
-        <Section title="5. What do you want in trade?">
+        <Section title="6. What do you want in trade?">
           <textarea
             required
             minLength={2}
@@ -262,8 +273,12 @@ export default function NewListing() {
         )}
 
         <Section
-          title="6. Where are you?"
-          subtitle="Your account ZIP is filled in when available. Keep it or pick a different neighborhood, ZIP, or street. We only show an approximate area."
+          title={exchangeMode === "remote" ? "7. What is your home base?" : "7. Where are you?"}
+          subtitle={
+            exchangeMode === "remote"
+              ? "Used for your account and broad marketplace operations, but this remote offer is shown as available nationwide—not pinned to your ZIP."
+              : "Your account ZIP is filled in when available. Keep it or pick a different neighborhood, ZIP, or street. We only show an approximate area."
+          }
         >
           <AddressPicker value={address} onChange={setAddress} />
         </Section>
@@ -290,6 +305,53 @@ export default function NewListing() {
         </div>
       </form>
     </Container>
+  );
+}
+
+function ExchangeModePicker({
+  value,
+  onChange,
+}: {
+  value: "local" | "remote" | "either";
+  onChange: (value: "local" | "remote" | "either") => void;
+}) {
+  const options = [
+    {
+      value: "local" as const,
+      title: "In person",
+      body: "Pickup, delivery, or face-to-face service near your chosen area.",
+    },
+    {
+      value: "remote" as const,
+      title: "Remote",
+      body: "A skill or service that can be exchanged anywhere in the U.S.",
+    },
+    {
+      value: "either" as const,
+      title: "Either",
+      body: "You can complete this exchange locally or remotely.",
+    },
+  ];
+  return (
+    <div className="grid gap-2 sm:grid-cols-3">
+      {options.map((option) => (
+        <button
+          type="button"
+          key={option.value}
+          onClick={() => onChange(option.value)}
+          className={`rounded-xl border p-3 text-left transition-colors ${
+            value === option.value
+              ? "border-brand-500 bg-brand-50 text-brand-900"
+              : "border-surface-300 text-ink-700 hover:border-brand-400"
+          }`}
+        >
+          <span className="block text-sm font-semibold">{option.title}</span>
+          <span className="mt-1 block text-xs leading-relaxed opacity-75">
+            {option.body}
+          </span>
+        </button>
+      ))}
+    </div>
   );
 }
 

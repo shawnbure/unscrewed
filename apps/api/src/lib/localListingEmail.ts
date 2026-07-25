@@ -16,6 +16,7 @@ type LocalListingAlertInput = {
   postalCode: string;
   lat: number;
   lng: number;
+  exchangeMode: "local" | "remote" | "either";
 };
 
 type Recipient = {
@@ -71,6 +72,7 @@ export async function notifyLocalListingWatchers(
   env: Env,
   input: LocalListingAlertInput
 ): Promise<void> {
+  if (input.exchangeMode === "remote") return;
   const [south, north, west, east] = bounds(input.lat, input.lng);
   const candidates = await env.DB.prepare(
     `SELECT id, email, email_normalized
