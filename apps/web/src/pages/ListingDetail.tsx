@@ -167,9 +167,13 @@ export default function ListingDetail() {
                 Your trade is live.
               </h2>
               <p className="mt-1 max-w-xl text-sm leading-relaxed text-white/70">
-                The fastest path to a real proposal is one relevant nearby
-                person. Send them this listing directly—no mass posting or
-                referral contest needed.
+                {l.exchangeMode === "remote"
+                  ? "The fastest path to a real proposal is one person who could use this remote offer."
+                  : l.exchangeMode === "either"
+                    ? "The fastest path to a real proposal is one relevant local or remote person."
+                    : "The fastest path to a real proposal is one relevant nearby person."}{" "}
+                Send them this listing directly—no mass posting or referral
+                contest needed.
               </p>
             </div>
           </div>

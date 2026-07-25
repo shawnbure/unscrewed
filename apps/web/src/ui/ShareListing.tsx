@@ -49,7 +49,10 @@ export function ShareListing({
       if (resetTimer.current) window.clearTimeout(resetTimer.current);
       resetTimer.current = window.setTimeout(() => setCopied(false), 2500);
     } catch {
-      window.prompt("Copy this trade and send it to a neighbor:", message);
+      window.prompt(
+        "Copy this trade and send it to one possible trade partner:",
+        message
+      );
     }
   }
 
