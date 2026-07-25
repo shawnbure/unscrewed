@@ -2,6 +2,9 @@ interface PublicPost {
   slug: string;
   title: string;
   excerpt?: string | null;
+  datePublished?: number | null;
+  dateModified?: number | null;
+  authorName?: string | null;
 }
 
 interface FunctionContext {
@@ -57,6 +60,7 @@ export async function onRequest(context: FunctionContext): Promise<Response> {
     `<link rel="canonical" href="${canonical}" />`
   );
   html = replaceMeta(html, 'property="og:url"', canonical);
+  html = replaceMeta(html, 'property="og:type"', "article");
   html = replaceMeta(html, 'property="og:title"', title);
   html = replaceMeta(html, 'property="og:description"', description);
   html = replaceMeta(html, 'property="og:image"', IMAGE);
@@ -71,6 +75,36 @@ export async function onRequest(context: FunctionContext): Promise<Response> {
   html = html.replace(
     /<title>[^<]*<\/title>/,
     `<title>${escapeHtml(title)}</title>`
+  );
+  const datePublished = new Date(
+    post.datePublished ?? post.dateModified ?? Date.now()
+  ).toISOString();
+  const dateModified = new Date(
+    post.dateModified ?? post.datePublished ?? Date.now()
+  ).toISOString();
+  const structuredData = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: compact(post.title),
+    description,
+    url: canonical,
+    mainEntityOfPage: canonical,
+    image: IMAGE,
+    datePublished,
+    dateModified,
+    author: {
+      "@type": "Person",
+      name: compact(post.authorName ?? "") || "unscrewed team",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "unscrewed.lol",
+      url: SITE,
+    },
+  }).replaceAll("<", "\\u003c");
+  html = html.replace(
+    "</head>",
+    `    <meta property="article:published_time" content="${datePublished}" />\n    <meta property="article:modified_time" content="${dateModified}" />\n    <script type="application/ld+json">${structuredData}</script>\n  </head>`
   );
 
   return new Response(context.request.method === "HEAD" ? null : html, {

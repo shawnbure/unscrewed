@@ -7,6 +7,7 @@ import { Container } from "../ui/Container.js";
 import { ReportButton } from "../ui/ReportButton.js";
 import { api } from "../lib/api.js";
 import { useSession } from "../lib/session.js";
+import { ShareArticle } from "../ui/ShareArticle.js";
 
 interface Post {
   id: string;
@@ -103,6 +104,11 @@ export default function BlogPostPage() {
             {post.excerpt}
           </p>
         )}
+        <ShareArticle
+          slug={post.slug}
+          title={post.title}
+          excerpt={post.excerpt}
+        />
       </header>
 
       <article className="prose prose-neutral mt-8 max-w-none text-ink-800">
