@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   CheckCircle2,
@@ -49,6 +49,7 @@ interface MeLocation {
 }
 
 export default function NeighborhoodPage() {
+  const [searchParams] = useSearchParams();
   const [progress, setProgress] = useState<LocalProgress | null>(null);
   const [location, setLocation] = useState<MeLocation | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -128,9 +129,31 @@ export default function NeighborhoodPage() {
     },
   ];
   const postedTowardGoal = Math.min(progress.mine.postedListings, 2);
+  const justJoined = searchParams.get("welcome") === "1";
 
   return (
     <Container size="xl" className="py-8 sm:py-12">
+      {justJoined && (
+        <section
+          className="mb-5 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-4 text-brand-950"
+          aria-labelledby="neighborhood-welcome-heading"
+        >
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+            Account created
+          </p>
+          <h2
+            id="neighborhood-welcome-heading"
+            className="mt-1 text-xl font-bold"
+          >
+            Now make your area useful.
+          </h2>
+          <p className="mt-1 max-w-3xl text-sm leading-relaxed text-brand-900/80">
+            Your ZIP sets the starting area below. Nothing has been posted,
+            shared, or subscribed for you—choose one honest next action when
+            you are ready.
+          </p>
+        </section>
+      )}
       <header className="rounded-3xl bg-ink-900 p-7 text-white shadow-pop sm:p-10">
         <div className="flex items-start gap-4">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/10 text-brand-200">

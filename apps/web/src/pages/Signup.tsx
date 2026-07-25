@@ -25,7 +25,12 @@ export default function Signup() {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
   const { refresh } = useSession();
+  const hasExplicitNext = searchParams.has("next");
   const nextPath = safeNextPath(searchParams);
+  const postSignupPath = hasExplicitNext
+    ? nextPath
+    : "/neighborhood?welcome=1";
+  const returningMemberPath = hasExplicitNext ? nextPath : "/neighborhood";
   const nextUrl = new URL(nextPath, window.location.origin);
   const continuesToPost = nextUrl.pathname === "/post";
   const continuesToProposal =
@@ -78,7 +83,7 @@ export default function Signup() {
         }),
       });
       await refresh();
-      nav(nextPath);
+      nav(postSignupPath);
     } catch (e: any) {
       setError(e?.body?.message ?? e?.body?.error ?? e?.message ?? "Sign up failed");
     } finally {
@@ -96,13 +101,13 @@ export default function Signup() {
             ? "Then you’ll return to this trade to make your proposal. We’ll ask you to verify your email for trade alerts; phone is optional."
             : continuesToLocalWatch
               ? "Then you can choose whether to watch for new listings near your home ZIP. Local-listing emails are off until you turn them on."
-              : "Email + password. We’ll ask you to verify your email for trade alerts; phone is optional and never used for verification or messaging."
+              : "Then we’ll show your local trade circle and the first useful action. We’ll ask you to verify your email for trade alerts; phone is optional."
       }
       footer={
         <>
           Already a member?{" "}
           <Link
-            to={withNext("/login", nextPath)}
+            to={withNext("/login", returningMemberPath)}
             className="font-medium text-brand-700 hover:underline"
           >
             Sign in
@@ -210,7 +215,7 @@ export default function Signup() {
                 ? "Create account and propose"
                 : continuesToLocalWatch
                   ? "Create account and choose alerts"
-                  : "Create account"}
+                  : "Create account and see my area"}
         </button>
       </form>
     </AuthLayout>
