@@ -288,8 +288,25 @@ export default function ListingDetail() {
             </div>
 
             {(() => {
+              const proposalPath = `/listing/${l.id}?propose=1`;
+              if (session === null) {
+                return (
+                  <>
+                    <button
+                      type="button"
+                      disabled
+                      className="btn-primary mt-5 w-full"
+                    >
+                      Checking account…
+                    </button>
+                    <p className="mt-2 text-center text-xs text-ink-400">
+                      You'll chat to negotiate before signing anything.
+                    </p>
+                  </>
+                );
+              }
               const canEdit =
-                session?.authenticated &&
+                session.authenticated &&
                 (l.isOwner === true || session.isAdmin);
               if (canEdit) {
                 return (
@@ -308,20 +325,34 @@ export default function ListingDetail() {
                   </>
                 );
               }
+              if (!session.authenticated) {
+                return (
+                  <>
+                    <Link
+                      to={withNext("/signup", proposalPath)}
+                      className="btn-primary mt-5 flex w-full items-center justify-center"
+                    >
+                      Create account to propose
+                    </Link>
+                    <p className="mt-2 text-center text-xs text-ink-400">
+                      Already a member?{" "}
+                      <Link
+                        to={withNext("/login", proposalPath)}
+                        className="font-semibold text-brand-700 hover:underline"
+                      >
+                        Sign in and return here
+                      </Link>
+                      . Otherwise, create your account and come straight back
+                      to this trade.
+                    </p>
+                  </>
+                );
+              }
               return (
                 <>
                   <button
                     type="button"
-                    onClick={() =>
-                      session?.authenticated
-                        ? setShowPropose(true)
-                        : nav(
-                            withNext(
-                              "/login",
-                              `/listing/${l.id}?propose=1`
-                            )
-                          )
-                    }
+                    onClick={() => setShowPropose(true)}
                     className="btn-primary mt-5 w-full"
                   >
                     Propose a trade
