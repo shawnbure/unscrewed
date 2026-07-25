@@ -45,7 +45,7 @@ interface Photo {
 export default function ListingDetail() {
   const { id } = useParams();
   const nav = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { session } = useSession();
   const [data, setData] = useState<{
     listing: ListingFull;
@@ -103,6 +103,21 @@ export default function ListingDetail() {
       restores.forEach((restore) => restore());
     };
   }, [data]);
+
+  useEffect(() => {
+    if (
+      !data ||
+      !session?.authenticated ||
+      data.listing.isOwner === true ||
+      searchParams.get("propose") !== "1"
+    ) {
+      return;
+    }
+    setShowPropose(true);
+    const remaining = new URLSearchParams(searchParams);
+    remaining.delete("propose");
+    setSearchParams(remaining, { replace: true });
+  }, [data, searchParams, session?.authenticated, setSearchParams]);
 
   if (!data)
     return (
@@ -282,7 +297,12 @@ export default function ListingDetail() {
                     onClick={() =>
                       session?.authenticated
                         ? setShowPropose(true)
-                        : nav(withNext("/login", `/listing/${l.id}`))
+                        : nav(
+                            withNext(
+                              "/login",
+                              `/listing/${l.id}?propose=1`
+                            )
+                          )
                     }
                     className="btn-primary mt-5 w-full"
                   >

@@ -18,6 +18,10 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const { refresh } = useSession();
   const nextPath = safeNextPath(searchParams);
+  const nextUrl = new URL(nextPath, window.location.origin);
+  const continuesToProposal =
+    nextUrl.pathname.startsWith("/listing/") &&
+    nextUrl.searchParams.get("propose") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -74,7 +78,11 @@ export default function Login() {
   return (
     <AuthLayout
       title="Welcome back"
-      subtitle="Sign in with your email and password."
+      subtitle={
+        continuesToProposal
+          ? "Sign in, then you’ll return to this trade to make your proposal."
+          : "Sign in with your email and password."
+      }
       footer={
         <>
           New here?{" "}

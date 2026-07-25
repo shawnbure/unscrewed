@@ -26,8 +26,11 @@ export default function Signup() {
   const [searchParams] = useSearchParams();
   const { refresh } = useSession();
   const nextPath = safeNextPath(searchParams);
-  const continuesToPost =
-    new URL(nextPath, window.location.origin).pathname === "/post";
+  const nextUrl = new URL(nextPath, window.location.origin);
+  const continuesToPost = nextUrl.pathname === "/post";
+  const continuesToProposal =
+    nextUrl.pathname.startsWith("/listing/") &&
+    nextUrl.searchParams.get("propose") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState("");
@@ -87,6 +90,8 @@ export default function Signup() {
       subtitle={
         continuesToPost
           ? "Then you’ll go straight to posting your first trade. Phone is optional."
+          : continuesToProposal
+            ? "Then you’ll return to this trade to make your proposal. We’ll ask you to verify your email for trade alerts; phone is optional."
           : "Email + password. We’ll ask you to verify your email for trade alerts; phone is optional and never used for verification or messaging."
       }
       footer={
@@ -197,6 +202,8 @@ export default function Signup() {
             ? "Creating account…"
             : continuesToPost
               ? "Create account and post"
+              : continuesToProposal
+                ? "Create account and propose"
               : "Create account"}
         </button>
       </form>
