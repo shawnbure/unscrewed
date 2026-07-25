@@ -184,6 +184,7 @@ export default function ListingDetail() {
               wants={l.wants}
               postalCode={l.postalCode}
               exchangeMode={l.exchangeMode}
+              owner
               variant="success"
             />
           </div>
@@ -374,6 +375,7 @@ export default function ListingDetail() {
                 wants={l.wants}
                 postalCode={l.postalCode}
                 exchangeMode={l.exchangeMode}
+                owner={l.isOwner === true}
               />
             )}
           </div>

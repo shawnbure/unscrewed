@@ -264,6 +264,7 @@ export default function NeighborhoodPage() {
                         title={listing.title}
                         wants={listing.wants}
                         postalCode={listing.postalCode}
+                        owner
                       />
                     </div>
                   ))}

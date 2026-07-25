@@ -8,6 +8,7 @@ interface ShareListingProps {
   wants: string;
   postalCode?: string | null;
   exchangeMode?: "local" | "remote" | "either";
+  owner?: boolean;
   variant?: "default" | "success";
 }
 
@@ -17,6 +18,7 @@ export function ShareListing({
   wants,
   postalCode,
   exchangeMode = "local",
+  owner = false,
   variant = "default",
 }: ShareListingProps) {
   const [copied, setCopied] = useState(false);
@@ -31,7 +33,8 @@ export function ShareListing({
     title,
     wants,
     postalCode,
-    exchangeMode
+    exchangeMode,
+    owner
   );
 
   useEffect(
