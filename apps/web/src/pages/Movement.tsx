@@ -4,6 +4,7 @@ import {
   ArrowRight,
   FileSignature,
   Handshake,
+  Laptop,
   MapPin,
   MessageSquare,
   PackagePlus,
@@ -11,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { getStats, type StatsPayload } from "../lib/stats.js";
+import { listingStarterPath } from "../lib/listingStarters.js";
 import { Container } from "../ui/Container.js";
 import { InviteNeighbors } from "../ui/InviteNeighbors.js";
 
@@ -67,12 +69,12 @@ export default function MovementPage() {
             directly—without a marketplace or payment processor taking a cut.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              to="/signup"
+            <a
+              href="#start"
               className="inline-flex items-center gap-2 rounded-xl bg-brand-400 px-5 py-3 text-sm font-bold text-ink-900 hover:bg-brand-300"
             >
-              Join the movement <ArrowRight className="h-4 w-4" />
-            </Link>
+              Choose my first offer <ArrowRight className="h-4 w-4" />
+            </a>
             <Link
               to="/browse"
               className="rounded-xl border border-white/25 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10"
@@ -107,6 +109,59 @@ export default function MovementPage() {
           endpoint. A conversation counts only after both people reply; a trade
           counts only after both people sign.
         </p>
+      </Container>
+
+      <Container size="lg" className="mt-16">
+        <section id="start" className="scroll-mt-24">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+              Put something useful into circulation
+            </p>
+            <h2 className="display mt-2 text-balance text-4xl text-ink-900">
+              Choose a starting point. Make it yours before posting.
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-ink-500">
+              Each starter opens an editable listing and preserves this
+              movement campaign through signup. Nothing is posted, shared, or
+              subscribed automatically.
+            </p>
+          </div>
+          <div className="mt-7 grid gap-4 md:grid-cols-3">
+            <Starter
+              to={listingStarterPath("useful_item")}
+              icon={<PackagePlus className="h-6 w-6" />}
+              title="A useful item"
+              body="Name the exact item, its condition, pickup timing, and two or three things you would really accept."
+              action="Start an item listing"
+            />
+            <Starter
+              to={listingStarterPath("one_hour_help")}
+              icon={<Handshake className="h-6 w-6" />}
+              title="One hour of practical help"
+              body="Define one task you can do, when you are available, what is included, and a realistic return."
+              action="Start a local service"
+            />
+            <Starter
+              to={listingStarterPath("remote_skill")}
+              icon={<Laptop className="h-6 w-6" />}
+              title="A remote skill session"
+              body="Offer one specific 30-minute outcome by video or phone and trade it with someone anywhere in the country."
+              action="Start a remote offer"
+            />
+          </div>
+          <div className="mt-5 text-center">
+            <Link
+              to="/post"
+              className="text-sm font-semibold text-brand-700 hover:underline"
+            >
+              Or write a blank listing from scratch
+            </Link>
+            <p className="mx-auto mt-3 max-w-2xl text-xs leading-relaxed text-ink-400">
+              Post only something you can genuinely provide. A template is not
+              supply, and a signup is not a successful trade.
+            </p>
+          </div>
+        </section>
       </Container>
 
       <Container size="lg" className="mt-16">
@@ -193,15 +248,51 @@ export default function MovementPage() {
           something useful and invite one genuine trading partner.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link to="/post" className="btn-brand">
-            Post a trade <ArrowRight className="h-4 w-4" />
-          </Link>
+          <a href="#start" className="btn-brand">
+            Choose my first offer <ArrowRight className="h-4 w-4" />
+          </a>
           <Link to="/public-benefit" className="btn-outline">
             Read the public-benefit commitments
           </Link>
         </div>
       </Container>
     </div>
+  );
+}
+
+function Starter({
+  to,
+  icon,
+  title,
+  body,
+  action,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+  action: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="group card flex h-full flex-col p-6 transition hover:-translate-y-0.5 hover:ring-brand-300"
+    >
+      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+        {icon}
+      </span>
+      <h3 className="mt-5 text-lg font-bold text-ink-900">{title}</h3>
+      <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-500">
+        {body}
+      </p>
+      <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-brand-700">
+        {action}
+        <ArrowRight
+          className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+          aria-hidden
+        />
+      </span>
+    </Link>
   );
 }
 

@@ -31,6 +31,16 @@ export const LISTING_STARTERS = {
     descriptionPlaceholder:
       "Name the specific task you can do for one hour, when you are available, what is included, and any limits.",
   },
+  remote_skill: {
+    label: "30-minute remote skill session",
+    kind: "service",
+    category: "professional_services",
+    title: "30-minute remote skill session",
+    wants:
+      "Open to 30 minutes of another practical skill, specific written feedback, or another fair remote exchange.",
+    descriptionPlaceholder:
+      "Name the exact skill you can share, what someone can accomplish in 30 minutes, how you will meet remotely, your availability, and any limits.",
+  },
   dorm_fridge: {
     label: "Mini-fridge",
     kind: "good",
