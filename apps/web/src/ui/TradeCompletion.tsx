@@ -96,7 +96,7 @@ export function TradeCompletion({
       <p className="mt-1 leading-relaxed">
         Confirm only after you have actually given and received what the signed
         agreement says. Both people must confirm before this counts as a
-        completed trade.
+        completed trade. Your confirmation cannot be undone.
       </p>
       <button
         type="button"
