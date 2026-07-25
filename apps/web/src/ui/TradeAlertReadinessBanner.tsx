@@ -67,8 +67,10 @@ export function TradeAlertReadinessBanner({
           <MailWarning className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
           <p>
             <strong>Verify your email before sharing a listing.</strong>{" "}
-            Otherwise a real proposal will not produce an alert. Alerts omit
-            offers, messages, terms, and meetup details.
+            Otherwise a real proposal will not produce an email alert. The
+            persistent My trades badge still appears when you return.
+            Transactional emails omit offers, messages, terms, and meetup
+            details.
           </p>
         </div>
         <Link
