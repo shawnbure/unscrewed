@@ -24,6 +24,7 @@ const STATIC_PAGES: Array<{ path: string; changefreq: string; priority: string }
   { path: "/thoughts", changefreq: "weekly", priority: "0.7" },
   { path: "/community", changefreq: "weekly", priority: "0.6" },
   { path: "/umass", changefreq: "monthly", priority: "0.7" },
+  { path: "/public-benefit", changefreq: "weekly", priority: "0.7" },
   { path: "/safety", changefreq: "monthly", priority: "0.7" },
   { path: "/contact", changefreq: "monthly", priority: "0.5" },
   { path: "/signup", changefreq: "monthly", priority: "0.5" },
@@ -68,7 +69,13 @@ async function loadSitemapEntries(db: ReturnType<typeof getDb>) {
         dateModified: listings.dateModified,
       })
       .from(listings)
-      .where(and(eq(listings.isArchived, 0), eq(listings.isDeleted, 0)))
+      .where(
+        and(
+          eq(listings.status, "active"),
+          eq(listings.isArchived, 0),
+          eq(listings.isDeleted, 0)
+        )
+      )
       .orderBy(desc(listings.dateModified))
       .limit(45_000),
   ]);

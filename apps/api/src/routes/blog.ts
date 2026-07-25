@@ -194,6 +194,7 @@ blogRoutes.get("/:slug", async (c) => {
   const db = getDb(c.env.DB);
   const [row] = await db
     .select({
+      id: blogPosts.id,
       slug: blogPosts.slug,
       title: blogPosts.title,
       excerpt: blogPosts.excerpt,
