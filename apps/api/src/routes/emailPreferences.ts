@@ -1,6 +1,6 @@
 import { Hono, type Context } from "hono";
 import { eq } from "drizzle-orm";
-import { UpdateTradeEmailNotificationsSchema } from "@unscrewed/shared";
+import { UpdateEmailPreferencesSchema } from "@unscrewed/shared";
 import { getDb, users } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 import {
@@ -28,6 +28,10 @@ async function authorize(c: Context<AppContext>) {
       email: users.email,
       emailNormalized: users.emailNormalized,
       enabled: users.tradeEmailNotifications,
+      localEnabled: users.localListingNotifications,
+      homeZip: users.homeZip,
+      homeLat: users.homeLat,
+      homeLng: users.homeLng,
       isDeleted: users.isDeleted,
     })
     .from(users)
@@ -48,6 +52,8 @@ emailPreferencesRoutes.get("/", async (c) => {
   return c.json({
     email: maskEmail(user.email),
     enabled: user.enabled === 1,
+    tradeEnabled: user.enabled === 1,
+    localEnabled: user.localEnabled === 1,
   });
 });
 
@@ -55,17 +61,39 @@ emailPreferencesRoutes.post("/", async (c) => {
   const user = await authorize(c);
   if (!user) return c.json({ error: "invalid_link" }, 403);
   const json = await c.req.json().catch(() => null);
-  const parsed = UpdateTradeEmailNotificationsSchema.safeParse(json);
+  const parsed = UpdateEmailPreferencesSchema.safeParse(json);
   if (!parsed.success) return c.json({ error: "invalid_input" }, 400);
+  const tradeEnabled = parsed.data.tradeEnabled ?? parsed.data.enabled;
+  const localEnabled = parsed.data.localEnabled;
+  if (
+    localEnabled === true &&
+    (!user.homeZip ||
+      !Number.isFinite(user.homeLat) ||
+      !Number.isFinite(user.homeLng))
+  ) {
+    return c.json({ error: "home_location_unavailable" }, 409);
+  }
   const db = getDb(c.env.DB);
   const result = await db
     .update(users)
     .set({
-      tradeEmailNotifications: parsed.data.enabled ? 1 : 0,
+      ...(tradeEnabled === undefined
+        ? {}
+        : { tradeEmailNotifications: tradeEnabled ? 1 : 0 }),
+      ...(localEnabled === undefined
+        ? {}
+        : { localListingNotifications: localEnabled ? 1 : 0 }),
       dateModified: Date.now(),
     })
     .where(eq(users.id, user.id))
     .returning({ id: users.id });
   if (!result[0]) return c.json({ error: "invalid_link" }, 404);
-  return c.json({ ok: true, enabled: parsed.data.enabled });
+  const currentTradeEnabled = user.enabled === 1;
+  const currentLocalEnabled = user.localEnabled === 1;
+  return c.json({
+    ok: true,
+    enabled: tradeEnabled ?? currentTradeEnabled,
+    tradeEnabled: tradeEnabled ?? currentTradeEnabled,
+    localEnabled: localEnabled ?? currentLocalEnabled,
+  });
 });

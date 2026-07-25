@@ -8,6 +8,7 @@ import {
   ChangePasswordSchema,
   DeleteAccountSchema,
   UpdateTradeEmailNotificationsSchema,
+  UpdateLocalListingNotificationsSchema,
 } from "@unscrewed/shared";
 import { getDb, users } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
@@ -41,6 +42,7 @@ meRoutes.get("/", async (c) => {
       homeLat: users.homeLat,
       homeLng: users.homeLng,
       tradeEmailNotifications: users.tradeEmailNotifications,
+      localListingNotifications: users.localListingNotifications,
       isAdmin: users.isAdmin,
       dateCreated: users.dateCreated,
     })
@@ -62,6 +64,41 @@ meRoutes.patch("/trade-email-notifications", async (c) => {
     .update(users)
     .set({
       tradeEmailNotifications: parsed.data.enabled ? 1 : 0,
+      dateModified: Date.now(),
+    })
+    .where(eq(users.id, userId));
+  return c.json({ ok: true, enabled: parsed.data.enabled });
+});
+
+// ---------- PATCH /me/local-listing-notifications ----------
+meRoutes.patch("/local-listing-notifications", async (c) => {
+  const userId = c.get("userId")!;
+  const json = await c.req.json().catch(() => null);
+  const parsed = UpdateLocalListingNotificationsSchema.safeParse(json);
+  if (!parsed.success) return c.json({ error: "invalid_input" }, 400);
+  const db = getDb(c.env.DB);
+  if (parsed.data.enabled) {
+    const [me] = await db
+      .select({
+        homeZip: users.homeZip,
+        homeLat: users.homeLat,
+        homeLng: users.homeLng,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    if (
+      !me?.homeZip ||
+      !Number.isFinite(me.homeLat) ||
+      !Number.isFinite(me.homeLng)
+    ) {
+      return c.json({ error: "home_location_unavailable" }, 409);
+    }
+  }
+  await db
+    .update(users)
+    .set({
+      localListingNotifications: parsed.data.enabled ? 1 : 0,
       dateModified: Date.now(),
     })
     .where(eq(users.id, userId));

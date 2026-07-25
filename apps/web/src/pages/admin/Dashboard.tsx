@@ -58,6 +58,13 @@ interface Stats {
       overdueWaitingOnLister: number;
       overdueWaitingOnRequester: number;
     };
+    localWatch: {
+      radiusKm: number;
+      maxAlertsPerUtcDay: number;
+      optedIn: number;
+      alertReady: number;
+      attemptsLast7Days: number;
+    };
   };
 }
 
@@ -138,6 +145,12 @@ export default function AdminDashboard() {
             ).toLocaleString()}
             detail={`${stats.marketplace.ownerResponse.overdueWaitingOnLister} listing owners · ${stats.marketplace.ownerResponse.overdueWaitingOnRequester} requesters`}
           />
+          <Metric
+            label="Local-watch members"
+            value={stats.marketplace.localWatch.alertReady.toLocaleString()}
+            detail={`${stats.marketplace.localWatch.optedIn} opted in · ${stats.marketplace.localWatch.attemptsLast7Days} alert attempts in 7d`}
+            tone="brand"
+          />
         </div>
         <div className="mt-3 rounded-xl bg-surface-50 px-4 py-3 text-xs leading-5 text-ink-500">
           A completed trade has both signatures. Liquidity includes non-deleted
@@ -147,7 +160,9 @@ export default function AdminDashboard() {
           a message, or completed a trade during the period. Owner response
           measures whether the listing owner sent a first reply within{" "}
           {stats.marketplace.ownerResponse.observationHours} hours; proposals
-          younger than that are excluded from its denominator.
+          younger than that are excluded from its denominator. Local-watch
+          readiness requires explicit opt-in, a verified email, and a geocoded
+          home ZIP; an alert attempt does not prove delivery or a visit.
         </div>
       </section>
 

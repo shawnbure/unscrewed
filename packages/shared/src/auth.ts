@@ -96,3 +96,28 @@ export const UpdateTradeEmailNotificationsSchema = z.object({
 export type UpdateTradeEmailNotificationsInput = z.infer<
   typeof UpdateTradeEmailNotificationsSchema
 >;
+
+// Explicitly requested local-supply alerts. Separate from transactional trade
+// activity and off by default at the database layer.
+export const UpdateLocalListingNotificationsSchema = z.object({
+  enabled: z.boolean(),
+});
+export type UpdateLocalListingNotificationsInput = z.infer<
+  typeof UpdateLocalListingNotificationsSchema
+>;
+
+// Signed email-preference links manage both categories independently. Keep the
+// legacy `enabled` field so an older cached web bundle can still change only
+// transactional alerts during a rolling deploy.
+export const UpdateEmailPreferencesSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    tradeEnabled: z.boolean().optional(),
+    localEnabled: z.boolean().optional(),
+  })
+  .refine(
+    (input) =>
+      input.enabled !== undefined ||
+      input.tradeEnabled !== undefined ||
+      input.localEnabled !== undefined
+  );

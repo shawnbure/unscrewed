@@ -34,6 +34,7 @@ interface Me {
   phoneVerifiedAt: number | null;
   homeZip: string | null;
   tradeEmailNotifications: number;
+  localListingNotifications: number;
   isAdmin: number;
   dateCreated: number;
 }
@@ -220,6 +221,40 @@ export default function AccountPage() {
         />
       </section>
 
+      <section
+        id="local-watch"
+        className="card mt-4 scroll-mt-24 p-6"
+      >
+        <div className="flex items-start gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-brand-500/10 text-brand-700">
+            <MapPin className="h-4 w-4" strokeWidth={2} />
+          </span>
+          <div>
+            <h2 className="text-base font-semibold text-ink-900">
+              New trades near home
+            </h2>
+            <p className="mt-0.5 text-sm text-ink-500">
+              Optional and off by default. Get at most one local-listing email
+              each day when a new listing appears within roughly 25 km of your
+              home ZIP. No newsletters, exact addresses, or private trade
+              details.
+            </p>
+          </div>
+        </div>
+        <LocalListingEmailToggle
+          enabled={me.localListingNotifications === 1}
+          homeZip={me.homeZip}
+          emailVerified={me.emailVerifiedAt !== null}
+          onSaved={(enabled) =>
+            setMe((prev) =>
+              prev
+                ? { ...prev, localListingNotifications: enabled ? 1 : 0 }
+                : prev
+            )
+          }
+        />
+      </section>
+
       <section className="card mt-4 p-6">
         <h2 className="text-base font-semibold text-ink-900">Phone</h2>
         <p className="mt-0.5 text-sm text-ink-500">
@@ -235,7 +270,7 @@ export default function AccountPage() {
         />
       </section>
 
-      <section className="card mt-4 p-6">
+      <section id="home-zip" className="card mt-4 scroll-mt-24 p-6">
         <h2 className="text-base font-semibold text-ink-900">Home ZIP</h2>
         <p className="mt-0.5 text-sm text-ink-500">
           Used only to place you on the community map in aggregate — nobody
@@ -364,6 +399,87 @@ function TradeEmailToggle({
         Email me about new trade activity
         {busy && <span className="text-xs text-ink-500">Saving…</span>}
       </label>
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+function LocalListingEmailToggle({
+  enabled,
+  homeZip,
+  emailVerified,
+  onSaved,
+}: {
+  enabled: boolean;
+  homeZip: string | null;
+  emailVerified: boolean;
+  onSaved: (enabled: boolean) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function update(next: boolean) {
+    setBusy(true);
+    setError(null);
+    try {
+      await api("/me/local-listing-notifications", {
+        method: "PATCH",
+        body: JSON.stringify({ enabled: next }),
+      });
+      onSaved(next);
+    } catch (e: any) {
+      const code = e?.body?.error;
+      setError(
+        code === "home_location_unavailable"
+          ? "Your home ZIP could not be placed on the map. Save it again or try another nearby ZIP."
+          : (code ?? e?.message ?? "Could not update local alerts")
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-4">
+      <label
+        className={`flex items-center gap-3 text-sm text-ink-800 ${
+          homeZip ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+        }`}
+      >
+        <input
+          type="checkbox"
+          checked={enabled}
+          disabled={busy || !homeZip}
+          onChange={(event) => update(event.target.checked)}
+          className="h-4 w-4 rounded border-surface-300 text-brand-700 focus:ring-brand-500"
+        />
+        Email me about new listings near my home ZIP
+        {busy && <span className="text-xs text-ink-500">Saving…</span>}
+      </label>
+      {!homeZip && (
+        <p className="mt-2 text-xs text-amber-800">
+          Add a{" "}
+          <a href="#home-zip" className="font-semibold underline">
+            home ZIP
+          </a>{" "}
+          before turning this on.
+        </p>
+      )}
+      {enabled && !emailVerified && (
+        <p className="mt-2 text-xs text-amber-800">
+          Your choice is saved, but no local alert can be sent until you{" "}
+          <a href="#email" className="font-semibold underline">
+            verify your email
+          </a>
+          .
+        </p>
+      )}
+      {enabled && emailVerified && homeZip && (
+        <p className="mt-2 text-xs text-brand-700">
+          Watching the area around ZIP {homeZip}. You can turn this off here
+          or from any local-listing email.
+        </p>
+      )}
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   );

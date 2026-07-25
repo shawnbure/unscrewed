@@ -278,12 +278,20 @@ export default function Home() {
               <ArrowRight className="h-4 w-4" />
             </Link>
             {homeArea && (
-              <Link
-                to="/browse"
-                className="mt-3 text-sm font-medium text-brand-700 hover:underline"
-              >
-                Browse all locations
-              </Link>
+              <>
+                <Link
+                  to="/account#local-watch"
+                  className="mt-3 text-sm font-medium text-brand-700 hover:underline"
+                >
+                  Watch for new trades near your home ZIP
+                </Link>
+                <Link
+                  to="/browse"
+                  className="mt-2 text-xs font-medium text-ink-500 hover:underline"
+                >
+                  Browse all locations
+                </Link>
+              </>
             )}
           </div>
         ) : (

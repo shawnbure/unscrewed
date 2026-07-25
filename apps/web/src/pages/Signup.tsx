@@ -31,6 +31,8 @@ export default function Signup() {
   const continuesToProposal =
     nextUrl.pathname.startsWith("/listing/") &&
     nextUrl.searchParams.get("propose") === "1";
+  const continuesToLocalWatch =
+    nextUrl.pathname === "/account" && nextUrl.hash === "#local-watch";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState("");
@@ -92,7 +94,9 @@ export default function Signup() {
           ? "Then you’ll go straight to posting your first trade. Phone is optional."
           : continuesToProposal
             ? "Then you’ll return to this trade to make your proposal. We’ll ask you to verify your email for trade alerts; phone is optional."
-          : "Email + password. We’ll ask you to verify your email for trade alerts; phone is optional and never used for verification or messaging."
+            : continuesToLocalWatch
+              ? "Then you can choose whether to watch for new listings near your home ZIP. Local-listing emails are off until you turn them on."
+              : "Email + password. We’ll ask you to verify your email for trade alerts; phone is optional and never used for verification or messaging."
       }
       footer={
         <>
@@ -204,7 +208,9 @@ export default function Signup() {
               ? "Create account and post"
               : continuesToProposal
                 ? "Create account and propose"
-              : "Create account"}
+                : continuesToLocalWatch
+                  ? "Create account and choose alerts"
+                  : "Create account"}
         </button>
       </form>
     </AuthLayout>

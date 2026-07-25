@@ -71,6 +71,9 @@ export default function Browse() {
   const postPath = session?.authenticated
     ? "/post"
     : withNext("/signup", "/post");
+  const localWatchPath = session?.authenticated
+    ? "/account#local-watch"
+    : withNext("/signup", "/account#local-watch");
   const starterPath = (id: ListingStarterId) => {
     const path = listingStarterPath(id);
     return session?.authenticated ? path : withNext("/signup", path);
@@ -179,6 +182,7 @@ export default function Browse() {
               postPath={postPath}
               itemStarterPath={starterPath("useful_item")}
               helpStarterPath={starterPath("one_hour_help")}
+              localWatchPath={localWatchPath}
             />
           ) : (
             <MapView items={items} location={location} />
@@ -268,6 +272,7 @@ function GridView({
   postPath,
   itemStarterPath,
   helpStarterPath,
+  localWatchPath,
 }: {
   items: ListingCardData[];
   loading: boolean;
@@ -275,6 +280,7 @@ function GridView({
   postPath: string;
   itemStarterPath: string;
   helpStarterPath: string;
+  localWatchPath: string;
 }) {
   if (loading) {
     return (
@@ -327,6 +333,12 @@ function GridView({
               Starters select editable fields only. Nothing is posted until a
               real person adds accurate details and submits it.
             </p>
+            <Link
+              to={localWatchPath}
+              className="mt-4 text-xs font-semibold text-ink-600 hover:text-brand-700 hover:underline"
+            >
+              Prefer to wait? Watch for new listings near your home ZIP
+            </Link>
           </>
         ) : (
           <Link to={postPath} className="btn-brand mt-4 inline-flex">

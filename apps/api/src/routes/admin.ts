@@ -34,6 +34,7 @@ interface GrowthFunnelRow {
   target_area_posters: number;
   negotiation_starters: number;
   completed_traders: number;
+  local_watch_zip: string | null;
 }
 
 // ============================================================
@@ -90,6 +91,8 @@ adminRoutes.get("/stats", async (c) => {
     ownerResponse,
     ownerResponseDurations,
     overdueReplies,
+    localWatchMembers,
+    localWatchAttempts7,
   ] = await Promise.all([
     db.prepare("SELECT COUNT(*) AS n FROM users").first<{ n: number }>(),
     db
@@ -115,6 +118,7 @@ adminRoutes.get("/stats", async (c) => {
            gv.campaign,
            gv.source,
            gv.medium,
+           MAX(alert_listing.postal_code) AS local_watch_zip,
            COUNT(DISTINCT gv.visitor_id) AS visitors,
            COUNT(DISTINCT u.id) AS signups,
            COUNT(DISTINCT CASE WHEN posted.id IS NOT NULL THEN u.id END) AS first_listings,
@@ -128,6 +132,13 @@ adminRoutes.get("/stats", async (c) => {
                AND ROUND(posted.lat, 1) BETWEEN ?2 AND ?3
                AND ROUND(posted.lng, 1) BETWEEN ?4 AND ?5
              )
+             OR (
+               gv.source = 'local_watch'
+               AND gv.medium = 'email'
+               AND substr(gv.campaign, 1, 16) = 'new_local_trade:'
+               AND alert_listing.postal_code IS NOT NULL
+               AND posted.postal_code = alert_listing.postal_code
+             )
              THEN u.id
            END) AS target_area_posters,
            COUNT(DISTINCT CASE WHEN initiators.user_id IS NOT NULL THEN u.id END) AS negotiation_starters,
@@ -139,6 +150,11 @@ adminRoutes.get("/stats", async (c) => {
           AND u.attribution_medium = gv.medium
           AND u.attribution_campaign = gv.campaign
           AND u.is_deleted = 0
+         LEFT JOIN listings alert_listing
+           ON gv.source = 'local_watch'
+          AND gv.medium = 'email'
+          AND gv.campaign = 'new_local_trade:' || alert_listing.id
+          AND alert_listing.is_deleted = 0
          LEFT JOIN listings posted
            ON posted.user_id = u.id
           AND posted.is_deleted = 0
@@ -322,6 +338,34 @@ adminRoutes.get("/stats", async (c) => {
         waiting_on_lister: number;
         waiting_on_requester: number;
       }>(),
+    db
+      .prepare(
+        `SELECT
+           COALESCE(SUM(
+             CASE WHEN local_listing_notifications = 1 THEN 1 ELSE 0 END
+           ), 0) AS opted_in,
+           COALESCE(SUM(
+             CASE
+               WHEN local_listing_notifications = 1
+                AND email_verified_at IS NOT NULL
+                AND home_lat IS NOT NULL
+                AND home_lng IS NOT NULL
+               THEN 1 ELSE 0
+             END
+           ), 0) AS alert_ready
+         FROM users
+        WHERE is_deleted = 0
+          AND is_archived = 0`
+      )
+      .first<{ opted_in: number; alert_ready: number }>(),
+    db
+      .prepare(
+        `SELECT COUNT(*) AS n
+           FROM local_listing_email_deliveries
+          WHERE date_created >= ?1`
+      )
+      .bind(now - 7 * day)
+      .first<{ n: number }>(),
   ]);
   const tradeDurations = firstTradeDurations.results.map((row) => row.elapsed_ms);
   const midpoint = Math.floor(tradeDurations.length / 2);
@@ -351,7 +395,9 @@ adminRoutes.get("/stats", async (c) => {
   const eligibleNegotiations = ownerResponse?.eligible_negotiations ?? 0;
   const respondedWithin72h = ownerResponse?.responded_within_72h ?? 0;
   const growthCampaigns = growthFunnel.results.map((campaign) => {
-    const targetArea = campaignTargetLabel(campaign.campaign);
+    const targetArea = campaign.local_watch_zip
+      ? `ZIP ${campaign.local_watch_zip}`
+      : campaignTargetLabel(campaign.campaign);
     return {
       ...campaign,
       target_area: targetArea,
@@ -425,6 +471,13 @@ adminRoutes.get("/stats", async (c) => {
         overdueAfterHours: 24,
         overdueWaitingOnLister: overdueReplies?.waiting_on_lister ?? 0,
         overdueWaitingOnRequester: overdueReplies?.waiting_on_requester ?? 0,
+      },
+      localWatch: {
+        radiusKm: 25,
+        maxAlertsPerUtcDay: 1,
+        optedIn: localWatchMembers?.opted_in ?? 0,
+        alertReady: localWatchMembers?.alert_ready ?? 0,
+        attemptsLast7Days: localWatchAttempts7?.n ?? 0,
       },
     },
   });

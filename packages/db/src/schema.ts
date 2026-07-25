@@ -32,6 +32,9 @@ export const users = sqliteTable(
     tradeEmailNotifications: integer("trade_email_notifications")
       .notNull()
       .default(1),
+    localListingNotifications: integer("local_listing_notifications")
+      .notNull()
+      .default(0),
     sessionsInvalidatedAt: integer("sessions_invalidated_at"),
     isAdmin: integer("is_admin").notNull().default(0),
     isArchived: integer("is_archived").notNull().default(0),
@@ -139,6 +142,31 @@ export const listings = sqliteTable(
     ixCategory: index("ix_listings_category").on(t.category),
     ixGeohash: index("ix_listings_geohash").on(t.geohash),
     ixStatus: index("ix_listings_status").on(t.status),
+  })
+);
+
+export const localListingEmailDeliveries = sqliteTable(
+  "local_listing_email_deliveries",
+  {
+    id: text("id").primaryKey(),
+    recipientUserId: text("recipient_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    listingId: text("listing_id")
+      .notNull()
+      .references(() => listings.id, { onDelete: "cascade" }),
+    dayUtc: text("day_utc").notNull(),
+    dateCreated: integer("date_created")
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => ({
+    uxRecipientDay: uniqueIndex(
+      "ux_local_listing_email_deliveries_recipient_day"
+    ).on(t.recipientUserId, t.dayUtc),
+    ixCreated: index("ix_local_listing_email_deliveries_created").on(
+      t.dateCreated
+    ),
   })
 );
 

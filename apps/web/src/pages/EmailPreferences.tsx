@@ -7,6 +7,8 @@ import { Container } from "../ui/Container.js";
 type Preferences = {
   email: string;
   enabled: boolean;
+  tradeEnabled: boolean;
+  localEnabled: boolean;
 };
 
 export default function EmailPreferencesPage() {
@@ -27,24 +29,34 @@ export default function EmailPreferencesPage() {
       );
   }, [query]);
 
-  async function update(enabled: boolean) {
+  async function update(
+    kind: "tradeEnabled" | "localEnabled",
+    enabled: boolean
+  ) {
     setBusy(true);
     setError(null);
     setSaved(false);
     try {
-      const result = await api<{ enabled: boolean }>(
-        `/email-preferences?${query}`,
-        {
-          method: "POST",
-          body: JSON.stringify({ enabled }),
-        }
-      );
+      await api(`/email-preferences?${query}`, {
+        method: "POST",
+        body: JSON.stringify({ [kind]: enabled }),
+      });
       setPreferences((current) =>
-        current ? { ...current, enabled: result.enabled } : current
+        current
+          ? {
+              ...current,
+              [kind]: enabled,
+              ...(kind === "tradeEnabled" ? { enabled } : {}),
+            }
+          : current
       );
       setSaved(true);
-    } catch {
-      setError("We could not update your preference. Please try again.");
+    } catch (e: any) {
+      setError(
+        e?.body?.error === "home_location_unavailable"
+          ? "Add or resave a valid home ZIP in Account before turning on local-listing alerts."
+          : "We could not update your preference. Please try again."
+      );
     } finally {
       setBusy(false);
     }
@@ -57,12 +69,12 @@ export default function EmailPreferencesPage() {
           <Bell className="h-5 w-5" strokeWidth={2} />
         </span>
         <h1 className="display mt-5 text-3xl text-ink-900">
-          Trade email alerts
+          Email preferences
         </h1>
         <p className="mt-2 text-sm leading-6 text-ink-600">
-          These alerts only cover proposals, replies, and agreement status
-          connected to your unscrewed account. They never contain private
-          message text or contract terms and are never used for marketing.
+          Manage transactional trade activity and optional local-listing
+          alerts independently. Neither category contains private message text,
+          contract terms, exact addresses, or meetup details.
         </p>
 
         {!preferences && !error && (
@@ -70,27 +82,75 @@ export default function EmailPreferencesPage() {
         )}
 
         {preferences && (
-          <div className="mt-6 rounded-xl border border-surface-200 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-              Account
-            </p>
-            <p className="mt-1 text-sm text-ink-900">{preferences.email}</p>
-            <p className="mt-3 text-sm text-ink-700">
-              Alerts are currently{" "}
-              <strong>{preferences.enabled ? "on" : "off"}</strong>.
-            </p>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => update(!preferences.enabled)}
-              className={preferences.enabled ? "btn-ghost mt-4" : "btn-brand mt-4"}
-            >
-              {busy
-                ? "Saving…"
-                : preferences.enabled
-                  ? "Turn off trade emails"
-                  : "Turn trade emails back on"}
-            </button>
+          <div className="mt-6 space-y-3">
+            <div className="rounded-xl border border-surface-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+                Account
+              </p>
+              <p className="mt-1 text-sm text-ink-900">{preferences.email}</p>
+            </div>
+            <div className="rounded-xl border border-surface-200 p-4">
+              <p className="text-sm font-semibold text-ink-900">
+                Trade activity
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-500">
+                Transactional alerts for proposals, replies, and agreement
+                updates connected to your account.
+              </p>
+              <p className="mt-3 text-sm text-ink-700">
+                Alerts are currently{" "}
+                <strong>{preferences.tradeEnabled ? "on" : "off"}</strong>.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  update("tradeEnabled", !preferences.tradeEnabled)
+                }
+                className={
+                  preferences.tradeEnabled
+                    ? "btn-ghost mt-4"
+                    : "btn-brand mt-4"
+                }
+              >
+                {busy
+                  ? "Saving…"
+                  : preferences.tradeEnabled
+                    ? "Turn off trade emails"
+                    : "Turn trade emails back on"}
+              </button>
+            </div>
+            <div className="rounded-xl border border-surface-200 p-4">
+              <p className="text-sm font-semibold text-ink-900">
+                New listings near home
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-500">
+                Optional alerts for new listings within roughly 25 km of your
+                home ZIP, limited to at most one local-listing email each day.
+              </p>
+              <p className="mt-3 text-sm text-ink-700">
+                Alerts are currently{" "}
+                <strong>{preferences.localEnabled ? "on" : "off"}</strong>.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  update("localEnabled", !preferences.localEnabled)
+                }
+                className={
+                  preferences.localEnabled
+                    ? "btn-ghost mt-4"
+                    : "btn-brand mt-4"
+                }
+              >
+                {busy
+                  ? "Saving…"
+                  : preferences.localEnabled
+                    ? "Turn off local-listing emails"
+                    : "Turn on local-listing emails"}
+              </button>
+            </div>
             {saved && (
               <p className="mt-3 flex items-center gap-1.5 text-sm text-brand-700">
                 <CheckCircle2 className="h-4 w-4" />

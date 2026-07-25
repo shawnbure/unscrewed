@@ -12,6 +12,7 @@ import { getDb, listings, listingPhotos } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 import { requireAuth, optionalAuth } from "../middleware/auth.js";
 import { uuidv4 } from "../lib/crypto.js";
+import { notifyLocalListingWatchers } from "../lib/localListingEmail.js";
 
 export const listingsRoutes = new Hono<AppContext>();
 
@@ -241,6 +242,20 @@ listingsRoutes.post("/", requireAuth, async (c) => {
   )
     .bind(id)
     .run();
+
+  c.executionCtx.waitUntil(
+    notifyLocalListingWatchers(c.env, {
+      listingId: id,
+      ownerUserId: userId,
+      title: input.title,
+      wants: input.wants,
+      postalCode: input.postalCode,
+      lat: input.lat,
+      lng: input.lng,
+    }).catch((error) => {
+      console.error("[local-listing-email] send failed", error);
+    })
+  );
 
   return c.json({ id });
 });

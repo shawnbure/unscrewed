@@ -22,6 +22,8 @@ export default function Login() {
   const continuesToProposal =
     nextUrl.pathname.startsWith("/listing/") &&
     nextUrl.searchParams.get("propose") === "1";
+  const continuesToLocalWatch =
+    nextUrl.pathname === "/account" && nextUrl.hash === "#local-watch";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -81,7 +83,9 @@ export default function Login() {
       subtitle={
         continuesToProposal
           ? "Sign in, then you’ll return to this trade to make your proposal."
-          : "Sign in with your email and password."
+          : continuesToLocalWatch
+            ? "Sign in, then you can review your optional local-listing alerts."
+            : "Sign in with your email and password."
       }
       footer={
         <>
