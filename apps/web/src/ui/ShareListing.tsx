@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Share2 } from "lucide-react";
+import { Check, Copy, Eye, Share2, X } from "lucide-react";
 import { buildListingShareText } from "../lib/shareListing.js";
 
 interface ShareListingProps {
@@ -22,6 +22,7 @@ export function ShareListing({
   variant = "default",
 }: ShareListingProps) {
   const [copied, setCopied] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const resetTimer = useRef<number | null>(null);
   const shareParams = new URLSearchParams({
     utm_source: "listing_share",
@@ -77,6 +78,14 @@ export function ShareListing({
     }
   }
 
+  const buttonLabel = copied
+    ? "Exact invitation copied"
+    : owner
+      ? "Review exact invitation"
+      : variant === "success"
+        ? "Invite a possible trade partner"
+        : "Share this trade";
+
   return (
     <div
       className={
@@ -96,7 +105,8 @@ export function ShareListing({
       )}
       <button
         type="button"
-        onClick={shareListing}
+        onClick={owner ? () => setReviewing(true) : shareListing}
+        aria-expanded={owner ? reviewing : undefined}
         className={
           variant === "default"
             ? "btn-outline mt-2 flex w-full items-center justify-center gap-2"
@@ -105,17 +115,83 @@ export function ShareListing({
       >
         {copied ? (
           <Check className="h-4 w-4" strokeWidth={2.25} />
+        ) : owner ? (
+          <Eye className="h-4 w-4" strokeWidth={2.25} />
         ) : (
           <Share2 className="h-4 w-4" strokeWidth={2.25} />
         )}
-        {copied
-          ? "Trade link copied"
-          : variant === "success"
-            ? "Invite a possible trade partner"
-            : "Share this trade"}
+        {buttonLabel}
       </button>
+      {owner && reviewing && (
+        <section
+          className={`mt-3 rounded-2xl border p-4 text-left ${
+            variant === "success"
+              ? "border-white/20 bg-white text-ink-900 shadow-card sm:w-[28rem]"
+              : "border-surface-200 bg-surface-50"
+          }`}
+          aria-labelledby={`share-review-${id}`}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3
+                id={`share-review-${id}`}
+                className="text-sm font-bold text-ink-900"
+              >
+                Review the exact invitation
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-ink-500">
+                Choose one person who might genuinely want this offer. Nothing
+                is sent until you choose the recipient and send it yourself.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReviewing(false)}
+              className="rounded-lg p-1 text-ink-400 hover:bg-surface-100 hover:text-ink-700"
+              aria-label="Close invitation review"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="mt-3 rounded-xl border border-surface-200 bg-white p-3">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink-800">
+              {shareText}
+            </p>
+            <p className="mt-2 break-all text-[11px] leading-relaxed text-brand-700">
+              {shareUrl}
+            </p>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={shareListing}
+              className="btn-brand text-sm"
+            >
+              <Share2 className="h-4 w-4" strokeWidth={2.25} />
+              Choose a recipient
+            </button>
+            <button
+              type="button"
+              onClick={copyShare}
+              className="btn-outline text-sm"
+            >
+              {copied ? (
+                <Check className="h-4 w-4" strokeWidth={2.25} />
+              ) : (
+                <Copy className="h-4 w-4" strokeWidth={2.25} />
+              )}
+              {copied ? "Exact invitation copied" : "Copy exact invitation"}
+            </button>
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
+            Copying prepares the invitation but does not send it or count as a
+            visit. Only a recipient opening the link creates an invitation
+            visit.
+          </p>
+        </section>
+      )}
       <p className="sr-only" aria-live="polite">
-        {copied ? "Trade invitation copied to your clipboard." : ""}
+        {copied ? "Exact trade invitation copied to your clipboard." : ""}
       </p>
     </div>
   );
