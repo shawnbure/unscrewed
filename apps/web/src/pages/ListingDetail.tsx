@@ -60,6 +60,49 @@ export default function ListingDetail() {
       .catch(console.error);
   }, [id]);
 
+  useEffect(() => {
+    if (!data) return;
+    const listing = data.listing;
+    const location = listing.postalCode?.trim()
+      ? ` near ${listing.postalCode.trim()}`
+      : "";
+    const pageTitle = truncateMeta(
+      `${compactMeta(listing.title)} — barter${location} | unscrewed.lol`,
+      90
+    );
+    const description = truncateMeta(
+      `Looking to trade for ${withoutTrailingPunctuation(listing.wants)}. ${compactMeta(listing.description)}`,
+      160
+    );
+    const canonical = `${window.location.origin}/listing/${encodeURIComponent(listing.id)}`;
+    const firstPhoto = data.photos.find((photo) => photo.r2Key)?.r2Key;
+    const image = firstPhoto
+      ? photoUrl(firstPhoto)
+      : `${window.location.origin}/og.png`;
+    const imageAlt = firstPhoto
+      ? `Photo for ${compactMeta(listing.title)}`
+      : "Neighbors exchanging goods, tools, and skills through unscrewed.lol";
+    const previousTitle = document.title;
+    const restores = [
+      setMeta('meta[name="description"]', description),
+      setMeta('meta[property="og:url"]', canonical),
+      setMeta('meta[property="og:title"]', pageTitle),
+      setMeta('meta[property="og:description"]', description),
+      setMeta('meta[property="og:image"]', image),
+      setMeta('meta[property="og:image:alt"]', imageAlt),
+      setMeta('meta[name="twitter:title"]', pageTitle),
+      setMeta('meta[name="twitter:description"]', description),
+      setMeta('meta[name="twitter:image"]', image),
+      setCanonical(canonical),
+    ];
+    document.title = pageTitle;
+
+    return () => {
+      document.title = previousTitle;
+      restores.forEach((restore) => restore());
+    };
+  }, [data]);
+
   if (!data)
     return (
       <Container size="lg" className="py-10">
@@ -445,4 +488,39 @@ function formatRelative(ms: number): string {
   const d = Math.floor(h / 24);
   if (d < 30) return `${d}d ago`;
   return new Date(ms).toLocaleDateString();
+}
+
+function compactMeta(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function withoutTrailingPunctuation(value: string): string {
+  return compactMeta(value).replace(/[.!?]+$/, "");
+}
+
+function truncateMeta(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function setMeta(selector: string, content: string): () => void {
+  const element = document.querySelector<HTMLMetaElement>(selector);
+  if (!element) return () => {};
+  const previous = element.content;
+  element.content = content;
+  return () => {
+    element.content = previous;
+  };
+}
+
+function setCanonical(href: string): () => void {
+  const element = document.querySelector<HTMLLinkElement>(
+    'link[rel="canonical"]'
+  );
+  if (!element) return () => {};
+  const previous = element.href;
+  element.href = href;
+  return () => {
+    element.href = previous;
+  };
 }
