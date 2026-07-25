@@ -148,6 +148,12 @@ export default function UMassPage() {
               <p className="mt-4 max-w-2xl text-xs leading-relaxed text-ink-400">
                 unscrewed is an independent community project. It is not
                 affiliated with or endorsed by UMass Amherst or New2U.
+                <Link
+                  to="/public-benefit"
+                  className="ml-1 font-semibold text-brand-700 hover:underline"
+                >
+                  Review its public-benefit commitments and live outcomes.
+                </Link>
               </p>
             </div>
 

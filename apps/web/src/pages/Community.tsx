@@ -101,6 +101,7 @@ export default function CommunityPage() {
 
   const totalMapped = stats?.map_clusters.reduce((sum, c) => sum + c.count, 0) ?? 0;
   const totalMembers = stats?.members_total ?? 0;
+  const minAreaMembers = stats?.map_min_cluster_size ?? 3;
 
   return (
     <div className="pb-24">
@@ -116,11 +117,12 @@ export default function CommunityPage() {
               <span className="text-brand-600">
                 {totalMembers.toLocaleString()}
               </span>{" "}
-              neighbors trading with each other.
+              neighbors have joined so far.
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-base text-ink-500 sm:text-lg">
-              Every dot on the map is a real person nearby. No fees, no
-              middleman — just neighbors deciding to help each other out.
+              Every number on the map counts real members in a broad area. No
+              fees, no middleman—just neighbors deciding to help each other
+              out.
             </p>
             {!session?.authenticated && (
               <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -166,9 +168,10 @@ export default function CommunityPage() {
               The map of trades that could happen.
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-ink-500">
-              Each dot is a ZIP-3 area (~500,000 people) that has at least one
-              unscrewed member. The bigger the dot, the more neighbors. Nobody's
-              exact ZIP is ever shown.
+              Each dot is a ZIP-3 area (~500,000 people) that appears only
+              after at least {minAreaMembers} members share that broad region.
+              Marker positions are rounded before publication. Nobody's home
+              ZIP or exact location is shown.
             </p>
           </div>
         </header>
@@ -179,14 +182,15 @@ export default function CommunityPage() {
         />
         {stats && stats.map_clusters.length === 0 && (
           <p className="mt-3 text-center text-sm text-ink-500">
-            Nobody's on the map yet — be the first to plant a flag.
+            No ZIP-3 area has reached the {minAreaMembers}-member privacy
+            threshold yet. The member total above still counts everyone.
           </p>
         )}
         {stats && stats.map_clusters.length > 0 && (
           <p className="mt-3 text-center text-xs text-ink-400">
             {totalMapped.toLocaleString()} of {totalMembers.toLocaleString()}{" "}
-            member{totalMembers === 1 ? "" : "s"} shown — the rest haven't
-            added a ZIP yet.
+            member{totalMembers === 1 ? "" : "s"} shown in broad areas that
+            meet the {minAreaMembers}-member privacy threshold.
           </p>
         )}
       </Container>

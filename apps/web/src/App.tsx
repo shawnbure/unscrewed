@@ -305,6 +305,9 @@ export default function App() {
               Making money :)
             </Link>
             <Link to="/safety" className="hover:text-ink-900">Safety</Link>
+            <Link to="/public-benefit" className="hover:text-ink-900">
+              Public benefit
+            </Link>
             <Link to="/contact" className="hover:text-ink-900">Contact</Link>
             <Link to="/tos" className="hover:text-ink-900">Terms</Link>
             <span className="text-ink-300">© {new Date().getFullYear()}</span>

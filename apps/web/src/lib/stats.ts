@@ -15,6 +15,9 @@ export interface StatsPayload {
   members_total: number;
   listings_active: number;
   listings_this_month: number;
+  two_sided_conversations: number;
+  completed_trades: number;
+  map_min_cluster_size: number;
   map_clusters: MapCluster[];
   updated_at: number;
 }

@@ -13,6 +13,7 @@ import NegotiationPage from "./pages/Negotiation.js";
 import TradesPage from "./pages/Trades.js";
 import AccountPage from "./pages/Account.js";
 import NeighborhoodPage from "./pages/Neighborhood.js";
+import PublicBenefitPage from "./pages/PublicBenefit.js";
 import ThoughtsPage from "./pages/Thoughts.js";
 import CommunityPage from "./pages/Community.js";
 import BlogPage from "./pages/Blog.js";
@@ -95,6 +96,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           />
           <Route path="thoughts" element={<ThoughtsPage />} />
           <Route path="community" element={<CommunityPage />} />
+          <Route path="public-benefit" element={<PublicBenefitPage />} />
           <Route path="blog" element={<BlogPage />} />
           <Route path="blog/:slug" element={<BlogPostPage />} />
           <Route path="tos" element={<Tos />} />
