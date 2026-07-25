@@ -43,7 +43,7 @@ export async function sendVerificationEmail(
 
 ${verifyUrl}
 
-After verification, unscrewed can alert you when a neighbor proposes or replies to a trade. These are transactional account alerts, not marketing.
+After verification, unscrewed can alert you when a neighbor proposes, replies, or updates an agreement. These are transactional account alerts, not marketing.
 
 If you did not create this account, you can ignore this email.`,
     html: `<!doctype html>
@@ -52,7 +52,7 @@ If you did not create this account, you can ignore this email.`,
     <div style="max-width:560px;margin:0 auto;padding:32px 20px">
       <p style="font-size:13px;font-weight:700;letter-spacing:.08em;color:#5a6f3b">UNSCREWED</p>
       <h1 style="font-size:24px;line-height:1.25;margin:16px 0 8px">Verify your email</h1>
-      <p style="font-size:16px;line-height:1.6">Confirm that this address belongs to your unscrewed account. Afterward, we can alert you when a neighbor proposes or replies to a trade.</p>
+      <p style="font-size:16px;line-height:1.6">Confirm that this address belongs to your unscrewed account. Afterward, we can alert you when a neighbor proposes, replies, or updates an agreement.</p>
       <p style="margin:28px 0">
         <a href="${escapedVerifyUrl}" style="display:inline-block;background:#455d2a;color:#fff;text-decoration:none;border-radius:10px;padding:13px 18px;font-weight:700">Verify email address</a>
       </p>

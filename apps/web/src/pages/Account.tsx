@@ -199,8 +199,9 @@ export default function AccountPage() {
               Trade email alerts
             </h2>
             <p className="mt-0.5 text-sm text-ink-500">
-              Get a brief email when a neighbor sends a proposal or replies.
-              No newsletters, promotions, or private message text.
+              Get a brief email when a proposal, reply, or agreement update
+              needs your attention. No newsletters, promotions, or private
+              message text.
             </p>
           </div>
         </div>

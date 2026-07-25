@@ -60,9 +60,9 @@ export default function EmailPreferencesPage() {
           Trade email alerts
         </h1>
         <p className="mt-2 text-sm leading-6 text-ink-600">
-          These alerts only cover proposals and replies connected to your
-          unscrewed account. They never contain private message text and are
-          never used for marketing.
+          These alerts only cover proposals, replies, and agreement status
+          connected to your unscrewed account. They never contain private
+          message text or contract terms and are never used for marketing.
         </p>
 
         {!preferences && !error && (

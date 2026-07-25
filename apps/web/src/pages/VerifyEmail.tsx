@@ -56,7 +56,8 @@ export default function VerifyEmailPage() {
           <>
             <p className="mt-3 text-sm leading-6 text-ink-600">
               Confirm <strong>{state.email}</strong> so unscrewed can send
-              proposal and reply alerts. No marketing email.
+              proposal, reply, and agreement-status alerts. No marketing
+              email.
             </p>
             <button
               type="button"

@@ -5,7 +5,7 @@
 
 import { Hono } from "hono";
 import { z } from "zod";
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import {
   getDb,
   listings,
@@ -19,6 +19,7 @@ import type { AppContext } from "../env.js";
 import { requireAuth } from "../middleware/auth.js";
 import { uuidv4 } from "../lib/crypto.js";
 import { draftContractTerms } from "../lib/contractAi.js";
+import { notifyTradeParticipant } from "../lib/tradeEmail.js";
 
 export const contractsRoutes = new Hono<AppContext>();
 contractsRoutes.use("*", requireAuth);
@@ -132,21 +133,64 @@ contractsRoutes.post("/:id/sign", async (c) => {
     upd.partyBSignedIp = ip;
   }
 
-  // Determine if this signature completes the contract.
-  const bothSigning =
-    (isA ? true : Boolean(ct.partyASignedAt)) &&
-    (isA ? Boolean(ct.partyBSignedAt) : true);
-  if (bothSigning) {
-    upd.status = "signed";
-    upd.tosVersionAtSigning = c.env.TOS_VERSION;
-  } else if (ct.status === "draft") {
+  if (ct.status === "draft") {
     upd.status = "awaiting_signatures";
   }
 
-  await db.update(contracts).set(upd as any).where(eq(contracts.id, id));
+  // The conditional update prevents a stale request from signing after a
+  // cancellation or completion. RETURNING observes the entire row after this
+  // signature lands, including a near-simultaneous signature by the other
+  // party, so one of the two requests always sees that both are present.
+  const signedRows = await db
+    .update(contracts)
+    .set(upd as any)
+    .where(
+      and(
+        eq(contracts.id, id),
+        ne(contracts.status, "cancelled"),
+        ne(contracts.status, "signed"),
+        isA
+          ? isNull(contracts.partyASignedAt)
+          : isNull(contracts.partyBSignedAt)
+      )
+    )
+    .returning();
+  const afterSignature = signedRows[0];
+  if (!afterSignature) {
+    const [current] = await db
+      .select()
+      .from(contracts)
+      .where(eq(contracts.id, id))
+      .limit(1);
+    let conflictError = "signature_conflict";
+    if (current?.status === "cancelled") conflictError = "cancelled";
+    else if (current?.status === "signed") conflictError = "already_signed";
+    else if (isA ? current?.partyASignedAt : current?.partyBSignedAt)
+      conflictError = "you_already_signed";
+    return c.json({ error: conflictError }, 409);
+  }
 
-  // Cascade lifecycle updates when both parties have signed.
+  const bothSigning = Boolean(
+    afterSignature.partyASignedAt && afterSignature.partyBSignedAt
+  );
+  let completed = false;
   if (bothSigning) {
+    const finalized = await db
+      .update(contracts)
+      .set({
+        status: "signed",
+        tosVersionAtSigning: c.env.TOS_VERSION,
+        dateModified: now,
+      })
+      .where(
+        and(eq(contracts.id, id), ne(contracts.status, "cancelled"))
+      )
+      .returning({ id: contracts.id });
+    completed = Boolean(finalized[0]);
+  }
+
+  // Cascade lifecycle updates only after the signed status is authoritative.
+  if (completed) {
     await db
       .update(listings)
       .set({ status: "traded", dateModified: now })
@@ -155,11 +199,24 @@ contractsRoutes.post("/:id/sign", async (c) => {
       .update(negotiations)
       .set({ status: "signed", dateModified: now })
       .where(eq(negotiations.id, ct.negotiationId));
-  } else if (ct.status === "draft") {
+  } else if (!bothSigning && ct.status === "draft") {
     await db
       .update(negotiations)
       .set({ status: "contract_drafted", dateModified: now })
       .where(eq(negotiations.id, ct.negotiationId));
+  }
+
+  if (!bothSigning || completed) {
+    c.executionCtx.waitUntil(
+      notifyTradeParticipant(c.env, {
+        recipientUserId: isA ? ct.partyBUserId : ct.partyAUserId,
+        negotiationId: ct.negotiationId,
+        kind: completed ? "trade_completed" : "signature_needed",
+        dedupeId: ct.id,
+      }).catch((error) => {
+        console.error("[trade-email] signature alert failed", error);
+      })
+    );
   }
 
   // Return the fresh row.
@@ -198,6 +255,17 @@ contractsRoutes.post("/:id/cancel", async (c) => {
     .update(negotiations)
     .set({ status: "open", dateModified: Date.now() })
     .where(eq(negotiations.id, ct.negotiationId));
+  c.executionCtx.waitUntil(
+    notifyTradeParticipant(c.env, {
+      recipientUserId:
+        ct.partyAUserId === userId ? ct.partyBUserId : ct.partyAUserId,
+      negotiationId: ct.negotiationId,
+      kind: "contract_cancelled",
+      dedupeId: ct.id,
+    }).catch((error) => {
+      console.error("[trade-email] cancellation alert failed", error);
+    })
+  );
   return c.json({ ok: true });
 });
 
@@ -318,6 +386,18 @@ export async function createContract(
     .update(negotiations)
     .set({ status: "contract_drafted", dateModified: now })
     .where(eq(negotiations.id, negotiationId));
+
+  c.executionCtx.waitUntil(
+    notifyTradeParticipant(c.env, {
+      recipientUserId:
+        n.listerUserId === userId ? n.requesterUserId : n.listerUserId,
+      negotiationId,
+      kind: "contract_ready",
+      dedupeId: id,
+    }).catch((error) => {
+      console.error("[trade-email] agreement alert failed", error);
+    })
+  );
 
   return c.json({ id });
 }

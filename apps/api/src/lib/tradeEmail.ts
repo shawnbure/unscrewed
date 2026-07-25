@@ -4,7 +4,13 @@ import { hmacSha256Hex } from "./crypto.js";
 const FROM = "notifications@unscrewed.lol";
 const PREFERENCE_PURPOSE = "trade-emails:v1";
 
-export type TradeEmailKind = "new_proposal" | "new_message";
+export type TradeEmailKind =
+  | "new_proposal"
+  | "new_message"
+  | "contract_ready"
+  | "signature_needed"
+  | "trade_completed"
+  | "contract_cancelled";
 
 export async function tradeEmailPreferenceToken(
   env: Env,
@@ -39,6 +45,7 @@ type NotifyTradeInput = {
   recipientUserId: string;
   negotiationId: string;
   kind: TradeEmailKind;
+  dedupeId?: string;
 };
 
 /**
@@ -71,7 +78,7 @@ export async function notifyTradeParticipant(
 
   // A burst of chat messages should produce one prompt, not a noisy inbox.
   // A newly-created proposal gets a longer dedupe window for retrying clients.
-  const dedupeKey = `trade-email:${input.kind}:${input.negotiationId}:${recipient.id}`;
+  const dedupeKey = `trade-email:${input.kind}:${input.dedupeId ?? input.negotiationId}:${recipient.id}`;
   if (await env.RATE_LIMIT.get(dedupeKey)) return;
 
   const token = await tradeEmailPreferenceToken(
@@ -86,15 +93,58 @@ export async function notifyTradeParticipant(
   const escapedTradeUrl = escapeHtml(tradeUrl);
   const listingTitle =
     safeSubjectPart(recipient.listing_title) || "your listing";
-  const isProposal = input.kind === "new_proposal";
-  const subject = isProposal
-    ? `New trade proposal: ${listingTitle}`
-    : `New trade reply: ${listingTitle}`;
-  const intro = isProposal
-    ? "A neighbor sent a proposal for one of your listings."
-    : "A neighbor replied in one of your trade conversations.";
+  const content = {
+    new_proposal: {
+      subject: `New trade proposal: ${listingTitle}`,
+      heading: "You have a new trade proposal",
+      intro: "A neighbor sent a proposal for one of your listings.",
+      cta: "Open private conversation",
+    },
+    new_message: {
+      subject: `New trade reply: ${listingTitle}`,
+      heading: "You have a new trade reply",
+      intro: "A neighbor replied in one of your trade conversations.",
+      cta: "Open private conversation",
+    },
+    contract_ready: {
+      subject: `Trade agreement ready to review: ${listingTitle}`,
+      heading: "A trade agreement is ready",
+      intro:
+        "The other trader prepared an agreement for you to review and sign only if it matches what you agreed.",
+      cta: "Review agreement",
+    },
+    signature_needed: {
+      subject: `Your signature is needed: ${listingTitle}`,
+      heading: "The other trader has signed",
+      intro:
+        "The trade agreement is waiting for your review and signature. Sign only if every term is accurate.",
+      cta: "Review and sign",
+    },
+    trade_completed: {
+      subject: `Trade agreement completed: ${listingTitle}`,
+      heading: "Both traders have signed",
+      intro:
+        "The trade agreement now has both signatures. Keep using your judgment and the safety guidance for any meetup or exchange.",
+      cta: "View completed agreement",
+    },
+    contract_cancelled: {
+      subject: `Trade agreement cancelled: ${listingTitle}`,
+      heading: "The trade agreement was cancelled",
+      intro:
+        "The other trader cancelled the unsigned agreement. You can continue the private conversation if you want to revise the terms.",
+      cta: "Open private conversation",
+    },
+  } satisfies Record<
+    TradeEmailKind,
+    { subject: string; heading: string; intro: string; cta: string }
+  >;
+  const emailContent = content[input.kind];
+  const subject = emailContent.subject;
+  const intro = emailContent.intro;
   const escapedIntro = escapeHtml(intro);
   const escapedTitle = escapeHtml(listingTitle);
+  const escapedHeading = escapeHtml(emailContent.heading);
+  const escapedCta = escapeHtml(emailContent.cta);
 
   await env.EMAIL.send({
     to: recipient.email,
@@ -104,7 +154,7 @@ export async function notifyTradeParticipant(
 
 Listing: ${listingTitle}
 
-Open the private trade conversation:
+${emailContent.cta}:
 ${tradeUrl}
 
 This is a transactional alert about activity on your unscrewed account, not a marketing email. Manage these alerts:
@@ -114,11 +164,11 @@ ${preferencesUrl}`,
   <body style="margin:0;background:#f7f5ef;color:#25231f;font-family:Arial,sans-serif">
     <div style="max-width:560px;margin:0 auto;padding:32px 20px">
       <p style="font-size:13px;font-weight:700;letter-spacing:.08em;color:#5a6f3b">UNSCREWED</p>
-      <h1 style="font-size:24px;line-height:1.25;margin:16px 0 8px">${isProposal ? "You have a new trade proposal" : "You have a new trade reply"}</h1>
+      <h1 style="font-size:24px;line-height:1.25;margin:16px 0 8px">${escapedHeading}</h1>
       <p style="font-size:16px;line-height:1.6">${escapedIntro}</p>
       <p style="font-size:15px;line-height:1.5"><strong>Listing:</strong> ${escapedTitle}</p>
       <p style="margin:28px 0">
-        <a href="${escapedTradeUrl}" style="display:inline-block;background:#455d2a;color:#fff;text-decoration:none;border-radius:10px;padding:13px 18px;font-weight:700">Open private conversation</a>
+        <a href="${escapedTradeUrl}" style="display:inline-block;background:#455d2a;color:#fff;text-decoration:none;border-radius:10px;padding:13px 18px;font-weight:700">${escapedCta}</a>
       </p>
       <p style="font-size:12px;line-height:1.5;color:#68645c">
         This is a transactional account alert, not a marketing email.
@@ -133,6 +183,6 @@ ${preferencesUrl}`,
   });
 
   await env.RATE_LIMIT.put(dedupeKey, "1", {
-    expirationTtl: isProposal ? 86_400 : 900,
+    expirationTtl: input.kind === "new_message" ? 900 : 86_400,
   });
 }
