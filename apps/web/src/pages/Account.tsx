@@ -12,6 +12,7 @@ import {
   User as UserIcon,
   Lock,
   AlertTriangle,
+  Bell,
 } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import {
@@ -27,10 +28,12 @@ import { useSession } from "../lib/session.js";
 interface Me {
   id: string;
   email: string;
+  emailVerifiedAt: number | null;
   displayName: string;
   phoneE164: string;
   phoneVerifiedAt: number | null;
   homeZip: string | null;
+  tradeEmailNotifications: number;
   isAdmin: number;
   dateCreated: number;
 }
@@ -186,6 +189,33 @@ export default function AccountPage() {
         )}
       </section>
 
+      <section id="trade-emails" className="card mt-4 p-6">
+        <div className="flex items-start gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-brand-500/10 text-brand-700">
+            <Bell className="h-4 w-4" strokeWidth={2} />
+          </span>
+          <div>
+            <h2 className="text-base font-semibold text-ink-900">
+              Trade email alerts
+            </h2>
+            <p className="mt-0.5 text-sm text-ink-500">
+              Get a brief email when a neighbor sends a proposal or replies.
+              No newsletters, promotions, or private message text.
+            </p>
+          </div>
+        </div>
+        <TradeEmailToggle
+          enabled={me.tradeEmailNotifications === 1}
+          onSaved={(enabled) =>
+            setMe((prev) =>
+              prev
+                ? { ...prev, tradeEmailNotifications: enabled ? 1 : 0 }
+                : prev
+            )
+          }
+        />
+      </section>
+
       <section className="card mt-4 p-6">
         <h2 className="text-base font-semibold text-ink-900">Phone</h2>
         <p className="mt-0.5 text-sm text-ink-500">
@@ -238,8 +268,16 @@ export default function AccountPage() {
         </p>
         <EmailEditor
           initial={me.email}
-          onSaved={(next) =>
-            setMe((prev) => (prev ? { ...prev, email: next } : prev))
+          verified={me.emailVerifiedAt !== null}
+          onSaved={(next, emailVerifiedAt) =>
+            setMe((prev) =>
+              prev ? { ...prev, email: next, emailVerifiedAt } : prev
+            )
+          }
+          onVerified={() =>
+            setMe((prev) =>
+              prev ? { ...prev, emailVerifiedAt: Date.now() } : prev
+            )
           }
         />
       </section>
@@ -282,6 +320,50 @@ export default function AccountPage() {
 // ============================================================
 // Editors
 // ============================================================
+
+function TradeEmailToggle({
+  enabled,
+  onSaved,
+}: {
+  enabled: boolean;
+  onSaved: (enabled: boolean) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function update(next: boolean) {
+    setBusy(true);
+    setError(null);
+    try {
+      await api("/me/trade-email-notifications", {
+        method: "PATCH",
+        body: JSON.stringify({ enabled: next }),
+      });
+      onSaved(next);
+    } catch (e: any) {
+      setError(e?.body?.error ?? e?.message ?? "Could not update alerts");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-4">
+      <label className="flex cursor-pointer items-center gap-3 text-sm text-ink-800">
+        <input
+          type="checkbox"
+          checked={enabled}
+          disabled={busy}
+          onChange={(event) => update(event.target.checked)}
+          className="h-4 w-4 rounded border-surface-300 text-brand-700 focus:ring-brand-500"
+        />
+        Email me about new trade activity
+        {busy && <span className="text-xs text-ink-500">Saving…</span>}
+      </label>
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+    </div>
+  );
+}
 
 function NameEditor({
   initial,
@@ -378,16 +460,49 @@ function NameEditor({
 
 function EmailEditor({
   initial,
+  verified,
   onSaved,
+  onVerified,
 }: {
   initial: string;
-  onSaved: (next: string) => void;
+  verified: boolean;
+  onSaved: (next: string, emailVerifiedAt: number | null) => void;
+  onVerified: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [email, setEmail] = useState(initial);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(
+    null
+  );
+
+  async function resendVerification() {
+    setBusy(true);
+    setError(null);
+    setVerificationStatus(null);
+    try {
+      const result = await api<{ verified: boolean; sent?: boolean }>(
+        "/email-verification/resend",
+        { method: "POST" }
+      );
+      if (result.verified) {
+        onVerified();
+        setVerificationStatus("Already verified.");
+      } else {
+        setVerificationStatus(
+          result.sent
+            ? "Verification email sent. Check your inbox."
+            : "A verification email was sent recently. Check your inbox."
+        );
+      }
+    } catch (e: any) {
+      setError(e?.body?.error ?? e?.message ?? "Could not send verification");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function save() {
     setError(null);
@@ -401,11 +516,14 @@ function EmailEditor({
     }
     setBusy(true);
     try {
-      const r = await api<{ email: string }>("/me/email", {
+      const r = await api<{
+        email: string;
+        emailVerifiedAt: number | null;
+      }>("/me/email", {
         method: "PATCH",
         body: JSON.stringify({ email, currentPassword: password }),
       });
-      onSaved(r.email);
+      onSaved(r.email, r.emailVerifiedAt);
       setPassword("");
       setEditing(false);
     } catch (e: any) {
@@ -424,22 +542,44 @@ function EmailEditor({
 
   if (!editing) {
     return (
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Mail className="h-4 w-4 text-ink-400" strokeWidth={2} />
-          <span className="text-sm text-ink-900">{initial}</span>
+      <div className="mt-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Mail className="h-4 w-4 text-ink-400" strokeWidth={2} />
+            <span className="text-sm text-ink-900">{initial}</span>
+            <span className={verified ? "chip-brand" : "chip"}>
+              {verified ? "verified" : "unverified"}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(true);
+              setEmail(initial);
+              setPassword("");
+            }}
+            className="btn-ghost text-sm"
+          >
+            <Pencil className="h-3.5 w-3.5" strokeWidth={2} /> Edit
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setEditing(true);
-            setEmail(initial);
-            setPassword("");
-          }}
-          className="btn-ghost text-sm"
-        >
-          <Pencil className="h-3.5 w-3.5" strokeWidth={2} /> Edit
-        </button>
+        {!verified && (
+          <div className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+            Verify this address before unscrewed sends trade activity alerts.
+            <button
+              type="button"
+              onClick={resendVerification}
+              disabled={busy}
+              className="ml-2 font-semibold underline"
+            >
+              {busy ? "Sending…" : "Send verification email"}
+            </button>
+          </div>
+        )}
+        {verificationStatus && (
+          <p className="mt-2 text-sm text-brand-700">{verificationStatus}</p>
+        )}
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>
     );
   }

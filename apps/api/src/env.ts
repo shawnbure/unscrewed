@@ -6,6 +6,7 @@ export interface Env {
   PHOTOS: R2Bucket;
   NEGOTIATION: DurableObjectNamespace;
   AI: Ai;
+  EMAIL: SendEmail;
 
   // Vars
   PUBLIC_BASE_URL: string;

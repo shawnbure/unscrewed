@@ -87,7 +87,7 @@ export default function Signup() {
       subtitle={
         continuesToPost
           ? "Then you’ll go straight to posting your first trade. Phone is optional."
-          : "Email + password. Phone is optional and never used for verification or messaging."
+          : "Email + password. We’ll ask you to verify your email for trade alerts; phone is optional and never used for verification or messaging."
       }
       footer={
         <>

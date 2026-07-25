@@ -62,11 +62,44 @@ async function pbkdf2(
   );
 }
 
-function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+export function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
   for (let i = 0; i < a.length; i++) diff |= a[i]! ^ b[i]!;
   return diff === 0;
+}
+
+export async function hmacSha256Hex(
+  secret: string,
+  value: string
+): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(value)
+  );
+  return [...new Uint8Array(signature)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export function timingSafeEqualHex(a: string, b: string): boolean {
+  if (!/^[0-9a-f]+$/i.test(a) || !/^[0-9a-f]+$/i.test(b)) return false;
+  if (a.length !== b.length || a.length % 2 !== 0) return false;
+  const left = new Uint8Array(a.length / 2);
+  const right = new Uint8Array(b.length / 2);
+  for (let i = 0; i < left.length; i++) {
+    left[i] = parseInt(a.slice(i * 2, i * 2 + 2), 16);
+    right[i] = parseInt(b.slice(i * 2, i * 2 + 2), 16);
+  }
+  return timingSafeEqual(left, right);
 }
 
 export async function sha256Hex(s: string): Promise<string> {

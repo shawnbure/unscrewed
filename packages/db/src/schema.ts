@@ -17,6 +17,7 @@ export const users = sqliteTable(
     id: text("id").primaryKey(), // uuid
     email: text("email").notNull(),
     emailNormalized: text("email_normalized").notNull(),
+    emailVerifiedAt: integer("email_verified_at"),
     passwordHash: text("password_hash").notNull(), // scrypt JSON blob
     phoneE164: text("phone_e164").notNull(),
     phoneVerifiedAt: integer("phone_verified_at"), // epoch ms; null until SMS verified
@@ -28,6 +29,9 @@ export const users = sqliteTable(
     attributionSource: text("attribution_source"),
     attributionMedium: text("attribution_medium"),
     attributionCampaign: text("attribution_campaign"),
+    tradeEmailNotifications: integer("trade_email_notifications")
+      .notNull()
+      .default(1),
     sessionsInvalidatedAt: integer("sessions_invalidated_at"),
     isAdmin: integer("is_admin").notNull().default(0),
     isArchived: integer("is_archived").notNull().default(0),

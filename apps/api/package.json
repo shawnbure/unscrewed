@@ -20,8 +20,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241112.0",
     "@types/ngeohash": "^0.6.8",
-    "wrangler": "^3.90.0"
+    "@types/node": "^26.1.1",
+    "wrangler": "^4.114.0"
   }
 }

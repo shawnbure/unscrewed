@@ -7,6 +7,7 @@ import {
   UpdateEmailSchema,
   ChangePasswordSchema,
   DeleteAccountSchema,
+  UpdateTradeEmailNotificationsSchema,
 } from "@unscrewed/shared";
 import { getDb, users } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
@@ -14,6 +15,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { geocodeUsZip } from "../lib/geocode.js";
 import { hashPassword, verifyPassword } from "../lib/crypto.js";
 import { createSession, destroySession } from "../lib/session.js";
+import { sendVerificationEmail } from "../lib/verificationEmail.js";
 
 export const meRoutes = new Hono<AppContext>();
 
@@ -31,12 +33,14 @@ meRoutes.get("/", async (c) => {
     .select({
       id: users.id,
       email: users.email,
+      emailVerifiedAt: users.emailVerifiedAt,
       displayName: users.displayName,
       phoneE164: users.phoneE164,
       phoneVerifiedAt: users.phoneVerifiedAt,
       homeZip: users.homeZip,
       homeLat: users.homeLat,
       homeLng: users.homeLng,
+      tradeEmailNotifications: users.tradeEmailNotifications,
       isAdmin: users.isAdmin,
       dateCreated: users.dateCreated,
     })
@@ -45,6 +49,23 @@ meRoutes.get("/", async (c) => {
     .limit(1);
   if (!row[0]) return c.json({ error: "not_found" }, 404);
   return c.json(row[0]);
+});
+
+// ---------- PATCH /me/trade-email-notifications ----------
+meRoutes.patch("/trade-email-notifications", async (c) => {
+  const userId = c.get("userId")!;
+  const json = await c.req.json().catch(() => null);
+  const parsed = UpdateTradeEmailNotificationsSchema.safeParse(json);
+  if (!parsed.success) return c.json({ error: "invalid_input" }, 400);
+  const db = getDb(c.env.DB);
+  await db
+    .update(users)
+    .set({
+      tradeEmailNotifications: parsed.data.enabled ? 1 : 0,
+      dateModified: Date.now(),
+    })
+    .where(eq(users.id, userId));
+  return c.json({ ok: true, enabled: parsed.data.enabled });
 });
 
 // ---------- PATCH /me/name ----------
@@ -143,6 +164,8 @@ meRoutes.patch("/email", async (c) => {
     .set({
       email: parsed.data.email.trim(),
       emailNormalized: newNorm,
+      emailVerifiedAt:
+        newNorm === me.emailNormalized ? me.emailVerifiedAt : null,
       dateModified: now,
       // Rebinding the login identifier invalidates every other session too.
       sessionsInvalidatedAt: now - 1,
@@ -152,7 +175,23 @@ meRoutes.patch("/email", async (c) => {
   // Re-mint the caller's cookie so THEIR session survives the invalidation.
   await destroySession(c);
   await createSession(c, userId, me.isAdmin === 1);
-  return c.json({ ok: true, email: parsed.data.email.trim() });
+  if (newNorm !== me.emailNormalized) {
+    c.executionCtx.waitUntil(
+      sendVerificationEmail(c.env, {
+        userId,
+        email: parsed.data.email.trim(),
+        emailNormalized: newNorm,
+      }).catch((error) => {
+        console.error("[verification-email] address-change send failed", error);
+      })
+    );
+  }
+  return c.json({
+    ok: true,
+    email: parsed.data.email.trim(),
+    emailVerifiedAt:
+      newNorm === me.emailNormalized ? me.emailVerifiedAt : null,
+  });
 });
 
 // ---------- PATCH /me/password ----------

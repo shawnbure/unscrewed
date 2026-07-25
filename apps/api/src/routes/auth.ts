@@ -16,6 +16,7 @@ import { verifyTurnstile } from "../lib/turnstile.js";
 import { rateLimit } from "../lib/rateLimit.js";
 import { createSession, destroySession, readSession } from "../lib/session.js";
 import { geocodeUsZip } from "../lib/geocode.js";
+import { sendVerificationEmail } from "../lib/verificationEmail.js";
 
 export const authRoutes = new Hono<AppContext>();
 
@@ -94,6 +95,15 @@ authRoutes.post("/signup", async (c) => {
   });
 
   await createSession(c, userId, false);
+  c.executionCtx.waitUntil(
+    sendVerificationEmail(c.env, {
+      userId,
+      email: input.email.trim(),
+      emailNormalized: emailNorm,
+    }).catch((error) => {
+      console.error("[verification-email] signup send failed", error);
+    })
+  );
   return c.json({ ok: true, step: "done" });
 });
 

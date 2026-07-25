@@ -87,3 +87,12 @@ export const DeleteAccountSchema = z.object({
   currentPassword: z.string().min(1).max(200),
 });
 export type DeleteAccountInput = z.infer<typeof DeleteAccountSchema>;
+
+// Transactional activity only: new proposals and replies. This is deliberately
+// separate from marketing consent; unscrewed does not use it for campaigns.
+export const UpdateTradeEmailNotificationsSchema = z.object({
+  enabled: z.boolean(),
+});
+export type UpdateTradeEmailNotificationsInput = z.infer<
+  typeof UpdateTradeEmailNotificationsSchema
+>;

@@ -17,6 +17,8 @@ import { contractsRoutes } from "./routes/contracts.js";
 import { geocodeRoutes } from "./routes/geocode.js";
 import { growthRoutes } from "./routes/growth.js";
 import { supportRoutes } from "./routes/support.js";
+import { emailPreferencesRoutes } from "./routes/emailPreferences.js";
+import { emailVerificationRoutes } from "./routes/emailVerification.js";
 
 export { NegotiationRoom } from "./lib/negotiationRoom.js";
 
@@ -58,6 +60,8 @@ app.route("/contracts", contractsRoutes);
 app.route("/geocode", geocodeRoutes);
 app.route("/growth", growthRoutes);
 app.route("/support", supportRoutes);
+app.route("/email-preferences", emailPreferencesRoutes);
+app.route("/email-verification", emailVerificationRoutes);
 app.route("/admin", adminRoutes);
 
 app.onError((err, c) => {

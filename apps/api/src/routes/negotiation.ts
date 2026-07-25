@@ -14,6 +14,7 @@ import {
 import type { AppContext } from "../env.js";
 import { requireAuth } from "../middleware/auth.js";
 import { uuidv4 } from "../lib/crypto.js";
+import { notifyTradeParticipant } from "../lib/tradeEmail.js";
 import { generateDraft, createContract } from "./contracts.js";
 
 export const negotiationRoutes = new Hono<AppContext>();
@@ -188,6 +189,7 @@ negotiationRoutes.post("/", async (c) => {
 
   let negotiationId: string;
   const now = Date.now();
+  const isNewProposal = !existing[0];
   if (existing[0]) {
     negotiationId = existing[0].id;
   } else {
@@ -211,6 +213,16 @@ negotiationRoutes.post("/", async (c) => {
     .update(negotiations)
     .set({ requesterLastReadAt: now, dateModified: now })
     .where(eq(negotiations.id, negotiationId));
+
+  c.executionCtx.waitUntil(
+    notifyTradeParticipant(c.env, {
+      recipientUserId: listing.userId,
+      negotiationId,
+      kind: isNewProposal ? "new_proposal" : "new_message",
+    }).catch((error) => {
+      console.error("[trade-email] proposal alert failed", error);
+    })
+  );
 
   return c.json({ id: negotiationId });
 });
@@ -308,6 +320,17 @@ negotiationRoutes.post("/:id/messages", async (c) => {
   } catch (e) {
     console.warn("[neg] DO fanout failed", e);
   }
+
+  c.executionCtx.waitUntil(
+    notifyTradeParticipant(c.env, {
+      recipientUserId:
+        n.listerUserId === userId ? n.requesterUserId : n.listerUserId,
+      negotiationId: id,
+      kind: "new_message",
+    }).catch((error) => {
+      console.error("[trade-email] reply alert failed", error);
+    })
+  );
 
   return c.json({ id: msgId });
 });

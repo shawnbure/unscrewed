@@ -1,9 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["@cloudflare/workers-types"],
+    "types": ["node"],
     "lib": ["ES2022", "WebWorker"],
     "jsx": "react-jsx"
   },
-  "include": ["src/**/*"]
+  "include": ["worker-configuration.d.ts", "src/**/*"]
 }

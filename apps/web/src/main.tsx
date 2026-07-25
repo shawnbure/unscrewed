@@ -23,6 +23,8 @@ import Tos from "./pages/Tos.js";
 import UMassPage from "./pages/UMass.js";
 import SafetyPage from "./pages/Safety.js";
 import ContactPage from "./pages/Contact.js";
+import EmailPreferencesPage from "./pages/EmailPreferences.js";
+import VerifyEmailPage from "./pages/VerifyEmail.js";
 import { AdminLayout } from "./pages/admin/AdminLayout.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
 import AdminUsers from "./pages/admin/Users.js";
@@ -89,6 +91,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="tos" element={<Tos />} />
           <Route path="safety" element={<SafetyPage />} />
           <Route path="contact" element={<ContactPage />} />
+          <Route path="email-preferences" element={<EmailPreferencesPage />} />
+          <Route path="verify-email" element={<VerifyEmailPage />} />
           <Route path="umass" element={<UMassPage />} />
           <Route
             path="admin"
