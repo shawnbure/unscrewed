@@ -16,7 +16,12 @@ export function ShareListing({
 }: ShareListingProps) {
   const [copied, setCopied] = useState(false);
   const resetTimer = useRef<number | null>(null);
-  const shareUrl = `${window.location.origin}/listing/${encodeURIComponent(id)}?utm_source=listing_share&utm_medium=share&utm_campaign=share_a_trade`;
+  const shareParams = new URLSearchParams({
+    utm_source: "listing_share",
+    utm_medium: "share",
+    utm_campaign: `share_a_trade:${id}`,
+  });
+  const shareUrl = `${window.location.origin}/listing/${encodeURIComponent(id)}?${shareParams.toString()}`;
   const shareText = buildShareText(title, wants);
 
   useEffect(

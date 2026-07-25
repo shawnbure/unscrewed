@@ -159,6 +159,82 @@ growthRoutes.get("/umass-me", requireAuth, async (c) => {
   });
 });
 
+growthRoutes.get("/listing/:id", requireAuth, async (c) => {
+  const userId = c.get("userId")!;
+  const isAdmin = c.get("isAdmin") === true;
+  const listingId = c.req.param("id");
+  const listing = await c.env.DB.prepare(
+    `SELECT user_id
+       FROM listings
+      WHERE id = ?1
+        AND is_deleted = 0
+      LIMIT 1`
+  )
+    .bind(listingId)
+    .first<{ user_id: string }>();
+
+  if (!listing) return c.json({ error: "not_found" }, 404);
+  if (!isAdmin && listing.user_id !== userId)
+    return c.json({ error: "forbidden" }, 403);
+
+  const campaign = `share_a_trade:${listingId}`;
+  const summary = await c.env.DB.prepare(
+    `SELECT
+       (SELECT COUNT(*)
+          FROM growth_visits
+         WHERE source = 'listing_share'
+           AND medium = 'share'
+           AND campaign = ?1) AS unique_visitors,
+       (SELECT COUNT(*)
+          FROM users
+         WHERE is_deleted = 0
+           AND attribution_source = 'listing_share'
+           AND attribution_medium = 'share'
+           AND attribution_campaign = ?1) AS attributed_members,
+       (SELECT COUNT(*)
+          FROM negotiations
+         WHERE listing_id = ?2
+           AND is_deleted = 0) AS proposals,
+       (SELECT COUNT(*)
+          FROM negotiations n
+         WHERE n.listing_id = ?2
+           AND n.is_deleted = 0
+           AND (
+             SELECT COUNT(DISTINCT m.sender_user_id)
+               FROM negotiation_messages m
+              WHERE m.negotiation_id = n.id
+           ) >= 2) AS two_sided_conversations,
+       (SELECT COUNT(*)
+          FROM contracts
+         WHERE listing_id = ?2
+           AND status = 'signed') AS completed_trades`
+  )
+    .bind(campaign, listingId)
+    .first<{
+      unique_visitors: number;
+      attributed_members: number;
+      proposals: number;
+      two_sided_conversations: number;
+      completed_trades: number;
+    }>();
+
+  c.header("Cache-Control", "private, no-store");
+  return c.json({
+    current: {
+      uniqueVisitors: summary?.unique_visitors ?? 0,
+      attributedMembers: summary?.attributed_members ?? 0,
+      proposals: summary?.proposals ?? 0,
+      twoSidedConversations: summary?.two_sided_conversations ?? 0,
+      completedTrades: summary?.completed_trades ?? 0,
+    },
+    attribution: {
+      source: "listing_share",
+      medium: "share",
+      campaign,
+    },
+  });
+});
+
 growthRoutes.post("/visit", async (c) => {
   const json = await c.req.json().catch(() => null);
   const parsed = AttributionSchema.safeParse(json);
