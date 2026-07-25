@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, ArrowRight } from "lucide-react";
+import { BookOpen, ArrowRight, Rss } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { api } from "../lib/api.js";
 
@@ -39,6 +39,13 @@ export default function BlogPage() {
             Thinking out loud about community, money, trust, and what we're
             building. New posts are rare on purpose.
           </p>
+          <a
+            href="/blog/feed.xml"
+            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-brand-700 hover:underline"
+          >
+            <Rss className="h-4 w-4" strokeWidth={2} />
+            Follow the public Atom feed
+          </a>
         </Container>
       </section>
 

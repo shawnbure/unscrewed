@@ -139,6 +139,61 @@ sitemapRoutes.get("/sitemap.txt", async (c) => {
   });
 });
 
+sitemapRoutes.get("/blog/feed.xml", async (c) => {
+  const db = getDb(c.env.DB);
+  const posts = await db
+    .select({
+      slug: blogPosts.slug,
+      title: blogPosts.title,
+      excerpt: blogPosts.excerpt,
+      datePublished: blogPosts.datePublished,
+      dateModified: blogPosts.dateModified,
+    })
+    .from(blogPosts)
+    .where(and(eq(blogPosts.status, "published"), eq(blogPosts.isDeleted, 0)))
+    .orderBy(desc(blogPosts.datePublished))
+    .limit(50);
+
+  const updatedAt =
+    posts[0]?.dateModified ??
+    posts[0]?.datePublished ??
+    Date.UTC(2026, 6, 18);
+  const entries = posts.map((post) => {
+    const url = `${SITE}/blog/${encodeURIComponent(post.slug)}`;
+    const published = new Date(
+      post.datePublished ?? post.dateModified
+    ).toISOString();
+    const updated = new Date(post.dateModified).toISOString();
+    return `<entry>
+  <title>${xmlEscape(post.title)}</title>
+  <link href="${url}" rel="alternate" type="text/html"/>
+  <id>${url}</id>
+  <published>${published}</published>
+  <updated>${updated}</updated>
+  <summary type="text">${xmlEscape(post.excerpt ?? "")}</summary>
+</entry>`;
+  });
+  const feed = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>unscrewed.lol — Notes from the barter beat</title>
+<subtitle>Practical notes about barter, reuse, trust, and public-benefit marketplace building.</subtitle>
+<link href="${SITE}/blog/feed.xml" rel="self" type="application/atom+xml"/>
+<link href="${SITE}/blog" rel="alternate" type="text/html"/>
+<id>${SITE}/blog</id>
+<updated>${new Date(updatedAt).toISOString()}</updated>
+<author><name>unscrewed.lol</name></author>
+${entries.join("\n")}
+</feed>`;
+
+  return new Response(feed, {
+    headers: {
+      "content-type": "application/atom+xml; charset=utf-8",
+      "cache-control": "public, max-age=900, s-maxage=1800",
+      "x-content-type-options": "nosniff",
+    },
+  });
+});
+
 sitemapRoutes.get("/robots.txt", (c) => {
   const body = `User-agent: *
 Disallow: /account

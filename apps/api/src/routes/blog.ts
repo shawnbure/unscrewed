@@ -15,6 +15,7 @@ import type { AppContext } from "../env.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { uuidv4 } from "../lib/crypto.js";
 import { classifyText } from "../lib/moderationAi.js";
+import { notifyIndexNow } from "../lib/indexNow.js";
 
 export const blogRoutes = new Hono<AppContext>();
 
@@ -95,6 +96,16 @@ blogRoutes.post("/", requireAdmin, async (c) => {
     dateCreated: now,
     dateModified: now,
   });
+  if (parsed.data.status === "published") {
+    c.executionCtx.waitUntil(
+      notifyIndexNow([
+        `/blog/${encodeURIComponent(parsed.data.slug)}`,
+        "/blog",
+        "/blog/feed.xml",
+        "/sitemap.xml",
+      ]).catch((error) => console.error("[indexnow] publish failed", error))
+    );
+  }
   return c.json({ id, slug: parsed.data.slug });
 });
 
@@ -154,16 +165,49 @@ blogRoutes.patch("/:id", requireAdmin, async (c) => {
   }
 
   await db.update(blogPosts).set(upd as any).where(eq(blogPosts.id, id));
+  if (willBePublished) {
+    const nextSlug = parsed.data.slug ?? row.slug;
+    const paths = [
+      `/blog/${encodeURIComponent(nextSlug)}`,
+      "/blog",
+      "/blog/feed.xml",
+      "/sitemap.xml",
+    ];
+    if (nextSlug !== row.slug) {
+      paths.push(`/blog/${encodeURIComponent(row.slug)}`);
+    }
+    c.executionCtx.waitUntil(
+      notifyIndexNow(paths).catch((error) =>
+        console.error("[indexnow] update failed", error)
+      )
+    );
+  }
   return c.json({ ok: true });
 });
 
 blogRoutes.delete("/:id", requireAdmin, async (c) => {
   const id = c.req.param("id");
   const db = getDb(c.env.DB);
+  const [row] = await db
+    .select({ slug: blogPosts.slug, status: blogPosts.status })
+    .from(blogPosts)
+    .where(and(eq(blogPosts.id, id), eq(blogPosts.isDeleted, 0)))
+    .limit(1);
+  if (!row) return c.json({ error: "not_found" }, 404);
   await db
     .update(blogPosts)
     .set({ isDeleted: 1, dateModified: Date.now() })
     .where(eq(blogPosts.id, id));
+  if (row.status === "published") {
+    c.executionCtx.waitUntil(
+      notifyIndexNow([
+        `/blog/${encodeURIComponent(row.slug)}`,
+        "/blog",
+        "/blog/feed.xml",
+        "/sitemap.xml",
+      ]).catch((error) => console.error("[indexnow] removal failed", error))
+    );
+  }
   return c.json({ ok: true });
 });
 
