@@ -400,7 +400,7 @@ function PersonalPilotChecklist({
         <ChecklistItem
           complete={hasTrade}
           title={`Complete a fair trade · ${progress.current.completedTrades}`}
-          body="Only a contract signed by both people counts. Never complete a bad match for the metric."
+          body="Both people must sign, make the real exchange, and separately confirm completion. Never complete a bad match for the metric."
         />
       </ol>
     </div>
@@ -529,8 +529,9 @@ function PilotScoreboard({ progress }: { progress: PilotProgress | null }) {
       <p className="mt-5 text-xs leading-relaxed text-ink-500">
         A trader is counted after posting a genuine local listing. A
         conversation counts only after both people reply. A completed trade
-        requires both signatures. This checkpoint is not a claim of campus
-        adoption or UMass endorsement.
+        requires both signatures plus separate completion confirmation from
+        both people. This checkpoint is not a claim of campus adoption or UMass
+        endorsement.
       </p>
     </div>
   );

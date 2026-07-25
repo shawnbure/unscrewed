@@ -125,7 +125,7 @@ export default function AdminDashboard() {
                 ? "—"
                 : stats.marketplace.tradesPerActiveTrader30Days.toFixed(2)
             }
-            detail="Signed trades ÷ active traders"
+            detail="Confirmed completed trades ÷ active traders"
           />
           <Metric
             label="Owner response · 72h"
@@ -153,12 +153,14 @@ export default function AdminDashboard() {
           />
         </div>
         <div className="mt-3 rounded-xl bg-surface-50 px-4 py-3 text-xs leading-5 text-ink-500">
-          A completed trade has both signatures. Liquidity includes non-deleted
+          A completed trade has both signatures and separate completion
+          confirmation from both traders. Liquidity includes non-deleted
           listings posted in the last {stats.marketplace.liquidity.windowDays}{" "}
-          days that have had a full {stats.marketplace.liquidity.observationHours}
-          -hour observation window. Active traders started a negotiation, sent
-          a message, or completed a trade during the period. Owner response
-          measures whether the listing owner sent a first reply within{" "}
+          days that have had a full{" "}
+          {stats.marketplace.liquidity.observationHours}-hour observation
+          window. Active traders started a negotiation, sent a message, signed,
+          or confirmed a trade during the period. Owner response measures
+          whether the listing owner sent a first reply within{" "}
           {stats.marketplace.ownerResponse.observationHours} hours; proposals
           younger than that are excluded from its denominator. Local-watch
           readiness requires explicit opt-in, a verified email, and a geocoded

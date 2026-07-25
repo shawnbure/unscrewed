@@ -10,7 +10,7 @@ import {
 import { Container } from "../ui/Container.js";
 import { api } from "../lib/api.js";
 import { ReportButton } from "../ui/ReportButton.js";
-import { ShareCompletedTrade } from "../ui/ShareCompletedTrade.js";
+import { TradeCompletion } from "../ui/TradeCompletion.js";
 
 interface Message {
   id: string;
@@ -40,6 +40,8 @@ interface Contract {
   partyASignedAt: number | null;
   partyBSignedName: string | null;
   partyBSignedAt: number | null;
+  partyACompletedAt: number | null;
+  partyBCompletedAt: number | null;
   dateCreated: number;
 }
 
@@ -545,10 +547,26 @@ function ContractCard({
         </div>
 
         {contract.status === "signed" ? (
-          <div className="rounded-xl bg-brand-50 p-3 text-center text-xs text-brand-700">
-            <p>🎉 Trade agreed. Meet, swap, and good luck.</p>
-            <ShareCompletedTrade />
-          </div>
+          <TradeCompletion
+            contractId={contract.id}
+            mineCompletedAt={
+              iAmA
+                ? contract.partyACompletedAt
+                : iAmB
+                  ? contract.partyBCompletedAt
+                  : undefined
+            }
+            otherCompletedAt={
+              iAmA
+                ? contract.partyBCompletedAt
+                : iAmB
+                  ? contract.partyACompletedAt
+                  : undefined
+            }
+            partyACompletedAt={contract.partyACompletedAt}
+            partyBCompletedAt={contract.partyBCompletedAt}
+            onConfirmed={onChange}
+          />
         ) : (
           <div className="flex flex-wrap gap-2 pt-1">
             {myUnsigned && (

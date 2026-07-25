@@ -18,7 +18,7 @@ export const statsRoutes = new Hono<AppContext>();
 
 const MIN_CLUSTER_SIZE = 3;
 const CACHE_TTL_SECONDS = 60;
-const CACHE_KEY = "stats:v2";
+const CACHE_KEY = "stats:v3";
 
 statsRoutes.get("/", async (c) => {
   // Cheap edge cache so the counter/map on every homepage load doesn't
@@ -60,7 +60,9 @@ statsRoutes.get("/", async (c) => {
       c.env.DB.prepare(
         `SELECT COUNT(*) AS n
            FROM contracts
-          WHERE status = 'signed'`
+          WHERE status = 'signed'
+            AND party_a_completed_at IS NOT NULL
+            AND party_b_completed_at IS NOT NULL`
       ).first<{ n: number }>(),
       c.env.DB.prepare(
         `SELECT substr(home_zip, 1, 3) AS zip3,

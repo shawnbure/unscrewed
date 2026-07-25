@@ -290,7 +290,7 @@ export default function NeighborhoodPage() {
             <ActionStep
               complete={progress.mine.completedTrades > 0}
               title={`Complete a fair trade · ${progress.mine.completedTrades}`}
-              body="Only an agreement signed by both people counts. Never complete a bad match for the metric."
+              body="Both people must sign, make the real exchange, and separately confirm completion. Never complete a bad match for the metric."
             />
           </ol>
         </section>

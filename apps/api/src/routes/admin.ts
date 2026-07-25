@@ -174,10 +174,14 @@ adminRoutes.get("/stats", async (c) => {
            SELECT party_a_user_id AS user_id
              FROM contracts
             WHERE status = 'signed'
+              AND party_a_completed_at IS NOT NULL
+              AND party_b_completed_at IS NOT NULL
            UNION
            SELECT party_b_user_id AS user_id
              FROM contracts
             WHERE status = 'signed'
+              AND party_a_completed_at IS NOT NULL
+              AND party_b_completed_at IS NOT NULL
          ) traders ON traders.user_id = u.id
          WHERE gv.date_created >= ?1
          GROUP BY gv.campaign, gv.source, gv.medium
@@ -194,7 +198,9 @@ adminRoutes.get("/stats", async (c) => {
            COALESCE(SUM(CASE WHEN date_modified >= ?3 THEN 1 ELSE 0 END), 0) AS last_30_days,
            COUNT(*) AS all_time
          FROM contracts
-         WHERE status = 'signed'`
+         WHERE status = 'signed'
+           AND party_a_completed_at IS NOT NULL
+           AND party_b_completed_at IS NOT NULL`
       )
       .bind(now - 7 * day, now - 14 * day, now - 30 * day)
       .first<{
@@ -241,6 +247,8 @@ adminRoutes.get("/stats", async (c) => {
            JOIN contracts
              ON (contracts.party_a_user_id = users.id OR contracts.party_b_user_id = users.id)
             AND contracts.status = 'signed'
+            AND contracts.party_a_completed_at IS NOT NULL
+            AND contracts.party_b_completed_at IS NOT NULL
            WHERE users.is_deleted = 0 AND users.is_archived = 0
            GROUP BY users.id
          )

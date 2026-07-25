@@ -9,6 +9,8 @@ export type TradeEmailKind =
   | "new_message"
   | "contract_ready"
   | "signature_needed"
+  | "agreement_signed"
+  | "completion_needed"
   | "trade_completed"
   | "contract_cancelled";
 
@@ -120,12 +122,26 @@ export async function notifyTradeParticipant(
         "The trade agreement is waiting for your review and signature. Sign only if every term is accurate.",
       cta: "Review and sign",
     },
-    trade_completed: {
+    agreement_signed: {
       subject: `Trade agreement completed: ${listingTitle}`,
       heading: "Both traders have signed",
       intro:
         "The trade agreement now has both signatures. Keep using your judgment and the safety guidance for any meetup or exchange.",
-      cta: "View completed agreement",
+      cta: "View signed agreement",
+    },
+    completion_needed: {
+      subject: `Confirm the exchange when it is complete: ${listingTitle}`,
+      heading: "The other trader confirmed completion",
+      intro:
+        "The other trader marked their side of the real-world exchange complete. Confirm yours only after you have actually given and received what you agreed.",
+      cta: "Review and confirm",
+    },
+    trade_completed: {
+      subject: `Both traders confirmed completion: ${listingTitle}`,
+      heading: "The trade is complete",
+      intro:
+        "Both traders have now confirmed that the real-world exchange happened.",
+      cta: "View completed trade",
     },
     contract_cancelled: {
       subject: `Trade agreement cancelled: ${listingTitle}`,

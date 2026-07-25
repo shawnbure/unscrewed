@@ -17,7 +17,7 @@ import { CATEGORIES } from "../ui/CategoryTile.js";
 import { CategoryIcon } from "../ui/CategoryIcons.js";
 import { photoUrl } from "../lib/photoUrl.js";
 import { api } from "../lib/api.js";
-import { ShareCompletedTrade } from "../ui/ShareCompletedTrade.js";
+import { TradeCompletion } from "../ui/TradeCompletion.js";
 
 interface NegoRow {
   id: string;
@@ -54,6 +54,8 @@ interface ContractRow {
   party_b_user_id: string;
   party_a_signed_at: number | null;
   party_b_signed_at: number | null;
+  party_a_completed_at: number | null;
+  party_b_completed_at: number | null;
   status: "draft" | "awaiting_signatures" | "signed" | "cancelled";
   termsJson?: string;
   terms_json?: string;
@@ -497,7 +499,28 @@ function ContractsSection({ me }: { me: { id: string } | null }) {
                       </button>
                     )}
                   </div>
-                  {c.status === "signed" && <ShareCompletedTrade />}
+                  {c.status === "signed" && (
+                    <TradeCompletion
+                      contractId={c.id}
+                      mineCompletedAt={
+                        iAmA
+                          ? c.party_a_completed_at
+                          : iAmB
+                            ? c.party_b_completed_at
+                            : undefined
+                      }
+                      otherCompletedAt={
+                        iAmA
+                          ? c.party_b_completed_at
+                          : iAmB
+                            ? c.party_a_completed_at
+                            : undefined
+                      }
+                      partyACompletedAt={c.party_a_completed_at}
+                      partyBCompletedAt={c.party_b_completed_at}
+                      onConfirmed={load}
+                    />
+                  )}
                 </div>
               </li>
             );

@@ -55,9 +55,9 @@ export default function PublicBenefitPage() {
       detail: "Threads where both people replied",
     },
     {
-      label: "Signed trades",
+      label: "Completed trades",
       value: stats?.completed_trades,
-      detail: "Agreements signed by both people",
+      detail: "Actual exchanges confirmed by both people",
     },
   ];
 
@@ -108,7 +108,8 @@ export default function PublicBenefitPage() {
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-500">
           Signups alone do not prove usefulness. A conversation counts only
           after both people reply; a completed trade counts only after both
-          people sign an agreement.
+          people sign an agreement and separately confirm the exchange
+          happened.
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {evidence.map((metric) => (
@@ -143,7 +144,7 @@ export default function PublicBenefitPage() {
           <Commitment
             icon={<BarChart3 className="h-5 w-5" />}
             title="Useful activity beats vanity"
-            body="The project reports real listings, replies from both sides, and signed trades. Clicks, copied links, and raw signup counts are never presented as completed community benefit."
+            body="The project reports real listings, replies from both sides, signed agreements, and trades both people confirm actually happened. Clicks, copied links, and raw signup counts are never presented as completed community benefit."
           />
           <Commitment
             icon={<MapPin className="h-5 w-5" />}

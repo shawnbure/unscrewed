@@ -138,9 +138,9 @@ contractsRoutes.post("/:id/sign", async (c) => {
   }
 
   // The conditional update prevents a stale request from signing after a
-  // cancellation or completion. RETURNING observes the entire row after this
-  // signature lands, including a near-simultaneous signature by the other
-  // party, so one of the two requests always sees that both are present.
+  // cancellation or finalized agreement. RETURNING observes the entire row
+  // after this signature lands, including a near-simultaneous signature by
+  // the other party, so one of the two requests always sees both.
   const signedRows = await db
     .update(contracts)
     .set(upd as any)
@@ -173,7 +173,7 @@ contractsRoutes.post("/:id/sign", async (c) => {
   const bothSigning = Boolean(
     afterSignature.partyASignedAt && afterSignature.partyBSignedAt
   );
-  let completed = false;
+  let agreementFinalized = false;
   if (bothSigning) {
     const finalized = await db
       .update(contracts)
@@ -186,11 +186,11 @@ contractsRoutes.post("/:id/sign", async (c) => {
         and(eq(contracts.id, id), ne(contracts.status, "cancelled"))
       )
       .returning({ id: contracts.id });
-    completed = Boolean(finalized[0]);
+    agreementFinalized = Boolean(finalized[0]);
   }
 
   // Cascade lifecycle updates only after the signed status is authoritative.
-  if (completed) {
+  if (agreementFinalized) {
     await db
       .update(listings)
       .set({ status: "traded", dateModified: now })
@@ -206,12 +206,12 @@ contractsRoutes.post("/:id/sign", async (c) => {
       .where(eq(negotiations.id, ct.negotiationId));
   }
 
-  if (!bothSigning || completed) {
+  if (!bothSigning || agreementFinalized) {
     c.executionCtx.waitUntil(
       notifyTradeParticipant(c.env, {
         recipientUserId: isA ? ct.partyBUserId : ct.partyAUserId,
         negotiationId: ct.negotiationId,
-        kind: completed ? "trade_completed" : "signature_needed",
+        kind: agreementFinalized ? "agreement_signed" : "signature_needed",
         dedupeId: ct.id,
       }).catch((error) => {
         console.error("[trade-email] signature alert failed", error);
@@ -226,6 +226,72 @@ contractsRoutes.post("/:id/sign", async (c) => {
     .where(eq(contracts.id, id))
     .limit(1);
   return c.json({ contract: fresh[0] });
+});
+
+// ----------------------------------------------------------------------
+// POST /contracts/:id/complete — after the actual exchange, each party
+// confirms fulfillment independently. A signed agreement alone is not a
+// completed trade and is never counted or shared as one.
+// ----------------------------------------------------------------------
+contractsRoutes.post("/:id/complete", async (c) => {
+  const userId = c.get("userId")!;
+  const id = c.req.param("id");
+  const db = getDb(c.env.DB);
+  const [ct] = await db
+    .select()
+    .from(contracts)
+    .where(eq(contracts.id, id))
+    .limit(1);
+  if (!ct) return c.json({ error: "not_found" }, 404);
+  if (ct.partyAUserId !== userId && ct.partyBUserId !== userId)
+    return c.json({ error: "forbidden" }, 403);
+  if (ct.status !== "signed")
+    return c.json({ error: "agreement_not_signed" }, 409);
+
+  const isA = ct.partyAUserId === userId;
+  if (isA ? ct.partyACompletedAt : ct.partyBCompletedAt) {
+    return c.json({
+      contract: ct,
+      completed:
+        Boolean(ct.partyACompletedAt) && Boolean(ct.partyBCompletedAt),
+    });
+  }
+
+  const now = Date.now();
+  const completedRows = await db
+    .update(contracts)
+    .set(
+      isA
+        ? { partyACompletedAt: now, dateModified: now }
+        : { partyBCompletedAt: now, dateModified: now }
+    )
+    .where(
+      and(
+        eq(contracts.id, id),
+        eq(contracts.status, "signed"),
+        isA
+          ? isNull(contracts.partyACompletedAt)
+          : isNull(contracts.partyBCompletedAt)
+      )
+    )
+    .returning();
+  const fresh = completedRows[0];
+  if (!fresh) return c.json({ error: "completion_conflict" }, 409);
+
+  const completed =
+    Boolean(fresh.partyACompletedAt) && Boolean(fresh.partyBCompletedAt);
+  c.executionCtx.waitUntil(
+    notifyTradeParticipant(c.env, {
+      recipientUserId: isA ? ct.partyBUserId : ct.partyAUserId,
+      negotiationId: ct.negotiationId,
+      kind: completed ? "trade_completed" : "completion_needed",
+      dedupeId: `${ct.id}:${isA ? "a" : "b"}`,
+    }).catch((error) => {
+      console.error("[trade-email] completion alert failed", error);
+    })
+  );
+
+  return c.json({ contract: fresh, completed });
 });
 
 // ----------------------------------------------------------------------

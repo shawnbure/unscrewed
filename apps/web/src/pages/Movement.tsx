@@ -48,7 +48,7 @@ export default function MovementPage() {
       label: "Two-sided conversations",
       value: stats?.two_sided_conversations,
     },
-    { label: "Signed trades", value: stats?.completed_trades },
+    { label: "Completed trades", value: stats?.completed_trades },
   ];
 
   return (
@@ -107,7 +107,8 @@ export default function MovementPage() {
         <p className="mt-3 text-xs text-ink-400">
           Nationwide marketplace outcomes, updated from the public stats
           endpoint. A conversation counts only after both people reply; a trade
-          counts only after both people sign.
+          counts only after both people sign and separately confirm the
+          exchange happened.
         </p>
       </Container>
 

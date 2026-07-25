@@ -51,7 +51,9 @@ growthRoutes.get("/umass-progress", async (c) => {
        (SELECT COUNT(*)
           FROM contracts c
           JOIN local_listings l ON l.id = c.listing_id
-         WHERE c.status = 'signed')
+         WHERE c.status = 'signed'
+           AND c.party_a_completed_at IS NOT NULL
+           AND c.party_b_completed_at IS NOT NULL)
          AS completed_trades`
   )
     .bind(...umassBounds())
@@ -115,6 +117,8 @@ growthRoutes.get("/umass-me", requireAuth, async (c) => {
             FROM contracts c
             JOIN local_listings l ON l.id = c.listing_id
            WHERE c.status = 'signed'
+             AND c.party_a_completed_at IS NOT NULL
+             AND c.party_b_completed_at IS NOT NULL
              AND (c.party_a_user_id = ?5 OR c.party_b_user_id = ?5))
            AS completed_trades`
     )
@@ -214,7 +218,9 @@ growthRoutes.get("/local-me", requireAuth, async (c) => {
          (SELECT COUNT(*)
             FROM contracts c
             JOIN local_listings l ON l.id = c.listing_id
-           WHERE c.status = 'signed')
+           WHERE c.status = 'signed'
+             AND c.party_a_completed_at IS NOT NULL
+             AND c.party_b_completed_at IS NOT NULL)
            AS completed_trades,
          (SELECT COUNT(*) FROM local_listings WHERE user_id = ?5)
            AS my_posted_listings,
@@ -230,6 +236,8 @@ growthRoutes.get("/local-me", requireAuth, async (c) => {
             FROM contracts c
             JOIN local_listings l ON l.id = c.listing_id
            WHERE c.status = 'signed'
+             AND c.party_a_completed_at IS NOT NULL
+             AND c.party_b_completed_at IS NOT NULL
              AND (c.party_a_user_id = ?5 OR c.party_b_user_id = ?5))
            AS my_completed_trades`
     )
@@ -342,7 +350,9 @@ growthRoutes.get("/listing/:id", requireAuth, async (c) => {
        (SELECT COUNT(*)
           FROM contracts
          WHERE listing_id = ?2
-           AND status = 'signed') AS completed_trades`
+           AND status = 'signed'
+           AND party_a_completed_at IS NOT NULL
+           AND party_b_completed_at IS NOT NULL) AS completed_trades`
   )
     .bind(campaign, listingId)
     .first<{

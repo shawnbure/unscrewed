@@ -458,7 +458,8 @@ export const passkeys = sqliteTable(
 );
 
 // ============================================================
-// contracts — immutable once signed
+// contracts — agreement terms/signatures are immutable once signed;
+// completion confirmations are append-only afterward
 // ============================================================
 export const contracts = sqliteTable(
   "contracts",
@@ -484,6 +485,8 @@ export const contracts = sqliteTable(
     partyBSignedName: text("party_b_signed_name"),
     partyBSignedAt: integer("party_b_signed_at"),
     partyBSignedIp: text("party_b_signed_ip"),
+    partyACompletedAt: integer("party_a_completed_at"),
+    partyBCompletedAt: integer("party_b_completed_at"),
     tosVersionAtSigning: text("tos_version_at_signing"),
     dateCreated: integer("date_created")
       .notNull()
@@ -495,5 +498,8 @@ export const contracts = sqliteTable(
   (t) => ({
     ixNeg: index("ix_contract_neg").on(t.negotiationId),
     ixListing: index("ix_contract_listing").on(t.listingId),
+    ixCompletion: index("ix_contract_completion")
+      .on(t.partyACompletedAt, t.partyBCompletedAt)
+      .where(sql`${t.status} = 'signed'`),
   })
 );
