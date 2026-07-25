@@ -141,6 +141,7 @@ export async function notifyLocalListingWatchers(
         t: token,
       });
       const preferencesUrl = `${env.PUBLIC_BASE_URL}/email-preferences?${preferenceQuery}`;
+      const oneClickUnsubscribeUrl = `${env.API_BASE_URL}/email-preferences/unsubscribe-local?${preferenceQuery}`;
       const listingQuery = new URLSearchParams({
         utm_source: "local_watch",
         utm_medium: "email",
@@ -193,7 +194,8 @@ ${preferencesUrl}`,
   </body>
 </html>`,
         headers: {
-          "List-Unsubscribe": `<${preferencesUrl}>`,
+          "List-Unsubscribe": `<${oneClickUnsubscribeUrl}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
       });
     })

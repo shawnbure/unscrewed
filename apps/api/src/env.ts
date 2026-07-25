@@ -9,6 +9,7 @@ export interface Env {
   EMAIL: SendEmail;
 
   // Vars
+  API_BASE_URL: string;
   PUBLIC_BASE_URL: string;
   TOS_VERSION: string;
 

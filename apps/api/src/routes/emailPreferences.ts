@@ -97,3 +97,22 @@ emailPreferencesRoutes.post("/", async (c) => {
     localEnabled: localEnabled ?? currentLocalEnabled,
   });
 });
+
+emailPreferencesRoutes.post("/unsubscribe-local", async (c) => {
+  // RFC 8058 mailbox-provider action. It is deliberately bodyless,
+  // idempotent, and narrower than the signed preference-management form:
+  // a one-click request can disable only the optional local-alert stream.
+  const user = await authorize(c);
+  if (!user) return c.json({ error: "invalid_link" }, 403);
+  const db = getDb(c.env.DB);
+  const result = await db
+    .update(users)
+    .set({
+      localListingNotifications: 0,
+      dateModified: Date.now(),
+    })
+    .where(eq(users.id, user.id))
+    .returning({ id: users.id });
+  if (!result[0]) return c.json({ error: "invalid_link" }, 404);
+  return c.json({ ok: true, localEnabled: false });
+});

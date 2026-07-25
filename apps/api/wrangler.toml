@@ -52,6 +52,7 @@ new_sqlite_classes = ["NegotiationRoom"]
 
 # ---------- Public env ----------
 [vars]
+API_BASE_URL = "https://api.unscrewed.lol"
 PUBLIC_BASE_URL = "https://unscrewed.lol"
 TOS_VERSION = "2026-07-18"
 
