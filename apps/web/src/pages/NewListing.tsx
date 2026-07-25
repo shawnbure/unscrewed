@@ -7,6 +7,7 @@ import { PhotoUploader } from "../ui/PhotoUploader.js";
 import { AddressPicker, type AddressValue } from "../ui/AddressPicker.js";
 import { api } from "../lib/api.js";
 import { getListingStarter } from "../lib/listingStarters.js";
+import { ListingMatchability } from "../ui/ListingMatchability.js";
 
 const CONDITIONS = [
   { value: "new", label: "New" },
@@ -246,6 +247,18 @@ export default function NewListing() {
             }
           />
         </Section>
+
+        {(title.trim() || description.trim() || wants.trim()) && (
+          <ListingMatchability
+            input={{
+              kind,
+              title,
+              description,
+              wants,
+              photoCount: photoKeys.length,
+            }}
+          />
+        )}
 
         <Section
           title="6. Where are you?"

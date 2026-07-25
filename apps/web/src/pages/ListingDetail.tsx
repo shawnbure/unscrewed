@@ -23,6 +23,7 @@ import { useSession } from "../lib/session.js";
 import { photoUrl } from "../lib/photoUrl.js";
 import { ShareListing } from "../ui/ShareListing.js";
 import { withNext } from "../lib/navigation.js";
+import { ListingMatchability } from "../ui/ListingMatchability.js";
 
 interface ListingFull {
   id: string;
@@ -253,6 +254,19 @@ export default function ListingDetail() {
               <ShareListing id={l.id} title={l.title} wants={l.wants} />
             )}
           </div>
+
+          {l.isOwner === true && (
+            <ListingMatchability
+              input={{
+                kind: l.kind,
+                title: l.title,
+                description: l.description,
+                wants: l.wants,
+                photoCount: photoKeys.length,
+              }}
+              editHref={`/listing/${l.id}/edit`}
+            />
+          )}
 
           <div className="card p-5">
             <h3 className="text-sm font-semibold text-ink-700">Description</h3>

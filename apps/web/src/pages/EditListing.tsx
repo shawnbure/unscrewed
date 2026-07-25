@@ -11,6 +11,7 @@ import { PhotoUploader } from "../ui/PhotoUploader.js";
 import { AddressPicker, type AddressValue } from "../ui/AddressPicker.js";
 import { api } from "../lib/api.js";
 import { useSession } from "../lib/session.js";
+import { ListingMatchability } from "../ui/ListingMatchability.js";
 
 const CONDITIONS = [
   { value: "new", label: "New" },
@@ -302,6 +303,16 @@ export default function EditListing() {
             className="input"
           />
         </Section>
+
+        <ListingMatchability
+          input={{
+            kind,
+            title,
+            description,
+            wants,
+            photoCount: photoKeys.length,
+          }}
+        />
 
         <Section
           title="Location"
