@@ -164,14 +164,23 @@ growthRoutes.get("/listing/:id", requireAuth, async (c) => {
   const isAdmin = c.get("isAdmin") === true;
   const listingId = c.req.param("id");
   const listing = await c.env.DB.prepare(
-    `SELECT user_id
-       FROM listings
-      WHERE id = ?1
-        AND is_deleted = 0
+    `SELECT
+       l.user_id,
+       u.email_verified_at,
+       u.trade_email_notifications
+       FROM listings l
+       JOIN users u ON u.id = l.user_id
+      WHERE l.id = ?1
+        AND l.is_deleted = 0
+        AND u.is_deleted = 0
       LIMIT 1`
   )
     .bind(listingId)
-    .first<{ user_id: string }>();
+    .first<{
+      user_id: string;
+      email_verified_at: number | null;
+      trade_email_notifications: number;
+    }>();
 
   if (!listing) return c.json({ error: "not_found" }, 404);
   if (!isAdmin && listing.user_id !== userId)
@@ -231,6 +240,11 @@ growthRoutes.get("/listing/:id", requireAuth, async (c) => {
       source: "listing_share",
       medium: "share",
       campaign,
+    },
+    ownerAlertReadiness: {
+      viewerIsOwner: listing.user_id === userId,
+      emailVerified: listing.email_verified_at !== null,
+      notificationsEnabled: listing.trade_email_notifications === 1,
     },
   });
 });

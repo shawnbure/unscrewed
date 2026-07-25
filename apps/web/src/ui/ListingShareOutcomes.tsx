@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BarChart3 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 
 interface ListingShareOutcomesProps {
@@ -13,6 +14,11 @@ interface ShareOutcomes {
     proposals: number;
     twoSidedConversations: number;
     completedTrades: number;
+  };
+  ownerAlertReadiness: {
+    viewerIsOwner: boolean;
+    emailVerified: boolean;
+    notificationsEnabled: boolean;
   };
 }
 
@@ -87,6 +93,43 @@ export function ListingShareOutcomes({
         Counts only. Visitor identities, emails, and browsing details are not
         shown. Anonymous invitation visits expire after 90 days.
       </p>
+      {data.ownerAlertReadiness.viewerIsOwner &&
+        !data.ownerAlertReadiness.emailVerified && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
+            <p className="text-xs font-semibold text-amber-900">
+              Don’t miss a real proposal
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-800">
+              Verify your email to receive brief trade alerts. Alerts omit
+              offer text, private messages, terms, and meetup details.
+            </p>
+            <Link
+              to="/account#email"
+              className="mt-2 inline-flex text-xs font-semibold text-amber-900 underline"
+            >
+              Verify email in Account
+            </Link>
+          </div>
+        )}
+      {data.ownerAlertReadiness.viewerIsOwner &&
+        data.ownerAlertReadiness.emailVerified &&
+        !data.ownerAlertReadiness.notificationsEnabled && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
+            <p className="text-xs font-semibold text-amber-900">
+              Trade alerts are off
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-800">
+              Turn them on if you want a brief email when a proposal, reply, or
+              agreement update needs attention.
+            </p>
+            <Link
+              to="/account#trade-emails"
+              className="mt-2 inline-flex text-xs font-semibold text-amber-900 underline"
+            >
+              Review trade alerts
+            </Link>
+          </div>
+        )}
     </section>
   );
 }

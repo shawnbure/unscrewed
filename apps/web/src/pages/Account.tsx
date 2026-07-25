@@ -189,7 +189,10 @@ export default function AccountPage() {
         )}
       </section>
 
-      <section id="trade-emails" className="card mt-4 p-6">
+      <section
+        id="trade-emails"
+        className="card mt-4 scroll-mt-24 p-6"
+      >
         <div className="flex items-start gap-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-brand-500/10 text-brand-700">
             <Bell className="h-4 w-4" strokeWidth={2} />
@@ -261,7 +264,7 @@ export default function AccountPage() {
         />
       </section>
 
-      <section className="card mt-4 p-6">
+      <section id="email" className="card mt-4 scroll-mt-24 p-6">
         <h2 className="text-base font-semibold text-ink-900">Email</h2>
         <p className="mt-0.5 text-sm text-ink-500">
           Your sign-in identifier. Changing it invalidates every other
