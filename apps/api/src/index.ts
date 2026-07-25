@@ -50,9 +50,11 @@ app.route("/auth", authRoutes);
 app.route("/passkeys", passkeysRoutes);
 app.route("/money-ideas", moneyIdeasRoutes);
 app.route("/stats", statsRoutes);
+// Exact public discovery routes such as /blog/feed.xml must precede the
+// dynamic /blog/:slug route.
+app.route("/", sitemapRoutes);
 app.route("/blog", blogRoutes);
 app.route("/reports", reportsRoutes);
-app.route("/", sitemapRoutes);
 app.route("/me", meRoutes);
 app.route("/listings", listingsRoutes);
 app.route("/negotiations", negotiationRoutes);
