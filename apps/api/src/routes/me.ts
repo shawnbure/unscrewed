@@ -53,6 +53,37 @@ meRoutes.get("/", async (c) => {
   return c.json(row[0]);
 });
 
+// ---------- GET /me/listings ----------
+// Private, minimal inventory for explicitly composing a proposal. Coordinates,
+// photos, owner identity, and archived/withdrawn inventory are not returned.
+meRoutes.get("/listings", async (c) => {
+  const userId = c.get("userId")!;
+  const rows = await c.env.DB.prepare(
+    `SELECT
+       id,
+       title,
+       description,
+       kind,
+       postal_code AS postalCode
+     FROM listings
+     WHERE user_id = ?1
+       AND status = 'active'
+       AND is_deleted = 0
+       AND is_archived = 0
+     ORDER BY date_modified DESC
+     LIMIT 20`
+  )
+    .bind(userId)
+    .all<{
+      id: string;
+      title: string;
+      description: string;
+      kind: string;
+      postalCode: string;
+    }>();
+  return c.json({ items: rows.results });
+});
+
 // ---------- PATCH /me/trade-email-notifications ----------
 meRoutes.patch("/trade-email-notifications", async (c) => {
   const userId = c.get("userId")!;

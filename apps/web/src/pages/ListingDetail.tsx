@@ -25,6 +25,10 @@ import { ShareListing } from "../ui/ShareListing.js";
 import { withNext } from "../lib/navigation.js";
 import { ListingMatchability } from "../ui/ListingMatchability.js";
 import { ListingShareOutcomes } from "../ui/ListingShareOutcomes.js";
+import {
+  proposalOfferingFromListing,
+  type ProposalListingOption,
+} from "../lib/proposal.js";
 
 interface ListingFull {
   id: string;
@@ -386,6 +390,7 @@ export default function ListingDetail() {
       {showPropose && (
         <ProposeModal
           listingId={l.id}
+          listingWants={l.wants}
           onClose={() => setShowPropose(false)}
           onSent={(negId) => nav(`/n/${negId}`)}
         />
@@ -396,10 +401,12 @@ export default function ListingDetail() {
 
 function ProposeModal({
   listingId,
+  listingWants,
   onClose,
   onSent,
 }: {
   listingId: string;
+  listingWants: string;
   onClose: () => void;
   onSent: (negotiationId: string) => void;
 }) {
@@ -407,6 +414,23 @@ function ProposeModal({
   const [openingMessage, setOpeningMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [myListings, setMyListings] = useState<ProposalListingOption[] | null>(
+    null
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    api<{ items: ProposalListingOption[] }>("/me/listings")
+      .then((response) => {
+        if (!cancelled) setMyListings(response.items);
+      })
+      .catch(() => {
+        if (!cancelled) setMyListings([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -439,18 +463,64 @@ function ProposeModal({
       onClick={onClose}
     >
       <div
-        className="card w-full max-w-lg p-6"
+        className="card max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-bold text-ink-900">Propose a trade</h2>
         <p className="mt-1 text-sm text-ink-500">
           Tell the lister what you're offering and start the conversation.
         </p>
+        <div className="mt-4 rounded-xl bg-brand-50 p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-700">
+            They are looking for
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-800">
+            {listingWants}
+          </p>
+        </div>
         <form onSubmit={submit} className="mt-4 space-y-3">
+          {myListings && myListings.length > 0 && (
+            <fieldset className="rounded-xl border border-surface-200 p-3">
+              <legend className="px-1 text-xs font-semibold text-ink-700">
+                Use one of your active listings
+              </legend>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {myListings.map((listing) => (
+                  <button
+                    key={listing.id}
+                    type="button"
+                    onClick={() =>
+                      setOffering(proposalOfferingFromListing(listing))
+                    }
+                    className="rounded-lg border border-surface-300 bg-white px-3 py-2 text-left text-xs transition-colors hover:border-brand-400 hover:bg-brand-50"
+                  >
+                    <span className="block font-semibold text-ink-900">
+                      {listing.title}
+                    </span>
+                    <span className="mt-0.5 block text-ink-400">
+                      {listing.kind} · {listing.postalCode}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
+                Choosing one fills editable offer text only. It does not
+                reserve, transfer, or send that listing.
+              </p>
+            </fieldset>
+          )}
+          {myListings && myListings.length === 0 && (
+            <p className="rounded-xl border border-dashed border-surface-300 p-3 text-xs leading-relaxed text-ink-500">
+              You have no active listing to reuse. That is okay—describe any
+              real item, skill, or time you can offer below.
+            </p>
+          )}
           <label className="block">
             <span className="label">What are you offering?</span>
             <textarea
               required
+              minLength={2}
+              maxLength={1000}
               rows={2}
               value={offering}
               onChange={(e) => setOffering(e.target.value)}
@@ -462,6 +532,8 @@ function ProposeModal({
             <span className="label">Opening message</span>
             <textarea
               required
+              minLength={2}
+              maxLength={2000}
               rows={4}
               value={openingMessage}
               onChange={(e) => setOpeningMessage(e.target.value)}
