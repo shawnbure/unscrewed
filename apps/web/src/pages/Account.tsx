@@ -613,8 +613,8 @@ function EmailEditor({
       } else {
         setVerificationStatus(
           result.sent
-            ? "Verification email sent. Check your inbox."
-            : "A verification email was sent recently. Check your inbox."
+            ? `Verification email sent to ${initial}. Search for “Verify your email for unscrewed” from notifications@unscrewed.lol.`
+            : `A verification email was sent recently to ${initial}. Search your inbox and Junk folder for “Verify your email for unscrewed” from notifications@unscrewed.lol.`
         );
       }
     } catch (e: any) {
@@ -684,13 +684,26 @@ function EmailEditor({
           </button>
         </div>
         {!verified && (
-          <div className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
-            Verify this address before unscrewed sends trade activity alerts.
+          <div className="mt-3 rounded-xl bg-amber-50 p-3 text-sm leading-relaxed text-amber-800">
+            <p>
+              Verify <strong>{initial}</strong> before unscrewed sends trade
+              activity alerts.
+            </p>
+            <dl className="mt-2 grid gap-x-2 text-xs sm:grid-cols-[auto_1fr]">
+              <dt className="font-semibold">From</dt>
+              <dd className="break-all">notifications@unscrewed.lol</dd>
+              <dt className="font-semibold">Subject</dt>
+              <dd>Verify your email for unscrewed</dd>
+            </dl>
+            <p className="mt-2 text-xs">
+              Check Junk or Spam if it is not in the inbox. Sending again does
+              not change the destination address.
+            </p>
             <button
               type="button"
               onClick={resendVerification}
               disabled={busy}
-              className="ml-2 font-semibold underline"
+              className="mt-2 font-semibold underline"
             >
               {busy ? "Sending…" : "Send verification email"}
             </button>
