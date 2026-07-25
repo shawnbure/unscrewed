@@ -14,9 +14,6 @@ export interface Env {
   TOS_VERSION: string;
 
   // Secrets
-  TELNYX_API_KEY: string;
-  TELNYX_MESSAGING_PROFILE_ID: string;
-  TELNYX_FROM_NUMBER: string;
   SESSION_SECRET: string;
   TURNSTILE_SECRET_KEY: string;
 }

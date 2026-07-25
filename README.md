@@ -1,7 +1,26 @@
-# unscrewed.lol
+# [unscrewed.lol](https://unscrewed.lol)
 
-A barter marketplace — trade goods and services without giving corporations a cut.
-Listings, negotiation chat, signed social contracts. Built 100% on Cloudflare.
+An independent, public-benefit-intended barter marketplace for exchanging
+nearby goods, skills, and time without a platform taking a cut.
+
+The project is deliberately early. Review the
+[live community evidence](https://unscrewed.lol/community) and
+[testable operating commitments](https://unscrewed.lol/public-benefit),
+including the zeroes, rather than treating signup totals or repository activity
+as proof of community impact.
+
+Core barter stays free: browsing, posting, proposing, negotiating, and signing
+a basic trade carry no platform fee. unscrewed is not a nonprofit,
+public-benefit corporation, university program, or endorsement claim.
+
+## Try or review it
+
+- [Browse real active listings](https://unscrewed.lol/browse)
+- [Read the safety guidance](https://unscrewed.lol/safety)
+- [Review the terms and enforcement rules](https://unscrewed.lol/tos)
+- [Read practical barter and reuse guides](https://unscrewed.lol/blog)
+- [Follow the public Atom feed](https://unscrewed.lol/blog/feed.xml)
+- [Ask a question or report a problem](https://unscrewed.lol/contact)
 
 ## Stack
 
@@ -13,7 +32,9 @@ Listings, negotiation chat, signed social contracts. Built 100% on Cloudflare.
 - **Sessions / rate limits**: **Cloudflare KV**
 - **Realtime negotiation rooms**: **Durable Objects** (one per negotiation)
 - **Bot protection**: **Cloudflare Turnstile**
-- **SMS 2FA**: **Telnyx** Messaging API
+- **Transactional email**: **Cloudflare Email Service**
+- **Authentication**: email/password or passkey; optional phone numbers are
+  contact fields only and are never texted or verified
 
 ## Domain
 
@@ -39,9 +60,6 @@ packages/
 4. **Set secrets** (never commit these):
    ```bash
    cd apps/api
-   pnpm dlx wrangler secret put TELNYX_API_KEY
-   pnpm dlx wrangler secret put TELNYX_MESSAGING_PROFILE_ID
-   pnpm dlx wrangler secret put TELNYX_FROM_NUMBER
    pnpm dlx wrangler secret put SESSION_SECRET
    pnpm dlx wrangler secret put TURNSTILE_SECRET_KEY
    ```
@@ -50,4 +68,5 @@ packages/
 
 ## Branch policy
 
-All work on `dev`. `main` is reserved for tagged releases.
+Implementation lands on `dev`; verified production releases are fast-forwarded
+to `main`.

@@ -18,10 +18,7 @@ pnpm dlx wrangler r2 bucket create unscrewed-photos
 pnpm --filter @unscrewed/db migrate:local     # local D1
 pnpm --filter @unscrewed/db migrate:remote    # remote D1 (smb account)
 
-# 4. set secrets (Telnyx + session signing + Turnstile)
-pnpm dlx wrangler secret put TELNYX_API_KEY
-pnpm dlx wrangler secret put TELNYX_MESSAGING_PROFILE_ID
-pnpm dlx wrangler secret put TELNYX_FROM_NUMBER       # E.164, e.g. +18885551234
+# 4. set secrets (session signing + Turnstile)
 pnpm dlx wrangler secret put SESSION_SECRET           # 32+ random bytes (openssl rand -hex 32)
 pnpm dlx wrangler secret put TURNSTILE_SECRET_KEY
 
@@ -31,11 +28,5 @@ pnpm --filter @unscrewed/api deploy
 # 6. point api.unscrewed.lol at the Worker via Cloudflare dashboard → Workers Routes
 ```
 
-## Telnyx side
-
-1. Buy / port a long code or toll-free number in the Telnyx portal.
-2. Create a **Messaging Profile**; attach the number.
-3. Configure inbound webhook URL: `https://api.unscrewed.lol/webhooks/telnyx`
-   (delivery receipts go to the same endpoint).
-4. Copy the **API v2 key** and the **Messaging Profile ID** into the
-   `wrangler secret put` commands above.
+The optional phone profile field is contact information only. The application
+does not send SMS, verify phone numbers, or require a messaging provider.

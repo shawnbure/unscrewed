@@ -63,9 +63,6 @@ Worker config lives in [`apps/api/wrangler.toml`](apps/api/wrangler.toml).
 - Custom domain: `api.unscrewed.lol`
 
 **Secrets** (set via `wrangler secret put`, not in git):
-- `TELNYX_API_KEY`
-- `TELNYX_MESSAGING_PROFILE_ID`
-- `TELNYX_FROM_NUMBER`
 - `SESSION_SECRET`
 - `TURNSTILE_SECRET_KEY`
 
