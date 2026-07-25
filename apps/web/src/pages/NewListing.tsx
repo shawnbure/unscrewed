@@ -241,9 +241,10 @@ export default function NewListing() {
             onChange={(e) => setWants(e.target.value)}
             className="input"
             placeholder={
-              kind === "good"
+              starter?.wantsPlaceholder ??
+              (kind === "good"
                 ? "Open to ideas — looking for kids' bike, garden tools, or trade for tutoring"
-                : "Looking for produce, fresh eggs, or a haircut"
+                : "Looking for produce, fresh eggs, or a haircut")
             }
           />
         </Section>

@@ -4,10 +4,33 @@ export interface ListingStarter {
   category: string;
   title: string;
   wants: string;
+  wantsPlaceholder?: string;
   descriptionPlaceholder: string;
 }
 
 export const LISTING_STARTERS = {
+  useful_item: {
+    label: "Useful item",
+    kind: "good",
+    category: "other",
+    title: "",
+    wants: "",
+    wantsPlaceholder:
+      "Name two or three things you would genuinely accept, such as another household item or one hour of a specific skill.",
+    descriptionPlaceholder:
+      "Name the exact item, condition, size or age if relevant, pickup availability, and anything a neighbor should know.",
+  },
+  one_hour_help: {
+    label: "One hour of practical help",
+    kind: "service",
+    category: "labor",
+    title: "One hour of practical help",
+    wants: "",
+    wantsPlaceholder:
+      "Name two or three realistic returns, such as a household item, garden produce, or one hour of another specific skill.",
+    descriptionPlaceholder:
+      "Name the specific task you can do for one hour, when you are available, what is included, and any limits.",
+  },
   dorm_fridge: {
     label: "Mini-fridge",
     kind: "good",

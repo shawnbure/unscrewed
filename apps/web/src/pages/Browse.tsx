@@ -10,6 +10,10 @@ import { CategoryIcon } from "../ui/CategoryIcons.js";
 import { api } from "../lib/api.js";
 import { useSession } from "../lib/session.js";
 import { withNext } from "../lib/navigation.js";
+import {
+  listingStarterPath,
+  type ListingStarterId,
+} from "../lib/listingStarters.js";
 
 type View = "grid" | "map";
 interface BrowseLocation {
@@ -67,6 +71,10 @@ export default function Browse() {
   const postPath = session?.authenticated
     ? "/post"
     : withNext("/signup", "/post");
+  const starterPath = (id: ListingStarterId) => {
+    const path = listingStarterPath(id);
+    return session?.authenticated ? path : withNext("/signup", path);
+  };
 
   return (
     <Container size="xl" className="py-6">
@@ -169,6 +177,8 @@ export default function Browse() {
               loading={loading}
               location={location}
               postPath={postPath}
+              itemStarterPath={starterPath("useful_item")}
+              helpStarterPath={starterPath("one_hour_help")}
             />
           ) : (
             <MapView items={items} location={location} />
@@ -256,11 +266,15 @@ function GridView({
   loading,
   location,
   postPath,
+  itemStarterPath,
+  helpStarterPath,
 }: {
   items: ListingCardData[];
   loading: boolean;
   location: BrowseLocation | null;
   postPath: string;
+  itemStarterPath: string;
+  helpStarterPath: string;
 }) {
   if (loading) {
     return (
@@ -282,13 +296,43 @@ function GridView({
         </p>
         {location && (
           <p className="mt-1 max-w-md text-sm text-ink-400">
-            This pilot becomes useful when nearby people add things or skills
-            they would genuinely trade.
+            This local pool becomes useful when nearby people add things or
+            skills they would genuinely trade.
           </p>
         )}
-        <Link to={postPath} className="btn-brand mt-4 inline-flex">
-          {location ? "Post the first local trade" : "Post the first one"}
-        </Link>
+        {location ? (
+          <>
+            <p className="mt-5 text-xs font-semibold uppercase tracking-widest text-brand-700">
+              Start with something real
+            </p>
+            <div className="mt-3 grid w-full max-w-xl gap-3 text-left sm:grid-cols-2">
+              <ListingStarterLink
+                to={itemStarterPath}
+                title="A useful item"
+                body="Add the exact item, condition, pickup timing, and what you would accept."
+              />
+              <ListingStarterLink
+                to={helpStarterPath}
+                title="One hour of practical help"
+                body="Define one task, your availability, limits, and realistic returns."
+              />
+            </div>
+            <Link
+              to={postPath}
+              className="mt-3 text-sm font-medium text-brand-700 hover:underline"
+            >
+              Or start with a blank listing
+            </Link>
+            <p className="mt-3 max-w-lg text-xs leading-relaxed text-ink-400">
+              Starters select editable fields only. Nothing is posted until a
+              real person adds accurate details and submits it.
+            </p>
+          </>
+        ) : (
+          <Link to={postPath} className="btn-brand mt-4 inline-flex">
+            Post the first one
+          </Link>
+        )}
       </div>
     );
   }
@@ -298,6 +342,31 @@ function GridView({
         <ListingCard key={l.id} l={l} />
       ))}
     </div>
+  );
+}
+
+function ListingStarterLink({
+  to,
+  title,
+  body,
+}: {
+  to: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="rounded-2xl border border-brand-200 bg-brand-50 p-4 transition-colors hover:border-brand-400 hover:bg-brand-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-300/30"
+    >
+      <span className="block font-semibold text-brand-900">{title}</span>
+      <span className="mt-1 block text-xs leading-relaxed text-brand-800/75">
+        {body}
+      </span>
+      <span className="mt-3 block text-xs font-semibold text-brand-700">
+        Use this editable starter →
+      </span>
+    </Link>
   );
 }
 
