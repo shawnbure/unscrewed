@@ -17,16 +17,87 @@ import { ListingCard, type ListingCardData } from "../ui/ListingCard.js";
 import { PhilosophyModal } from "../ui/PhilosophyModal.js";
 import { InviteNeighbors } from "../ui/InviteNeighbors.js";
 import { api } from "../lib/api.js";
+import { useSession } from "../lib/session.js";
+
+const HOME_AREA_RADIUS_KM = 25;
+
+interface HomeArea {
+  zip: string;
+  browsePath: string;
+}
 
 export default function Home() {
+  const { session } = useSession();
   const [trending, setTrending] = useState<ListingCardData[]>([]);
+  const [homeArea, setHomeArea] = useState<HomeArea | null>(null);
+  const [listingsLoading, setListingsLoading] = useState(true);
   const [philOpen, setPhilOpen] = useState(false);
 
   useEffect(() => {
-    api<{ items: ListingCardData[] }>("/listings?limit=12")
-      .then((r) => setTrending(r.items))
-      .catch(() => setTrending([]));
-  }, []);
+    if (session === null) return;
+
+    let active = true;
+    const loadRecent = async () => {
+      const result = await api<{ items: ListingCardData[] }>(
+        "/listings?limit=12"
+      );
+      if (!active) return;
+      setHomeArea(null);
+      setTrending(result.items);
+    };
+
+    const load = async () => {
+      setListingsLoading(true);
+      try {
+        if (session.authenticated) {
+          const me = await api<{
+            homeZip: string | null;
+            homeLat: number | null;
+            homeLng: number | null;
+          }>("/me");
+          if (
+            me.homeZip &&
+            Number.isFinite(me.homeLat) &&
+            Number.isFinite(me.homeLng)
+          ) {
+            const params = new URLSearchParams({
+              lat: String(me.homeLat),
+              lng: String(me.homeLng),
+              radiusKm: String(HOME_AREA_RADIUS_KM),
+              place: `ZIP ${me.homeZip}`,
+            });
+            const result = await api<{ items: ListingCardData[] }>(
+              `/listings?lat=${encodeURIComponent(String(me.homeLat))}&lng=${encodeURIComponent(String(me.homeLng))}&radiusKm=${HOME_AREA_RADIUS_KM}&limit=12`
+            );
+            if (!active) return;
+            setHomeArea({
+              zip: me.homeZip,
+              browsePath: `/browse?${params.toString()}`,
+            });
+            setTrending(result.items);
+            return;
+          }
+        }
+        await loadRecent();
+      } catch {
+        if (!active) return;
+        try {
+          await loadRecent();
+        } catch {
+          if (!active) return;
+          setHomeArea(null);
+          setTrending([]);
+        }
+      } finally {
+        if (active) setListingsLoading(false);
+      }
+    };
+
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [session]);
 
   const goods = CATEGORIES.filter(
     (c) => c.kind === "good" || c.kind === "both"
@@ -170,19 +241,50 @@ export default function Home() {
       {/* Trending */}
       <Container size="xl" className="mt-16">
         <SectionHeader
-          eyebrow="Recent"
-          title="Trades near you"
-          linkTo="/browse"
+          eyebrow={homeArea ? "Your area" : "Recent"}
+          title={
+            homeArea ? `Trades around ZIP ${homeArea.zip}` : "Recent trades"
+          }
+          linkTo={homeArea?.browsePath ?? "/browse"}
         />
-        {trending.length === 0 ? (
+        {listingsLoading ? (
+          <div
+            className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+            aria-label="Loading trades"
+          >
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="card h-72 animate-pulse bg-surface-100"
+              />
+            ))}
+          </div>
+        ) : trending.length === 0 ? (
           <div className="card mt-5 flex flex-col items-center p-10 text-center text-ink-500">
             <Hand className="h-10 w-10 text-brand-400" strokeWidth={1.5} />
             <p className="mt-3 text-base">
-              No trades posted yet — be the first one to start.
+              {homeArea
+                ? `No real trades are posted around ZIP ${homeArea.zip} yet.`
+                : "No trades are posted yet."}
             </p>
+            {homeArea && (
+              <p className="mt-1 max-w-md text-sm text-ink-400">
+                Post one honest offer, then share that listing with one person
+                nearby who might genuinely want it.
+              </p>
+            )}
             <Link to="/post" className="btn-brand mt-4">
-              Post a trade <ArrowRight className="h-4 w-4" />
+              {homeArea ? "Post the first local trade" : "Post a trade"}{" "}
+              <ArrowRight className="h-4 w-4" />
             </Link>
+            {homeArea && (
+              <Link
+                to="/browse"
+                className="mt-3 text-sm font-medium text-brand-700 hover:underline"
+              >
+                Browse all locations
+              </Link>
+            )}
           </div>
         ) : (
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
