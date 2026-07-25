@@ -207,7 +207,7 @@ export default function Home() {
 
       {/* A neighbor-to-neighbor growth loop with an explicit public-benefit pledge */}
       <Container size="xl" className="mt-14">
-        <InviteNeighbors />
+        <InviteNeighbors localArea={homeArea ?? undefined} />
       </Container>
 
       {/* Goods categories */}

@@ -38,14 +38,24 @@ const UMASS_INVITE = {
 
 interface InviteNeighborsProps {
   audience?: "general" | "umass";
+  localArea?: {
+    zip: string;
+    browsePath: string;
+  };
 }
 
 export function InviteNeighbors({
   audience = "general",
+  localArea,
 }: InviteNeighborsProps) {
   const [copied, setCopied] = useState(false);
   const resetTimer = useRef<number | null>(null);
-  const invite = audience === "umass" ? UMASS_INVITE : GENERAL_INVITE;
+  const invite =
+    audience === "umass"
+      ? UMASS_INVITE
+      : localArea
+        ? localInvite(localArea)
+        : GENERAL_INVITE;
 
   useEffect(
     () => () => {
@@ -147,6 +157,28 @@ export function InviteNeighbors({
     </section>
   );
 }
+
+function localInvite(area: NonNullable<InviteNeighborsProps["localArea"]>) {
+  const url = new URL(area.browsePath, window.location.origin);
+  url.searchParams.set("utm_source", "neighbor_invite");
+  url.searchParams.set("utm_medium", "share");
+  url.searchParams.set("utm_campaign", `invite_your_block:${area.zip}`);
+
+  return {
+    url: url.toString(),
+    title: `See trades around ZIP ${area.zip} on unscrewed.lol`,
+    text: `See real barter offers around ZIP ${area.zip}, or post one useful thing or skill your neighbors can trade for. No fees and no corporate skim.`,
+    eyebrow: "Your local trade area",
+    heading: `Invite one neighbor around ZIP ${area.zip}.`,
+    body: `This invitation opens the live ${HOME_AREA_LABEL} around ZIP ${area.zip}, so your neighbor sees relevant inventory instead of a national feed. One plausible invitation is more useful than a promotional blast.`,
+    shareLabel: "Share local trades",
+    copyLabel: "Copy local invite",
+    copiedHint: `Ready to send. The link identifies the ZIP ${area.zip} trade area, not your exact address.`,
+    idleHint: `Share only with someone you want to invite into the ZIP ${area.zip} trade area. Nothing is sent until you choose a recipient.`,
+  };
+}
+
+const HOME_AREA_LABEL = "25 km trade area";
 
 function Commitment({
   icon,
