@@ -296,8 +296,9 @@ export default function AdminDashboard() {
           out-of-scope inventory cannot masquerade as activation.
           “Started talks” means the member initiated at least one non-deleted
           negotiation. “Completed trade” means they are a party to at least one
-          contract signed by both sides. These outcome columns can overlap;
-          they are not assumed to happen in a fixed order.
+          agreement signed by both sides whose real exchange was separately
+          confirmed by both traders. These outcome columns can overlap; they
+          are not assumed to happen in a fixed order.
         </p>
       </section>
 

@@ -428,7 +428,8 @@ export default function ListingDetail() {
                   : "Inspect the item or scope the service before exchanging."}
               </SafetyLi>
               <SafetyLi tone="good">
-                Both sides sign the social contract in chat — keep the record.
+                Both sides sign the terms in chat. After the real exchange,
+                each person separately confirms completion.
               </SafetyLi>
               <SafetyLi tone="bad">
                 unscrewed.lol is not party to the trade — see{" "}

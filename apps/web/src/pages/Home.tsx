@@ -4,7 +4,7 @@ import {
   ArrowRight,
   BookOpen,
   MessageSquare,
-  FileSignature,
+  CheckCircle2,
   Hand,
   TrendingDown,
   Users,
@@ -337,9 +337,9 @@ export default function Home() {
             />
             <Step
               n={3}
-              icon={<FileSignature className="h-5 w-5" strokeWidth={2} />}
-              title="Sign and trade"
-              body="Both parties sign a simple social contract. Meet and swap."
+              icon={<CheckCircle2 className="h-5 w-5" strokeWidth={2} />}
+              title="Agree, exchange, confirm"
+              body="Both people sign the terms, make the real exchange, then separately confirm completion."
             />
           </div>
           <p className="mt-8 text-center text-xs text-ink-500">

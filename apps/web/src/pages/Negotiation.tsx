@@ -442,7 +442,8 @@ function DraftContractModal({
           </div>
           <p className="text-center text-xs text-ink-400">
             Once sent, both parties type their full name to sign. Either party
-            can cancel before both have signed.
+            can cancel before both have signed. Signing records the agreement;
+            completion is confirmed separately after the real exchange.
           </p>
         </div>
       ) : (
@@ -575,7 +576,7 @@ function ContractCard({
                 className="btn-brand flex-1"
               >
                 <FileSignature className="h-4 w-4" />
-                Sign{otherSigned ? " (completes contract)" : ""}
+                Sign{otherSigned ? " (adds final signature)" : ""}
               </button>
             )}
             {!myUnsigned && (
@@ -670,7 +671,7 @@ function SignModal({
         </div>
         <p className="text-xs text-ink-400">
           By signing you agree to the Terms and confirm the contract above is
-          accurate.
+          accurate. This does not confirm that the real exchange has happened.
         </p>
       </form>
     </Modal>

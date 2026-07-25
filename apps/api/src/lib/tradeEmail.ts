@@ -123,7 +123,7 @@ export async function notifyTradeParticipant(
       cta: "Review and sign",
     },
     agreement_signed: {
-      subject: `Trade agreement completed: ${listingTitle}`,
+      subject: `Trade agreement signed by both: ${listingTitle}`,
       heading: "Both traders have signed",
       intro:
         "The trade agreement now has both signatures. Keep using your judgment and the safety guidance for any meetup or exchange.",
