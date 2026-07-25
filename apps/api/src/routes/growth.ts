@@ -7,6 +7,7 @@ import { rateLimit } from "../lib/rateLimit.js";
 import { requireAuth } from "../middleware/auth.js";
 import {
   UMASS_RADIUS_KM,
+  locationBounds,
   umassBounds,
 } from "../lib/growthTargets.js";
 
@@ -18,6 +19,7 @@ const FIRST_SPRINT_TARGETS = {
   twoSidedConversations: 3,
   completedTrades: 1,
 } as const;
+const MEMBER_LOCAL_RADIUS_KM = 25;
 
 growthRoutes.get("/umass-progress", async (c) => {
   const row = await c.env.DB.prepare(
@@ -98,7 +100,7 @@ growthRoutes.get("/umass-me", requireAuth, async (c) => {
            JOIN negotiation_messages m ON m.negotiation_id = n.id
           WHERE n.is_deleted = 0
             AND (n.lister_user_id = ?5 OR n.requester_user_id = ?5)
-          GROUP BY n.id
+          GROUP BY n.id, n.lister_user_id, n.requester_user_id
          HAVING COUNT(DISTINCT m.sender_user_id) >= 2
        )
        SELECT
@@ -148,6 +150,135 @@ growthRoutes.get("/umass-me", requireAuth, async (c) => {
       completedTrades: summary?.completed_trades ?? 0,
     },
     activeListings: listingRows.results,
+  });
+});
+
+growthRoutes.get("/local-me", requireAuth, async (c) => {
+  const userId = c.get("userId")!;
+  const member = await c.env.DB.prepare(
+    `SELECT home_zip, home_lat, home_lng
+       FROM users
+      WHERE id = ?1
+        AND is_deleted = 0
+        AND is_archived = 0
+      LIMIT 1`
+  )
+    .bind(userId)
+    .first<{
+      home_zip: string | null;
+      home_lat: number | null;
+      home_lng: number | null;
+    }>();
+  if (
+    !member?.home_zip ||
+    !Number.isFinite(member.home_lat) ||
+    !Number.isFinite(member.home_lng)
+  ) {
+    return c.json({ error: "home_location_unavailable" }, 409);
+  }
+
+  const bounds = locationBounds(
+    { lat: member.home_lat!, lng: member.home_lng! },
+    MEMBER_LOCAL_RADIUS_KM
+  );
+  const localListingsSql = `
+    SELECT id, user_id, title, wants, postal_code, status, date_created
+      FROM listings
+     WHERE is_deleted = 0
+       AND is_archived = 0
+       AND ROUND(lat, 1) BETWEEN ?1 AND ?2
+       AND ROUND(lng, 1) BETWEEN ?3 AND ?4`;
+
+  const [summary, listingRows] = await Promise.all([
+    c.env.DB.prepare(
+      `WITH local_listings AS (${localListingsSql}),
+       local_conversations AS (
+         SELECT n.id, n.lister_user_id, n.requester_user_id
+           FROM negotiations n
+           JOIN local_listings l ON l.id = n.listing_id
+           JOIN negotiation_messages m ON m.negotiation_id = n.id
+          WHERE n.is_deleted = 0
+          GROUP BY n.id, n.lister_user_id, n.requester_user_id
+         HAVING COUNT(DISTINCT m.sender_user_id) >= 2
+       )
+       SELECT
+         (SELECT COUNT(DISTINCT user_id) FROM local_listings)
+           AS founding_traders,
+         (SELECT COUNT(*) FROM local_listings WHERE status = 'active')
+           AS active_listings,
+         (SELECT COUNT(*) FROM local_conversations)
+           AS two_sided_conversations,
+         (SELECT COUNT(*)
+            FROM contracts c
+            JOIN local_listings l ON l.id = c.listing_id
+           WHERE c.status = 'signed')
+           AS completed_trades,
+         (SELECT COUNT(*) FROM local_listings WHERE user_id = ?5)
+           AS my_posted_listings,
+         (SELECT COUNT(*)
+            FROM local_listings
+           WHERE user_id = ?5 AND status = 'active')
+           AS my_active_listings,
+         (SELECT COUNT(*)
+            FROM local_conversations
+           WHERE lister_user_id = ?5 OR requester_user_id = ?5)
+           AS my_two_sided_conversations,
+         (SELECT COUNT(*)
+            FROM contracts c
+            JOIN local_listings l ON l.id = c.listing_id
+           WHERE c.status = 'signed'
+             AND (c.party_a_user_id = ?5 OR c.party_b_user_id = ?5))
+           AS my_completed_trades`
+    )
+      .bind(...bounds, userId)
+      .first<{
+        founding_traders: number;
+        active_listings: number;
+        two_sided_conversations: number;
+        completed_trades: number;
+        my_posted_listings: number;
+        my_active_listings: number;
+        my_two_sided_conversations: number;
+        my_completed_trades: number;
+      }>(),
+    c.env.DB.prepare(
+      `WITH local_listings AS (${localListingsSql})
+       SELECT id, title, wants, postal_code AS postalCode
+         FROM local_listings
+        WHERE user_id = ?5
+          AND status = 'active'
+        ORDER BY date_created DESC
+        LIMIT 10`
+    )
+      .bind(...bounds, userId)
+      .all<{
+        id: string;
+        title: string;
+        wants: string;
+        postalCode: string;
+      }>(),
+  ]);
+
+  c.header("Cache-Control", "private, no-store");
+  return c.json({
+    area: `ZIP ${member.home_zip}`,
+    zip: member.home_zip,
+    radiusKm: MEMBER_LOCAL_RADIUS_KM,
+    current: {
+      foundingTraders: summary?.founding_traders ?? 0,
+      activeListings: summary?.active_listings ?? 0,
+      twoSidedConversations: summary?.two_sided_conversations ?? 0,
+      completedTrades: summary?.completed_trades ?? 0,
+    },
+    mine: {
+      postedListings: summary?.my_posted_listings ?? 0,
+      activeListings: summary?.my_active_listings ?? 0,
+      twoSidedConversations: summary?.my_two_sided_conversations ?? 0,
+      completedTrades: summary?.my_completed_trades ?? 0,
+    },
+    targets: FIRST_SPRINT_TARGETS,
+    activeListings: listingRows.results,
+    updatedAt: Date.now(),
   });
 });
 

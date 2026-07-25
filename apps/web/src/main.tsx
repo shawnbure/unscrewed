@@ -12,6 +12,7 @@ import EditListing from "./pages/EditListing.js";
 import NegotiationPage from "./pages/Negotiation.js";
 import TradesPage from "./pages/Trades.js";
 import AccountPage from "./pages/Account.js";
+import NeighborhoodPage from "./pages/Neighborhood.js";
 import ThoughtsPage from "./pages/Thoughts.js";
 import CommunityPage from "./pages/Community.js";
 import BlogPage from "./pages/Blog.js";
@@ -81,6 +82,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             element={
               <RequireAuth>
                 <AccountPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="neighborhood"
+            element={
+              <RequireAuth>
+                <NeighborhoodPage />
               </RequireAuth>
             }
           />

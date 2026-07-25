@@ -10,6 +10,7 @@ import {
   UserPlus,
   Inbox as InboxIcon,
   User as UserIcon,
+  MapPin,
 } from "lucide-react";
 import { useSession } from "./lib/session.js";
 import { api } from "./lib/api.js";
@@ -123,6 +124,16 @@ export default function App() {
               </NavLink>
               {session?.authenticated && (
                 <NavLink
+                  to="/neighborhood"
+                  className={({ isActive }) =>
+                    `inline-flex items-center gap-1.5 rounded-xl px-3 py-2 ${isActive ? "bg-surface-100 text-ink-900" : "text-ink-700 hover:bg-surface-100"}`
+                  }
+                >
+                  <MapPin className="h-4 w-4" strokeWidth={2} /> My area
+                </NavLink>
+              )}
+              {session?.authenticated && (
+                <NavLink
                   to="/trades"
                   className={({ isActive }) =>
                     `inline-flex items-center gap-1.5 rounded-xl px-3 py-2 ${isActive ? "bg-surface-100 text-ink-900" : "text-ink-700 hover:bg-surface-100"}`
@@ -216,6 +227,14 @@ export default function App() {
                 {session?.authenticated && (
                   <MobileLink to="/post" onClick={() => setMobileOpen(false)}>
                     <Plus className="h-4 w-4" strokeWidth={2.5} /> Post a trade
+                  </MobileLink>
+                )}
+                {session?.authenticated && (
+                  <MobileLink
+                    to="/neighborhood"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <MapPin className="h-4 w-4" strokeWidth={2} /> My area
                   </MobileLink>
                 )}
                 {session?.authenticated && (

@@ -1,19 +1,26 @@
 export const UMASS_CENTER = { lat: 42.389326, lng: -72.528361 };
 export const UMASS_RADIUS_KM = 20;
 
-export function umassBounds() {
-  const latitudeDelta = UMASS_RADIUS_KM / 111.32;
+export function locationBounds(
+  center: { lat: number; lng: number },
+  radiusKm: number
+) {
+  const latitudeDelta = radiusKm / 111.32;
   const longitudeScale = Math.max(
-    Math.cos((UMASS_CENTER.lat * Math.PI) / 180),
+    Math.cos((center.lat * Math.PI) / 180),
     0.1
   );
-  const longitudeDelta = UMASS_RADIUS_KM / (111.32 * longitudeScale);
+  const longitudeDelta = radiusKm / (111.32 * longitudeScale);
   return [
-    Math.max(-90, UMASS_CENTER.lat - latitudeDelta),
-    Math.min(90, UMASS_CENTER.lat + latitudeDelta),
-    Math.max(-180, UMASS_CENTER.lng - longitudeDelta),
-    Math.min(180, UMASS_CENTER.lng + longitudeDelta),
+    Math.max(-90, center.lat - latitudeDelta),
+    Math.min(90, center.lat + latitudeDelta),
+    Math.max(-180, center.lng - longitudeDelta),
+    Math.min(180, center.lng + longitudeDelta),
   ] as const;
+}
+
+export function umassBounds() {
+  return locationBounds(UMASS_CENTER, UMASS_RADIUS_KM);
 }
 
 export function campaignTargetLabel(campaign: string): string | null {
