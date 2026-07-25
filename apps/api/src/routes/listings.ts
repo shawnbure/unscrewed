@@ -316,45 +316,105 @@ listingsRoutes.patch("/:id", requireAuth, async (c) => {
     }
   }
 
-  await db.update(listings).set(upd as any).where(eq(listings.id, id));
-
-  // Photos: if the client sent an array, treat it as the authoritative new
-  // ordering — wipe existing rows and re-insert in the new order.
-  if (input.photoKeys !== undefined) {
-    await db.delete(listingPhotos).where(eq(listingPhotos.listingId, id));
-    if (input.photoKeys.length > 0) {
-      await db.insert(listingPhotos).values(
-        input.photoKeys.map((key, i) => ({
-          id: uuidv4(),
-          listingId: id,
-          r2Key: key,
-          sortOrder: i,
-        }))
-      );
-    }
-  }
-
-  // Keep FTS in sync when any indexed column changed.
-  if (
+  const indexedTextChanged =
     input.title !== undefined ||
     input.description !== undefined ||
-    input.wants !== undefined
-  ) {
-    await c.env.DB.prepare(
-      `DELETE FROM listings_fts WHERE rowid = (SELECT rowid FROM listings WHERE id = ?1)`
-    )
-      .bind(id)
-      .run();
-    await c.env.DB.prepare(
-      `INSERT INTO listings_fts(rowid, title, description, wants)
-       SELECT rowid, title, description, wants FROM listings WHERE id = ?1`
-    )
-      .bind(id)
-      .run();
+    input.wants !== undefined;
+  const rowId = indexedTextChanged
+    ? await c.env.DB.prepare(
+        "SELECT rowid FROM listings WHERE id = ?1"
+      )
+        .bind(id)
+        .first<number>("rowid")
+    : null;
+  if (indexedTextChanged && rowId === null)
+    return c.json({ error: "not_found" }, 404);
+  const statements: D1PreparedStatement[] = [];
+
+  // listings_fts is an FTS5 external-content table. Its old tokens must be
+  // removed while the old listings row is still present; a normal DELETE
+  // after updating the content row can fail or leave stale search matches.
+  // D1 batch() is transactional, so the listing, search index, and optional
+  // photo ordering either all change together or all roll back.
+  if (indexedTextChanged) {
+    statements.push(
+      c.env.DB.prepare(
+        `INSERT INTO listings_fts(
+           listings_fts, rowid, title, description, wants
+         ) VALUES ('delete', ?1, ?2, ?3, ?4)`
+      ).bind(rowId!, row.title, row.description, row.wants)
+    );
   }
+
+  const assignments: string[] = [];
+  const values: unknown[] = [];
+  for (const [column, value] of Object.entries(upd)) {
+    assignments.push(`${listingColumn(column)} = ?${values.length + 1}`);
+    values.push(value);
+  }
+  statements.push(
+    c.env.DB.prepare(
+      `UPDATE listings
+          SET ${assignments.join(", ")}
+        WHERE id = ?${values.length + 1}`
+    ).bind(...values, id)
+  );
+
+  if (indexedTextChanged) {
+    statements.push(
+      c.env.DB.prepare(
+        `INSERT INTO listings_fts(rowid, title, description, wants)
+         VALUES (?1, ?2, ?3, ?4)`
+      ).bind(
+        rowId!,
+        input.title?.trim() ?? row.title,
+        input.description?.trim() ?? row.description,
+        input.wants?.trim() ?? row.wants
+      )
+    );
+  }
+
+  // If the client sent an array, treat it as the authoritative photo order.
+  if (input.photoKeys !== undefined) {
+    statements.push(
+      c.env.DB.prepare(
+        "DELETE FROM listing_photos WHERE listing_id = ?1"
+      ).bind(id)
+    );
+    input.photoKeys.forEach((key, sortOrder) => {
+      statements.push(
+        c.env.DB.prepare(
+          `INSERT INTO listing_photos(
+             id, listing_id, r2_key, sort_order
+           ) VALUES (?1, ?2, ?3, ?4)`
+        ).bind(uuidv4(), id, key, sortOrder)
+      );
+    });
+  }
+
+  await c.env.DB.batch(statements);
 
   return c.json({ ok: true });
 });
+
+function listingColumn(property: string): string {
+  const columns: Record<string, string> = {
+    title: "title",
+    description: "description",
+    wants: "wants",
+    category: "category",
+    condition: "condition",
+    status: "status",
+    postalCode: "postal_code",
+    lat: "lat",
+    lng: "lng",
+    geohash: "geohash",
+    dateModified: "date_modified",
+  };
+  const column = columns[property];
+  if (!column) throw new Error(`Unsupported listing update field: ${property}`);
+  return column;
+}
 
 // ---------------- photo upload presign ----------------
 // Returns a one-shot R2 key the client PUTs to via /listings/photos/:key.
