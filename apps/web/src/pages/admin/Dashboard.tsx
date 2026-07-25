@@ -21,6 +21,8 @@ interface Stats {
       visitors: number;
       signups: number;
       first_listings: number;
+      target_area: string | null;
+      target_area_posters: number | null;
       negotiation_starters: number;
       completed_traders: number;
     }[];
@@ -178,13 +180,16 @@ export default function AdminDashboard() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] text-left text-sm">
+            <table className="w-full min-w-[1080px] text-left text-sm">
               <thead className="bg-surface-50 text-xs uppercase tracking-wider text-ink-400">
                 <tr>
                   <th className="px-5 py-3 font-semibold">Campaign</th>
                   <th className="px-4 py-3 font-semibold">Visits</th>
                   <th className="px-4 py-3 font-semibold">Members</th>
-                  <th className="px-4 py-3 font-semibold">Posted</th>
+                  <th className="px-4 py-3 font-semibold">Posted anywhere</th>
+                  <th className="px-4 py-3 font-semibold">
+                    Target-area supply
+                  </th>
                   <th className="px-4 py-3 font-semibold">Started talks</th>
                   <th className="px-5 py-3 font-semibold">Completed trade</th>
                 </tr>
@@ -221,6 +226,25 @@ export default function AdminDashboard() {
                       </div>
                     </td>
                     <td className="px-4 py-4">
+                      {campaign.target_area_posters === null ? (
+                        <div className="text-ink-400">Not location-scoped</div>
+                      ) : (
+                        <>
+                          <div className="font-semibold text-brand-700">
+                            {campaign.target_area_posters.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-ink-400">
+                            {campaign.target_area} ·{" "}
+                            {percent(
+                              campaign.target_area_posters,
+                              campaign.signups
+                            )}{" "}
+                            of members
+                          </div>
+                        </>
+                      )}
+                    </td>
+                    <td className="px-4 py-4">
                       <div className="font-medium text-ink-900">
                         {campaign.negotiation_starters.toLocaleString()}
                       </div>
@@ -248,11 +272,14 @@ export default function AdminDashboard() {
           </div>
         )}
         <p className="border-t border-surface-200 px-5 py-3 text-xs leading-5 text-ink-500">
-          “Posted” means at least one non-deleted listing. “Started talks”
-          means the member initiated at least one non-deleted negotiation.
-          “Completed trade” means they are a party to at least one contract
-          signed by both sides. These outcome columns can overlap; they are not
-          assumed to happen in a fixed order.
+          “Posted anywhere” means at least one non-deleted listing.
+          “Target-area supply” counts attributed members who posted inside the
+          invited ZIP or UMass-area pool; it is deliberately separate so
+          out-of-area inventory cannot masquerade as local activation.
+          “Started talks” means the member initiated at least one non-deleted
+          negotiation. “Completed trade” means they are a party to at least one
+          contract signed by both sides. These outcome columns can overlap;
+          they are not assumed to happen in a fixed order.
         </p>
       </section>
 

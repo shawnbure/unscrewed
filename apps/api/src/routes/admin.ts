@@ -16,9 +16,25 @@ import {
 import type { AppContext } from "../env.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { geocodeUsZip } from "../lib/geocode.js";
+import {
+  campaignTargetLabel,
+  umassBounds,
+} from "../lib/growthTargets.js";
 
 export const adminRoutes = new Hono<AppContext>();
 adminRoutes.use("*", requireAdmin);
+
+interface GrowthFunnelRow {
+  campaign: string;
+  source: string;
+  medium: string;
+  visitors: number;
+  signups: number;
+  first_listings: number;
+  target_area_posters: number;
+  negotiation_starters: number;
+  completed_traders: number;
+}
 
 // ============================================================
 // /admin/stats — counts + recent activity
@@ -101,17 +117,31 @@ adminRoutes.get("/stats", async (c) => {
            gv.medium,
            COUNT(DISTINCT gv.visitor_id) AS visitors,
            COUNT(DISTINCT u.id) AS signups,
-           COUNT(DISTINCT CASE WHEN listers.user_id IS NOT NULL THEN u.id END) AS first_listings,
+           COUNT(DISTINCT CASE WHEN posted.id IS NOT NULL THEN u.id END) AS first_listings,
+           COUNT(DISTINCT CASE
+             WHEN (
+               substr(gv.campaign, 1, 18) = 'invite_your_block:'
+               AND posted.postal_code = substr(gv.campaign, 19)
+             )
+             OR (
+               substr(gv.campaign, 1, 6) = 'umass_'
+               AND ROUND(posted.lat, 1) BETWEEN ?2 AND ?3
+               AND ROUND(posted.lng, 1) BETWEEN ?4 AND ?5
+             )
+             THEN u.id
+           END) AS target_area_posters,
            COUNT(DISTINCT CASE WHEN initiators.user_id IS NOT NULL THEN u.id END) AS negotiation_starters,
            COUNT(DISTINCT CASE WHEN traders.user_id IS NOT NULL THEN u.id END) AS completed_traders
          FROM growth_visits gv
          LEFT JOIN users u
            ON u.attribution_visitor_id = gv.visitor_id
+          AND u.attribution_source = gv.source
+          AND u.attribution_medium = gv.medium
           AND u.attribution_campaign = gv.campaign
           AND u.is_deleted = 0
-         LEFT JOIN (
-           SELECT DISTINCT user_id FROM listings WHERE is_deleted = 0
-         ) listers ON listers.user_id = u.id
+         LEFT JOIN listings posted
+           ON posted.user_id = u.id
+          AND posted.is_deleted = 0
          LEFT JOIN (
            SELECT DISTINCT requester_user_id AS user_id
              FROM negotiations
@@ -131,8 +161,8 @@ adminRoutes.get("/stats", async (c) => {
          ORDER BY visitors DESC
          LIMIT 10`
       )
-      .bind(now - 30 * day)
-      .all(),
+      .bind(now - 30 * day, ...umassBounds())
+      .all<GrowthFunnelRow>(),
     db
       .prepare(
         `SELECT
@@ -320,6 +350,15 @@ adminRoutes.get("/stats", async (c) => {
           2;
   const eligibleNegotiations = ownerResponse?.eligible_negotiations ?? 0;
   const respondedWithin72h = ownerResponse?.responded_within_72h ?? 0;
+  const growthCampaigns = growthFunnel.results.map((campaign) => {
+    const targetArea = campaignTargetLabel(campaign.campaign);
+    return {
+      ...campaign,
+      target_area: targetArea,
+      target_area_posters:
+        targetArea === null ? null : campaign.target_area_posters,
+    };
+  });
 
   return c.json({
     users: {
@@ -338,7 +377,7 @@ adminRoutes.get("/stats", async (c) => {
     recentSignups: recentSignups.results,
     growth: {
       windowDays: 30,
-      campaigns: growthFunnel.results,
+      campaigns: growthCampaigns,
     },
     marketplace: {
       completedTrades: {

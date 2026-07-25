@@ -65,8 +65,12 @@ export const growthVisits = sqliteTable(
       .default(sql`(unixepoch() * 1000)`),
   },
   (t) => ({
-    uxVisitorCampaign: uniqueIndex("ux_growth_visits_visitor_campaign").on(
+    uxVisitorChannelCampaign: uniqueIndex(
+      "ux_growth_visits_visitor_channel_campaign"
+    ).on(
       t.visitorId,
+      t.source,
+      t.medium,
       t.campaign
     ),
     ixCampaignDate: index("ix_growth_visits_campaign_date").on(

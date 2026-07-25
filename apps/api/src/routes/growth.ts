@@ -5,32 +5,19 @@ import type { AppContext } from "../env.js";
 import { uuidv4 } from "../lib/crypto.js";
 import { rateLimit } from "../lib/rateLimit.js";
 import { requireAuth } from "../middleware/auth.js";
+import {
+  UMASS_RADIUS_KM,
+  umassBounds,
+} from "../lib/growthTargets.js";
 
 export const growthRoutes = new Hono<AppContext>();
 
-const UMASS_CENTER = { lat: 42.389326, lng: -72.528361 };
-const UMASS_RADIUS_KM = 20;
 const FIRST_SPRINT_TARGETS = {
   foundingTraders: 5,
   activeListings: 10,
   twoSidedConversations: 3,
   completedTrades: 1,
 } as const;
-
-function umassBounds() {
-  const latitudeDelta = UMASS_RADIUS_KM / 111.32;
-  const longitudeScale = Math.max(
-    Math.cos((UMASS_CENTER.lat * Math.PI) / 180),
-    0.1
-  );
-  const longitudeDelta = UMASS_RADIUS_KM / (111.32 * longitudeScale);
-  return [
-    Math.max(-90, UMASS_CENTER.lat - latitudeDelta),
-    Math.min(90, UMASS_CENTER.lat + latitudeDelta),
-    Math.max(-180, UMASS_CENTER.lng - longitudeDelta),
-    Math.min(180, UMASS_CENTER.lng + longitudeDelta),
-  ] as const;
-}
 
 growthRoutes.get("/umass-progress", async (c) => {
   const row = await c.env.DB.prepare(
