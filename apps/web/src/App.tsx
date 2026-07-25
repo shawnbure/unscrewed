@@ -19,6 +19,7 @@ import { PhilosophyModal } from "./ui/PhilosophyModal.js";
 import { MembersChip } from "./ui/MembersChip.js";
 import { Analytics } from "./ui/Analytics.js";
 import { AttributionTracker } from "./ui/AttributionTracker.js";
+import { TradeAlertReadinessBanner } from "./ui/TradeAlertReadinessBanner.js";
 
 export default function App() {
   const { session, refresh } = useSession();
@@ -256,6 +257,10 @@ export default function App() {
           )}
         </Container>
       </header>
+
+      <TradeAlertReadinessBanner
+        authenticated={session?.authenticated === true}
+      />
 
       <main className="flex-1">
         <Outlet />
