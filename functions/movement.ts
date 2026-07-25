@@ -3,6 +3,9 @@ const META = {
   description:
     "Anyone in the United States can start a local barter circle: post one useful thing or skill, invite one plausible trading partner, and keep value in the community.",
   url: "https://unscrewed.lol/movement",
+  image: "https://unscrewed.lol/movement-og.png",
+  imageAlt:
+    "Start the barter movement: people across the United States exchanging useful goods and skills",
 };
 
 export async function onRequest(context: {
@@ -24,8 +27,11 @@ export async function onRequest(context: {
   html = replaceMeta(html, 'property="og:url"', META.url);
   html = replaceMeta(html, 'property="og:title"', META.title);
   html = replaceMeta(html, 'property="og:description"', META.description);
+  html = replaceMeta(html, 'property="og:image"', META.image);
+  html = replaceMeta(html, 'property="og:image:alt"', META.imageAlt);
   html = replaceMeta(html, 'name="twitter:title"', META.title);
   html = replaceMeta(html, 'name="twitter:description"', META.description);
+  html = replaceMeta(html, 'name="twitter:image"', META.image);
   html = html.replace(
     /<title>[^<]*<\/title>/,
     `<title>${META.title}</title>`

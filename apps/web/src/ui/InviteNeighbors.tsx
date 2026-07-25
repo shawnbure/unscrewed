@@ -3,6 +3,7 @@ import {
   BadgeDollarSign,
   Check,
   Copy,
+  Download,
   HeartHandshake,
   Share2,
   ShieldCheck,
@@ -56,6 +57,7 @@ export function InviteNeighbors({
       : localArea
         ? localInvite(localArea)
         : GENERAL_INVITE;
+  const showMovementDownload = audience === "general" && !localArea;
 
   useEffect(
     () => () => {
@@ -134,6 +136,16 @@ export function InviteNeighbors({
           <p className="mt-3 text-xs text-white/55" aria-live="polite">
             {copied ? invite.copiedHint : invite.idleHint}
           </p>
+          {showMovementDownload && (
+            <a
+              href="/movement-og.png"
+              download="start-the-barter-movement.png"
+              className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-100 underline decoration-white/30 underline-offset-4 hover:text-white"
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden />
+              Download the movement card for a post
+            </a>
+          )}
         </div>
 
         <div className="grid gap-3" aria-label="Our public-benefit commitments">
