@@ -32,7 +32,7 @@ export function buildListingShareText(
         : exchangeMode === "either"
           ? `${location} or remotely`
           : location;
-    return `I'm offering “${title}” for barter${ownerAvailability}. I'm looking for: ${shortenedWants}. Would this be useful to you? No listing or transaction fees.`;
+    return `I'm offering “${title}” for barter${ownerAvailability}. I'm looking for: ${shortenedWants}. Would this be useful to you? No platform listing or transaction fees.`;
   }
-  return `${title} is up for barter${availability}. Looking for: ${shortenedWants}. No listing or transaction fees.`;
+  return `${title} is up for barter${availability}. Looking for: ${shortenedWants}. No platform listing or transaction fees.`;
 }
