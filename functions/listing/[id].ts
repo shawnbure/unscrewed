@@ -4,6 +4,7 @@ interface PublicListing {
   description: string;
   wants: string;
   postalCode?: string | null;
+  exchangeMode?: "local" | "remote" | "either";
 }
 
 interface PublicPhoto {
@@ -52,9 +53,14 @@ export async function onRequest(context: FunctionContext): Promise<Response> {
   const payload = (await listingResponse.json()) as ListingResponse;
   const listing = payload.listing;
   const canonical = `${SITE}/listing/${encodeURIComponent(listing.id)}`;
-  const location = listing.postalCode?.trim()
-    ? ` near ${listing.postalCode.trim()}`
-    : "";
+  const location =
+    listing.exchangeMode === "remote"
+      ? " remotely"
+      : listing.exchangeMode === "either"
+        ? " locally or remotely"
+        : listing.postalCode?.trim()
+          ? ` near ${listing.postalCode.trim()}`
+          : "";
   const title = truncate(
     `${compact(listing.title)} — barter${location} | unscrewed.lol`,
     90
