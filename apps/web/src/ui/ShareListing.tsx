@@ -5,6 +5,7 @@ interface ShareListingProps {
   id: string;
   title: string;
   wants: string;
+  postalCode?: string | null;
   variant?: "default" | "success";
 }
 
@@ -12,6 +13,7 @@ export function ShareListing({
   id,
   title,
   wants,
+  postalCode,
   variant = "default",
 }: ShareListingProps) {
   const [copied, setCopied] = useState(false);
@@ -22,7 +24,7 @@ export function ShareListing({
     utm_campaign: `share_a_trade:${id}`,
   });
   const shareUrl = `${window.location.origin}/listing/${encodeURIComponent(id)}?${shareParams.toString()}`;
-  const shareText = buildShareText(title, wants);
+  const shareText = buildShareText(title, wants, postalCode);
 
   useEffect(
     () => () => {
@@ -101,11 +103,24 @@ export function ShareListing({
   );
 }
 
-function buildShareText(title: string, wants: string): string {
+function buildShareText(
+  title: string,
+  wants: string,
+  postalCode?: string | null
+): string {
   const compactWants = wants.replace(/\s+/g, " ").trim();
   const shortenedWants =
     compactWants.length > 140
       ? `${compactWants.slice(0, 137).trimEnd()}…`
       : compactWants;
-  return `${title} is up for barter. Looking for: ${shortenedWants}. No listing or transaction fees.`;
+  const compactPostalCode = postalCode?.replace(/\s+/g, " ").trim();
+  const locationLabel =
+    compactPostalCode && /^\d{5}$/.test(compactPostalCode)
+      ? `ZIP ${compactPostalCode}`
+      : compactPostalCode;
+  const location =
+    locationLabel && locationLabel.toUpperCase() !== "USA"
+      ? ` near ${locationLabel}`
+      : "";
+  return `${title} is up for barter${location}. Looking for: ${shortenedWants}. No listing or transaction fees.`;
 }

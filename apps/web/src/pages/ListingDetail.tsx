@@ -170,6 +170,7 @@ export default function ListingDetail() {
               id={l.id}
               title={l.title}
               wants={l.wants}
+              postalCode={l.postalCode}
               variant="success"
             />
           </div>
@@ -315,7 +316,12 @@ export default function ListingDetail() {
               );
             })()}
             {!justPosted && (
-              <ShareListing id={l.id} title={l.title} wants={l.wants} />
+              <ShareListing
+                id={l.id}
+                title={l.title}
+                wants={l.wants}
+                postalCode={l.postalCode}
+              />
             )}
           </div>
 

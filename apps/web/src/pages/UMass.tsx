@@ -56,6 +56,7 @@ interface PersonalPilotProgress {
     id: string;
     title: string;
     wants: string;
+    postalCode: string;
   }[];
 }
 
@@ -368,6 +369,7 @@ function PersonalPilotChecklist({
                     id={listing.id}
                     title={listing.title}
                     wants={listing.wants}
+                    postalCode={listing.postalCode}
                   />
                 </div>
               ))}

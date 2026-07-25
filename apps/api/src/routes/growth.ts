@@ -78,7 +78,7 @@ growthRoutes.get("/umass-me", requireAuth, async (c) => {
   const userId = c.get("userId")!;
   const bounds = umassBounds();
   const localListingsSql = `
-    SELECT id, user_id, title, wants, status, date_created
+    SELECT id, user_id, title, wants, postal_code, status, date_created
       FROM listings
      WHERE is_deleted = 0
        AND is_archived = 0
@@ -123,7 +123,7 @@ growthRoutes.get("/umass-me", requireAuth, async (c) => {
       }>(),
     c.env.DB.prepare(
       `WITH local_listings AS (${localListingsSql})
-       SELECT id, title, wants
+       SELECT id, title, wants, postal_code AS postalCode
          FROM local_listings
         WHERE user_id = ?5
           AND status = 'active'
@@ -131,7 +131,12 @@ growthRoutes.get("/umass-me", requireAuth, async (c) => {
         LIMIT 10`
     )
       .bind(...bounds, userId)
-      .all<{ id: string; title: string; wants: string }>(),
+      .all<{
+        id: string;
+        title: string;
+        wants: string;
+        postalCode: string;
+      }>(),
   ]);
 
   c.header("Cache-Control", "private, no-store");
