@@ -20,6 +20,7 @@ const SITE = "https://unscrewed.lol";
 const STATIC_PAGES: Array<{ path: string; changefreq: string; priority: string }> = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
   { path: "/browse", changefreq: "daily", priority: "0.9" },
+  { path: "/movement", changefreq: "weekly", priority: "0.9" },
   { path: "/blog", changefreq: "weekly", priority: "0.8" },
   { path: "/thoughts", changefreq: "weekly", priority: "0.7" },
   { path: "/community", changefreq: "weekly", priority: "0.6" },

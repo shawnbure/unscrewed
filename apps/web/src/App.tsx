@@ -99,6 +99,14 @@ export default function App() {
                 Browse
               </NavLink>
               <NavLink
+                to="/movement"
+                className={({ isActive }) =>
+                  `rounded-xl px-3 py-2 ${isActive ? "bg-surface-100 text-ink-900" : "text-ink-700 hover:bg-surface-100"}`
+                }
+              >
+                Movement
+              </NavLink>
+              <NavLink
                 to="/community"
                 className={({ isActive }) =>
                   `rounded-xl px-3 py-2 ${isActive ? "bg-surface-100 text-ink-900" : "text-ink-700 hover:bg-surface-100"}`
@@ -212,6 +220,9 @@ export default function App() {
                 <MobileLink to="/browse" onClick={() => setMobileOpen(false)}>
                   Browse
                 </MobileLink>
+                <MobileLink to="/movement" onClick={() => setMobileOpen(false)}>
+                  Movement
+                </MobileLink>
                 <MobileLink to="/community" onClick={() => setMobileOpen(false)}>
                   Community
                 </MobileLink>
@@ -307,6 +318,9 @@ export default function App() {
             <Link to="/safety" className="hover:text-ink-900">Safety</Link>
             <Link to="/public-benefit" className="hover:text-ink-900">
               Public benefit
+            </Link>
+            <Link to="/movement" className="hover:text-ink-900">
+              Movement
             </Link>
             <Link to="/contact" className="hover:text-ink-900">Contact</Link>
             <Link to="/tos" className="hover:text-ink-900">Terms</Link>

@@ -124,6 +124,10 @@ adminRoutes.get("/stats", async (c) => {
            COUNT(DISTINCT CASE WHEN posted.id IS NOT NULL THEN u.id END) AS first_listings,
            COUNT(DISTINCT CASE
              WHEN (
+               gv.campaign = 'national_barter_movement_2026'
+               AND posted.id IS NOT NULL
+             )
+             OR (
                substr(gv.campaign, 1, 18) = 'invite_your_block:'
                AND posted.postal_code = substr(gv.campaign, 19)
              )

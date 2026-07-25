@@ -203,7 +203,7 @@ export default function AdminDashboard() {
                   <th className="px-4 py-3 font-semibold">Members</th>
                   <th className="px-4 py-3 font-semibold">Posted anywhere</th>
                   <th className="px-4 py-3 font-semibold">
-                    Target-area supply
+                    In-scope supply
                   </th>
                   <th className="px-4 py-3 font-semibold">Started talks</th>
                   <th className="px-5 py-3 font-semibold">Completed trade</th>
@@ -288,9 +288,10 @@ export default function AdminDashboard() {
         )}
         <p className="border-t border-surface-200 px-5 py-3 text-xs leading-5 text-ink-500">
           “Posted anywhere” means at least one non-deleted listing.
-          “Target-area supply” counts attributed members who posted inside the
-          invited ZIP or UMass-area pool; it is deliberately separate so
-          out-of-area inventory cannot masquerade as local activation.
+          “In-scope supply” counts attributed members who posted inside the
+          invited ZIP, UMass-area pool, or anywhere in the United States for
+          the national movement campaign; it is deliberately separate so
+          out-of-scope inventory cannot masquerade as activation.
           “Started talks” means the member initiated at least one non-deleted
           negotiation. “Completed trade” means they are a party to at least one
           contract signed by both sides. These outcome columns can overlap;

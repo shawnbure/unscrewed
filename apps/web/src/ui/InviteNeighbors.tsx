@@ -9,17 +9,17 @@ import {
 } from "lucide-react";
 
 const GENERAL_INVITE = {
-  url: "https://unscrewed.lol/?utm_source=neighbor_invite&utm_medium=share&utm_campaign=invite_your_block",
-  title: "Invite your block to unscrewed.lol",
-  text: "Your neighborhood already has what you need. Trade goods and skills with nearby people—no fees and no corporate skim.",
-  eyebrow: "Public benefit, by design",
-  heading: "Invite your block. Make barter useful where you live.",
-  body: "A barter network becomes valuable when nearby people join it. One invitation can turn idle stuff and overlooked skills into a local safety net—while keeping value in the community that created it.",
-  shareLabel: "Share with a neighbor",
-  copyLabel: "Copy invite",
-  copiedHint: "Ready to paste into a text, group chat, or neighborhood forum.",
+  url: "https://unscrewed.lol/movement?utm_source=movement_share&utm_medium=share&utm_campaign=national_barter_movement_2026",
+  title: "Help start the barter movement",
+  text: "Anyone in the United States can start a local barter circle. Post one useful thing or skill, invite one plausible trading partner, and keep value in your community—no fees and no corporate skim.",
+  eyebrow: "A nationwide movement, built locally",
+  heading: "Help make barter normal again.",
+  body: "The movement can spread across the country one useful local exchange at a time. Post something real, invite one person who could genuinely trade with you, and give the next community a pattern it can copy.",
+  shareLabel: "Share the movement",
+  copyLabel: "Copy movement invite",
+  copiedHint: "Ready to paste into a text, group chat, or community forum.",
   idleHint:
-    "No referral contest. Just a useful invitation from one neighbor to another.",
+    "No referral contest or promotional blast. One relevant invitation is enough.",
 };
 
 const UMASS_INVITE = {
@@ -72,7 +72,7 @@ export function InviteNeighbors({
       resetTimer.current = window.setTimeout(() => setCopied(false), 2500);
     } catch {
       window.prompt(
-        "Copy this invitation and send it to a neighbor:",
+        "Copy this invitation:",
         `${invite.text} ${invite.url}`
       );
     }
@@ -149,8 +149,8 @@ export function InviteNeighbors({
           />
           <Commitment
             icon={<HeartHandshake className="h-5 w-5" strokeWidth={2} />}
-            title="Local value stays local"
-            body="Growth should strengthen communities, not extract from them."
+            title="National reach, local value"
+            body="Anyone in the U.S. can start; each exchange strengthens the community that made it."
           />
         </div>
       </div>

@@ -126,10 +126,18 @@ export default function Home() {
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-balance text-base text-ink-500 sm:text-lg">
               Corporations are posting record profits while your paycheck buys
-              less every month. unscrewed.lol is a neighborhood barter
-              marketplace — swap goods and services with the people around you.
-              No app fees, no payment processors, no corporate skim.
+              less every month. unscrewed.lol is a barter marketplace open
+              across the United States—swap goods and services locally or trade
+              remote skills across distance. No app fees, no payment processors,
+              no corporate skim.
             </p>
+            <Link
+              to="/movement"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-brand-700 hover:underline"
+            >
+              Help start the nationwide barter movement
+              <ArrowRight className="h-4 w-4" />
+            </Link>
             <div className="mx-auto mt-8 max-w-xl">
               <SearchBar size="lg" />
             </div>
