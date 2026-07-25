@@ -69,7 +69,7 @@ export default function NewListing() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!address) {
+    if (exchangeMode !== "remote" && !address) {
       setError("Please pick a location.");
       return;
     }
@@ -85,12 +85,17 @@ export default function NewListing() {
           category,
           condition: kind === "good" ? condition : undefined,
           wants,
-          // Backend requires postalCode min 3 chars; fall back to a city-level
-          // marker if the picked address didn't include a ZIP.
-          postalCode: address.postcode || "USA",
           countryCode: "US",
-          lat: address.lat,
-          lng: address.lng,
+          ...(exchangeMode === "remote"
+            ? {}
+            : {
+                // Backend requires postalCode min 3 chars; fall back to a
+                // city-level marker if the picked address did not include a
+                // ZIP.
+                postalCode: address!.postcode || "USA",
+                lat: address!.lat,
+                lng: address!.lng,
+              }),
           photoKeys,
         }),
       });
@@ -272,16 +277,24 @@ export default function NewListing() {
           />
         )}
 
-        <Section
-          title={exchangeMode === "remote" ? "7. What is your home base?" : "7. Where are you?"}
-          subtitle={
-            exchangeMode === "remote"
-              ? "Used for your account and broad marketplace operations, but this remote offer is shown as available nationwide—not pinned to your ZIP."
-              : "Your account ZIP is filled in when available. Keep it or pick a different neighborhood, ZIP, or street. We only show an approximate area."
-          }
-        >
-          <AddressPicker value={address} onChange={setAddress} />
-        </Section>
+        {exchangeMode === "remote" ? (
+          <Section
+            title="7. Nationwide reach"
+            subtitle="Remote-only offers are listed across the United States. Your account’s home ZIP is not shown on this offer, and you do not need to choose a map location."
+          >
+            <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm leading-relaxed text-brand-900">
+              This offer will be labeled <strong>Remote</strong> and kept off
+              local maps and new-nearby email alerts.
+            </div>
+          </Section>
+        ) : (
+          <Section
+            title="7. Where are you?"
+            subtitle="Your account ZIP is filled in when available. Keep it or pick a different neighborhood, ZIP, or street. We only show an approximate area."
+          >
+            <AddressPicker value={address} onChange={setAddress} />
+          </Section>
+        )}
 
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">

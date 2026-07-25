@@ -44,13 +44,38 @@ export const ListingCreateSchema = z.object({
   condition: ListingCondition.optional(),
   // What the lister wants in trade. Freeform; AI matches later.
   wants: z.string().min(2).max(500),
-  // Approximate location (zip + lat/lng). We never expose street address.
-  postalCode: z.string().min(3).max(12),
+  // Local/either offers need an approximate location. Remote-only offers are
+  // stored against a neutral nationwide marker and must not require or expose
+  // a member's home area.
+  postalCode: z.string().min(3).max(12).optional(),
   countryCode: z.string().length(2).default("US"),
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
   // Photos uploaded separately; client passes returned R2 keys here.
   photoKeys: z.array(z.string()).max(8).default([]),
+}).superRefine((input, context) => {
+  if (input.exchangeMode === "remote") return;
+  if (!input.postalCode) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["postalCode"],
+      message: "Choose an approximate location for a local exchange.",
+    });
+  }
+  if (input.lat === undefined) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["lat"],
+      message: "Choose an approximate location for a local exchange.",
+    });
+  }
+  if (input.lng === undefined) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["lng"],
+      message: "Choose an approximate location for a local exchange.",
+    });
+  }
 });
 export type ListingCreateInput = z.infer<typeof ListingCreateSchema>;
 

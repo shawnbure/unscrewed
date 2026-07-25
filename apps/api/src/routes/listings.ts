@@ -13,6 +13,10 @@ import type { AppContext } from "../env.js";
 import { requireAuth, optionalAuth } from "../middleware/auth.js";
 import { uuidv4 } from "../lib/crypto.js";
 import { notifyLocalListingWatchers } from "../lib/localListingEmail.js";
+import {
+  REMOTE_MARKET_LOCATION,
+  resolveCreateListingLocation,
+} from "../lib/listingLocation.js";
 
 export const listingsRoutes = new Hono<AppContext>();
 
@@ -27,11 +31,16 @@ export function publicListing(
   row: Record<string, any>,
   options: { isOwner?: boolean } = {}
 ) {
+  const exchangeMode = row.exchangeMode ?? row.exchange_mode ?? "local";
   const geohash = String(row.geohash ?? "");
   const fallbackLat = Number(row.lat ?? 0);
   const fallbackLng = Number(row.lng ?? 0);
-  const cell =
-    geohash.length >= 5
+  const cell = exchangeMode === "remote"
+    ? {
+        latitude: REMOTE_MARKET_LOCATION.lat,
+        longitude: REMOTE_MARKET_LOCATION.lng,
+      }
+    : geohash.length >= 5
       ? ngeohash.decode(geohash.slice(0, 5))
       : {
           latitude: Math.round(fallbackLat * 100) / 100,
@@ -41,14 +50,20 @@ export function publicListing(
   return {
     id: row.id,
     kind: row.kind,
-    exchangeMode: row.exchangeMode ?? row.exchange_mode ?? "local",
+    exchangeMode,
     title: row.title,
     description: row.description,
     category: row.category,
     condition: row.condition ?? null,
     wants: row.wants,
-    postalCode: row.postalCode ?? row.postal_code,
-    countryCode: row.countryCode ?? row.country_code,
+    postalCode:
+      exchangeMode === "remote"
+        ? REMOTE_MARKET_LOCATION.postalCode
+        : row.postalCode ?? row.postal_code,
+    countryCode:
+      exchangeMode === "remote"
+        ? REMOTE_MARKET_LOCATION.countryCode
+        : row.countryCode ?? row.country_code,
     lat: cell.latitude,
     lng: cell.longitude,
     status: row.status,
@@ -223,7 +238,8 @@ listingsRoutes.post("/", requireAuth, async (c) => {
   }
 
   const id = uuidv4();
-  const geohash = ngeohash.encode(input.lat, input.lng, 7);
+  const location = resolveCreateListingLocation(input);
+  const geohash = ngeohash.encode(location.lat, location.lng, 7);
 
   const db = getDb(c.env.DB);
   await db.insert(listings).values({
@@ -236,10 +252,10 @@ listingsRoutes.post("/", requireAuth, async (c) => {
     category: input.category,
     condition: input.condition,
     wants: input.wants,
-    postalCode: input.postalCode,
-    countryCode: input.countryCode,
-    lat: input.lat,
-    lng: input.lng,
+    postalCode: location.postalCode,
+    countryCode: location.countryCode,
+    lat: location.lat,
+    lng: location.lng,
     geohash,
   });
   if (input.photoKeys.length > 0) {
@@ -267,9 +283,9 @@ listingsRoutes.post("/", requireAuth, async (c) => {
       ownerUserId: userId,
       title: input.title,
       wants: input.wants,
-      postalCode: input.postalCode,
-      lat: input.lat,
-      lng: input.lng,
+      postalCode: location.postalCode,
+      lat: location.lat,
+      lng: location.lng,
       exchangeMode: input.exchangeMode,
     }).catch((error) => {
       console.error("[local-listing-email] send failed", error);
