@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
+  Download,
   FileSignature,
   Handshake,
   Laptop,
@@ -205,6 +206,63 @@ export default function MovementPage() {
             />
           </div>
         </div>
+      </Container>
+
+      <Container size="lg" className="mt-16">
+        <section className="grid gap-8 overflow-hidden rounded-3xl border border-surface-200 bg-white p-7 shadow-card sm:p-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-center">
+          <div className="mx-auto w-full max-w-[18rem]">
+            <video
+              className="aspect-[9/16] w-full rounded-3xl bg-ink-900 object-contain shadow-xl"
+              controls
+              playsInline
+              preload="metadata"
+              poster="/movement-og.png"
+              aria-label="A 24-second introduction to starting a two-person barter circle"
+            >
+              <source src="/barter-movement-short.mp4" type="video/mp4" />
+              <track
+                default
+                kind="captions"
+                src="/barter-movement-short.vtt"
+                srcLang="en"
+                label="English"
+              />
+              Your browser does not support the movement video. You can
+              download it below.
+            </video>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+              A shareable 24-second starter
+            </p>
+            <h2 className="display mt-2 text-balance text-4xl text-ink-900">
+              Put the two-person barter pattern in someone else’s feed.
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-ink-500 sm:text-base">
+              The vertical video explains the whole loop: post one real offer,
+              invite one plausible trading partner, agree clearly, and trade
+              safely. Download it once and share it only where it is welcome.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a
+                href="/barter-movement-short.mp4"
+                download="start-the-barter-movement.mp4"
+                className="btn-brand"
+              >
+                <Download className="h-4 w-4" aria-hidden />
+                Download the vertical Short
+              </a>
+              <a href="#start" className="btn-outline">
+                Make my first real offer
+              </a>
+            </div>
+            <p className="mt-4 max-w-2xl text-xs leading-relaxed text-ink-400">
+              Downloading the video is preparation, not adoption. A genuine
+              listing, two-sided conversation, and completed fair trade remain
+              the outcomes that matter.
+            </p>
+          </div>
+        </section>
       </Container>
 
       <Container size="xl" className="mt-16">
