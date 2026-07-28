@@ -27,6 +27,8 @@ import { withNext } from "../lib/navigation.js";
 import { ListingMatchability } from "../ui/ListingMatchability.js";
 import { ListingShareOutcomes } from "../ui/ListingShareOutcomes.js";
 import {
+  hasProposalPlaceholders,
+  PROPOSAL_STARTERS,
   proposalOfferingFromListing,
   type ProposalListingOption,
 } from "../lib/proposal.js";
@@ -484,6 +486,10 @@ function ProposeModal({
   const [myListings, setMyListings] = useState<ProposalListingOption[] | null>(
     null
   );
+  const draftHasPlaceholders = hasProposalPlaceholders(
+    offering,
+    openingMessage
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -501,6 +507,10 @@ function ProposeModal({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (draftHasPlaceholders) {
+      setError("Replace every [bracketed prompt] before sending.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -546,6 +556,32 @@ function ProposeModal({
           </p>
         </div>
         <form onSubmit={submit} className="mt-4 space-y-3">
+          <fieldset className="rounded-xl border border-surface-200 p-3">
+            <legend className="px-1 text-xs font-semibold text-ink-700">
+              Start with an editable draft
+            </legend>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {PROPOSAL_STARTERS.map((starter) => (
+                <button
+                  key={starter.id}
+                  type="button"
+                  onClick={() => {
+                    setOffering(starter.offering);
+                    setOpeningMessage(starter.openingMessage);
+                    setError(null);
+                  }}
+                  className="rounded-lg border border-surface-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition-colors hover:border-brand-400 hover:bg-brand-50"
+                >
+                  {starter.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
+              Choosing one replaces the two draft fields below and sends
+              nothing. Replace every [bracketed prompt] with something you can
+              genuinely provide.
+            </p>
+          </fieldset>
           {myListings && myListings.length > 0 && (
             <fieldset className="rounded-xl border border-surface-200 p-3">
               <legend className="px-1 text-xs font-semibold text-ink-700">
@@ -608,12 +644,21 @@ function ProposeModal({
               placeholder="Say hi — explain the trade and ask any questions."
             />
           </label>
+          {draftHasPlaceholders && (
+            <p className="text-xs font-medium text-amber-700">
+              Replace every [bracketed prompt] before sending.
+            </p>
+          )}
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="btn-ghost">
               Cancel
             </button>
-            <button type="submit" disabled={busy} className="btn-primary">
+            <button
+              type="submit"
+              disabled={busy || draftHasPlaceholders}
+              className="btn-primary"
+            >
               {busy ? "Sending…" : "Send proposal"}
             </button>
           </div>
