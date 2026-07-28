@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
+  ArrowRightLeft,
   Download,
   FileSignature,
   Handshake,
@@ -12,15 +13,19 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import { api } from "../lib/api.js";
 import { getStats, type StatsPayload } from "../lib/stats.js";
 import { listingStarterPath } from "../lib/listingStarters.js";
 import { Container } from "../ui/Container.js";
 import { InviteNeighbors } from "../ui/InviteNeighbors.js";
+import type { ListingCardData } from "../ui/ListingCard.js";
 import { StartCircleInvite } from "../ui/StartCircleInvite.js";
 
 export default function MovementPage() {
   const [searchParams] = useSearchParams();
   const [stats, setStats] = useState<StatsPayload | null>(null);
+  const [liveRemoteOffer, setLiveRemoteOffer] =
+    useState<ListingCardData | null>(null);
   const startingZip = /^\d{5}$/.test(searchParams.get("zip") ?? "")
     ? searchParams.get("zip")!
     : "";
@@ -39,6 +44,11 @@ export default function MovementPage() {
     getStats()
       .then(setStats)
       .catch(() => setStats(null));
+    api<{ items: ListingCardData[] }>(
+      "/listings?exchangeMode=remote&limit=1"
+    )
+      .then((result) => setLiveRemoteOffer(result.items[0] ?? null))
+      .catch(() => setLiveRemoteOffer(null));
     return () => {
       document.title = previousTitle;
       if (description && previousDescription) {
@@ -117,6 +127,55 @@ export default function MovementPage() {
           exchange happened.
         </p>
       </Container>
+
+      {liveRemoteOffer && (
+        <Container size="lg" className="mt-12">
+          <section className="overflow-hidden rounded-3xl border border-brand-200 bg-brand-50 p-7 shadow-card sm:p-10">
+            <div className="grid gap-7 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+                  One live trade you can answer now
+                </p>
+                <h2 className="display mt-2 text-balance text-3xl text-ink-900 sm:text-4xl">
+                  {liveRemoteOffer.title}
+                </h2>
+                <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-600 sm:text-base">
+                  {liveRemoteOffer.description}
+                </p>
+                <div className="mt-4 inline-flex max-w-3xl items-start gap-2 rounded-2xl bg-white px-4 py-3 text-sm text-ink-700 shadow-sm">
+                  <ArrowRightLeft
+                    className="mt-0.5 h-4 w-4 shrink-0 text-brand-700"
+                    aria-hidden
+                  />
+                  <span>
+                    <strong>In exchange:</strong> {liveRemoteOffer.wants}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 lg:min-w-56">
+                <Link
+                  to={`/listing/${liveRemoteOffer.id}?propose=1`}
+                  className="btn-brand justify-center"
+                >
+                  Propose a real trade
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+                <Link
+                  to="/browse?exchange=remote"
+                  className="btn-outline justify-center"
+                >
+                  See all remote offers
+                </Link>
+              </div>
+            </div>
+            <p className="mt-5 max-w-3xl text-xs leading-relaxed text-ink-500">
+              This is existing nationwide remote supply—not evidence of a
+              local circle or completed exchange. A proposal starts a real
+              conversation; it does not guarantee a trade.
+            </p>
+          </section>
+        </Container>
+      )}
 
       <Container size="lg" className="mt-16">
         <section id="start" className="scroll-mt-24">
