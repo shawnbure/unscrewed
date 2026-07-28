@@ -81,6 +81,13 @@ export function getListingStarter(
   return LISTING_STARTERS[value as ListingStarterId];
 }
 
-export function listingStarterPath(id: ListingStarterId): string {
-  return `/post?starter=${encodeURIComponent(id)}`;
+export function listingStarterPath(
+  id: ListingStarterId,
+  suggestedZip?: string
+): string {
+  const params = new URLSearchParams({ starter: id });
+  if (suggestedZip && /^\d{5}$/.test(suggestedZip)) {
+    params.set("zip", suggestedZip);
+  }
+  return `/post?${params.toString()}`;
 }

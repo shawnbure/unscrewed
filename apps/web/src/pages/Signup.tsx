@@ -32,6 +32,8 @@ export default function Signup() {
     : "/neighborhood?welcome=1";
   const returningMemberPath = hasExplicitNext ? nextPath : "/neighborhood";
   const nextUrl = new URL(nextPath, window.location.origin);
+  const suggestedZip =
+    searchParams.get("zip") ?? nextUrl.searchParams.get("zip") ?? "";
   const continuesToPost = nextUrl.pathname === "/post";
   const continuesToProposal =
     nextUrl.pathname.startsWith("/listing/") &&
@@ -42,7 +44,9 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [homeZip, setHomeZip] = useState("");
+  const [homeZip, setHomeZip] = useState(
+    /^\d{5}$/.test(suggestedZip) ? suggestedZip : ""
+  );
   const [accepted, setAccepted] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -8,6 +8,44 @@ const META = {
     "Start the barter movement: people across the United States exchanging useful goods and skills",
 };
 
+const STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name: "How to start a free local barter circle",
+  description:
+    "Start a neighbor-to-neighbor barter circle anywhere in the United States without listing fees or transaction fees.",
+  totalTime: "PT15M",
+  supply: [
+    {
+      "@type": "HowToSupply",
+      name: "One useful item, service, or skill you can genuinely provide",
+    },
+  ],
+  step: [
+    {
+      "@type": "HowToStep",
+      position: 1,
+      name: "Post one real offer",
+      text: "Choose a specific good, service, or skill you can genuinely provide.",
+      url: "https://unscrewed.lol/movement#start",
+    },
+    {
+      "@type": "HowToStep",
+      position: 2,
+      name: "Invite one plausible trading partner",
+      text: "Share the exact offer with one person who might genuinely want it and have something fair to trade.",
+      url: "https://unscrewed.lol/movement",
+    },
+    {
+      "@type": "HowToStep",
+      position: 3,
+      name: "Complete and confirm a fair trade",
+      text: "Agree clearly, exchange safely, and have both participants separately confirm the real exchange happened.",
+      url: "https://unscrewed.lol/safety",
+    },
+  ],
+};
+
 export async function onRequest(context: {
   request: Request;
 }): Promise<Response> {
@@ -35,6 +73,10 @@ export async function onRequest(context: {
   html = html.replace(
     /<title>[^<]*<\/title>/,
     `<title>${META.title}</title>`
+  );
+  html = html.replace(
+    "</head>",
+    `    <script type="application/ld+json">${JSON.stringify(STRUCTURED_DATA).replaceAll("<", "\\u003c")}</script>\n  </head>`
   );
 
   return new Response(context.request.method === "HEAD" ? null : html, {

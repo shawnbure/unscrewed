@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   FileSignature,
@@ -15,9 +15,14 @@ import { getStats, type StatsPayload } from "../lib/stats.js";
 import { listingStarterPath } from "../lib/listingStarters.js";
 import { Container } from "../ui/Container.js";
 import { InviteNeighbors } from "../ui/InviteNeighbors.js";
+import { StartCircleInvite } from "../ui/StartCircleInvite.js";
 
 export default function MovementPage() {
+  const [searchParams] = useSearchParams();
   const [stats, setStats] = useState<StatsPayload | null>(null);
+  const startingZip = /^\d{5}$/.test(searchParams.get("zip") ?? "")
+    ? searchParams.get("zip")!
+    : "";
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -200,6 +205,10 @@ export default function MovementPage() {
             />
           </div>
         </div>
+      </Container>
+
+      <Container size="xl" className="mt-16">
+        <StartCircleInvite initialZip={startingZip} />
       </Container>
 
       <Container size="xl" className="mt-16">
