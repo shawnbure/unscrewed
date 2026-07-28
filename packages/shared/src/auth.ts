@@ -7,10 +7,11 @@ export const E164 = z
   .string()
   .regex(/^\+[1-9]\d{7,14}$/, "Phone must be in E.164 format like +14155551234");
 
-// 5-digit US ZIP. Required at signup so we can plot approximate
-// membership on the /community map. Server geocodes it → (lat, lng)
-// and only ever exposes the map data aggregated by the first three
-// digits of the ZIP (~500k people), never per-user.
+// 5-digit US ZIP. Normally required at signup so we can plot approximate
+// membership on the /community map. A person returning to a real remote
+// listing may defer it; the API verifies that listing before accepting a
+// ZIP-less account. When provided, the server geocodes it → (lat, lng) and
+// only ever exposes map data in aggregate, never per-user.
 export const UsZip = z
   .string()
   .regex(/^\d{5}$/, "Enter a 5-digit US ZIP code");
@@ -23,22 +24,32 @@ export const AttributionSchema = z.object({
 });
 export type AttributionInput = z.infer<typeof AttributionSchema>;
 
-// Signup is email + password + Turnstile + ZIP. Phone is a fully
-// optional profile field — collected here so users don't have to visit
-// /account after signing up, but never validated, never texted, never
-// used as an auth factor. Users can also edit / add / remove it from
-// /account.
-export const SignupSchema = z.object({
-  email: z.string().email().max(255),
-  password: z.string().min(12).max(200),
-  phone: z.union([E164, z.literal("")]).optional(),
-  homeZip: UsZip,
-  displayName: z.string().min(2).max(60),
-  tosVersion: z.string().min(1),
-  tosAccepted: z.literal(true),
-  turnstileToken: z.string().min(1),
-  attribution: AttributionSchema.optional(),
-});
+// Signup normally includes ZIP. It may be deferred only when the request
+// identifies the remote listing the new member is returning to propose on;
+// the API performs the authoritative listing check. Phone remains an optional
+// profile field and is never used as an auth factor.
+export const SignupSchema = z
+  .object({
+    email: z.string().email().max(255),
+    password: z.string().min(12).max(200),
+    phone: z.union([E164, z.literal("")]).optional(),
+    homeZip: UsZip.optional(),
+    proposalListingId: z.string().uuid().optional(),
+    displayName: z.string().min(2).max(60),
+    tosVersion: z.string().min(1),
+    tosAccepted: z.literal(true),
+    turnstileToken: z.string().min(1),
+    attribution: AttributionSchema.optional(),
+  })
+  .superRefine((input, ctx) => {
+    if (!input.homeZip && !input.proposalListingId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["homeZip"],
+        message: "Enter a 5-digit US ZIP code",
+      });
+    }
+  });
 export type SignupInput = z.infer<typeof SignupSchema>;
 
 export const LoginSchema = z.object({

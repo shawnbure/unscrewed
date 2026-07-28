@@ -38,6 +38,13 @@ export default function Signup() {
   const continuesToProposal =
     nextUrl.pathname.startsWith("/listing/") &&
     nextUrl.searchParams.get("propose") === "1";
+  const proposalListingId = continuesToProposal
+    ? nextUrl.pathname.split("/")[2]
+    : undefined;
+  const continuesToRemoteProposal =
+    continuesToProposal &&
+    searchParams.get("exchange") === "remote" &&
+    /^[0-9a-f-]{36}$/i.test(proposalListingId ?? "");
   const continuesToLocalWatch =
     nextUrl.pathname === "/account" && nextUrl.hash === "#local-watch";
   const [email, setEmail] = useState("");
@@ -59,7 +66,10 @@ export default function Signup() {
       setError("Please complete the bot check");
       return;
     }
-    if (!/^\d{5}$/.test(homeZip)) {
+    if (
+      (!continuesToRemoteProposal || homeZip.length > 0) &&
+      !/^\d{5}$/.test(homeZip)
+    ) {
       setError("Enter your 5-digit US ZIP code.");
       return;
     }
@@ -78,7 +88,9 @@ export default function Signup() {
           email,
           password,
           phone: phone || undefined,
-          homeZip,
+          homeZip: homeZip || undefined,
+          proposalListingId:
+            continuesToRemoteProposal ? proposalListingId : undefined,
           displayName,
           tosVersion: TOS_VERSION,
           tosAccepted: true,
@@ -102,7 +114,9 @@ export default function Signup() {
         continuesToPost
           ? "Then you’ll go straight to posting your first trade. Phone is optional."
           : continuesToProposal
-            ? "Then you’ll return to this trade to make your proposal. We’ll ask you to verify your email for trade alerts; phone is optional."
+            ? continuesToRemoteProposal
+              ? "Then you’ll return to this nationwide remote trade to make your proposal. ZIP and phone are optional; we’ll ask you to verify your email for trade alerts."
+              : "Then you’ll return to this trade to make your proposal. We’ll ask you to verify your email for trade alerts; phone is optional."
             : continuesToLocalWatch
               ? "Then you can choose whether to watch for new listings near your home ZIP. Local-listing emails are off until you turn them on."
               : "Then we’ll show your local trade circle and the first useful action. We’ll ask you to verify your email for trade alerts; phone is optional."
@@ -152,11 +166,19 @@ export default function Signup() {
           />
         </Field>
         <Field
-          label="ZIP code"
-          hint="US 5-digit ZIP only. Used to place you on the community map in aggregate — nobody sees your exact ZIP but you."
+          label={
+            continuesToRemoteProposal
+              ? "ZIP code (optional for this remote trade)"
+              : "ZIP code"
+          }
+          hint={
+            continuesToRemoteProposal
+              ? "Skip this for now if you only want to make the remote proposal. You can add a ZIP later to join a local circle; nobody sees your exact ZIP but you."
+              : "US 5-digit ZIP only. Used to place you on the community map in aggregate — nobody sees your exact ZIP but you."
+          }
         >
           <input
-            required
+            required={!continuesToRemoteProposal}
             inputMode="numeric"
             pattern="\d{5}"
             maxLength={5}

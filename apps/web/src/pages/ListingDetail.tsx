@@ -294,6 +294,11 @@ export default function ListingDetail() {
 
             {(() => {
               const proposalPath = `/listing/${l.id}?propose=1`;
+              const signupPath = withNext("/signup", proposalPath);
+              const proposalSignupPath =
+                l.exchangeMode === "remote"
+                  ? `${signupPath}&exchange=remote`
+                  : signupPath;
               if (session === null) {
                 return (
                   <>
@@ -334,7 +339,7 @@ export default function ListingDetail() {
                 return (
                   <>
                     <Link
-                      to={withNext("/signup", proposalPath)}
+                      to={proposalSignupPath}
                       className="btn-primary mt-5 flex w-full items-center justify-center"
                     >
                       Create account to propose

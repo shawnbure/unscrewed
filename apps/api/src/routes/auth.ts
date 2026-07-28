@@ -7,9 +7,9 @@
 // on zero-footprint / ephemeral communication.
 
 import { Hono } from "hono";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { SignupSchema, LoginSchema } from "@unscrewed/shared";
-import { getDb, users, tosAcceptances } from "@unscrewed/db";
+import { getDb, listings, users, tosAcceptances } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 import { hashPassword, verifyPassword, uuidv4 } from "../lib/crypto.js";
 import { verifyTurnstile } from "../lib/turnstile.js";
@@ -61,6 +61,31 @@ authRoutes.post("/signup", async (c) => {
     .limit(1);
   if (existing.length > 0) return c.json({ error: "email_in_use" }, 409);
 
+  if (!input.homeZip) {
+    const remoteProposalListing = await db
+      .select({ id: listings.id })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.id, input.proposalListingId!),
+          eq(listings.exchangeMode, "remote"),
+          eq(listings.status, "active"),
+          eq(listings.isDeleted, 0)
+        )
+      )
+      .limit(1);
+    if (remoteProposalListing.length === 0) {
+      return c.json(
+        {
+          error: "home_zip_required",
+          message:
+            "Enter a ZIP unless you are returning to an active remote trade.",
+        },
+        400
+      );
+    }
+  }
+
   const userId = uuidv4();
   const passwordHash = await hashPassword(input.password);
   const now = Date.now();
@@ -68,14 +93,16 @@ authRoutes.post("/signup", async (c) => {
   // Best-effort ZIP geocode. If Nominatim is unreachable we still
   // create the account — user can retry from /account. The stored
   // (lat, lng) is only ever exposed on the map in aggregated form.
-  const point = await geocodeUsZip(c.env, input.homeZip);
+  const point = input.homeZip
+    ? await geocodeUsZip(c.env, input.homeZip)
+    : null;
   await db.insert(users).values({
     id: userId,
     email: input.email.trim(),
     emailNormalized: emailNorm,
     passwordHash,
     phoneE164: phone,
-    homeZip: input.homeZip,
+    homeZip: input.homeZip ?? null,
     homeLat: point?.lat ?? null,
     homeLng: point?.lng ?? null,
     displayName: input.displayName.trim(),
