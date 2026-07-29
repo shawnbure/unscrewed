@@ -115,8 +115,8 @@ export default function Signup() {
           ? "Then you’ll go straight to posting your first trade. Phone is optional."
           : continuesToProposal
             ? continuesToRemoteProposal
-              ? "Then you’ll return to this nationwide remote trade to make your proposal. ZIP and phone are optional; we’ll ask you to verify your email for trade alerts."
-              : "Then you’ll return to this trade to make your proposal. We’ll ask you to verify your email for trade alerts; phone is optional."
+              ? "Then you’ll return to this nationwide remote trade to make your proposal. ZIP and phone are optional. You can propose immediately; email verification only turns on trade alerts."
+              : "Then you’ll return to this trade to make your proposal. You can propose immediately; email verification only turns on trade alerts. Phone is optional."
             : continuesToLocalWatch
               ? "Then you can choose whether to watch for new listings near your home ZIP. Local-listing emails are off until you turn them on."
               : "Then we’ll show your local trade circle and the first useful action. We’ll ask you to verify your email for trade alerts; phone is optional."

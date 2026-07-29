@@ -314,6 +314,11 @@ export default function ListingDetail() {
                     <p className="mt-2 text-center text-xs text-ink-400">
                       You'll chat to negotiate before signing anything.
                     </p>
+                    <p className="mt-2 text-center text-xs font-medium text-ink-600">
+                      No payment information or platform fee. You can propose
+                      immediately after signup; email verification only turns
+                      on trade alerts.
+                    </p>
                   </>
                 );
               }
