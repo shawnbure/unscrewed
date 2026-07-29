@@ -11,6 +11,7 @@ export interface Env {
   // Vars
   API_BASE_URL: string;
   PUBLIC_BASE_URL: string;
+  OPERATOR_EMAIL: string;
   TOS_VERSION: string;
 
   // Secrets
