@@ -127,14 +127,22 @@ export default function BlogPostPage() {
               succeeds or fails.
             </p>
           </div>
-          <a
-            href="/one-honest-barter-circle-test.pdf"
-            download
-            className="btn-brand mt-4 inline-flex shrink-0 items-center gap-2 sm:mt-0"
-          >
-            <Download className="h-4 w-4" aria-hidden="true" />
-            Download field sheet
-          </a>
+          <div className="mt-4 flex shrink-0 flex-col gap-2 sm:mt-0">
+            <Link
+              to="/contact?intent=organizer-pilot"
+              className="btn-brand justify-center"
+            >
+              I can organize a test
+            </Link>
+            <a
+              href="/one-honest-barter-circle-test.pdf"
+              download
+              className="btn-outline inline-flex justify-center gap-2"
+            >
+              <Download className="h-4 w-4" aria-hidden="true" />
+              Download field sheet
+            </a>
+          </div>
         </aside>
       )}
 
