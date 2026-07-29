@@ -113,7 +113,12 @@ def draw_qr(pdf: canvas.Canvas, x: float, y: float, size: float) -> None:
 
 def build() -> None:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    pdf = canvas.Canvas(str(OUTPUT), pagesize=letter, pageCompression=1)
+    pdf = canvas.Canvas(
+        str(OUTPUT),
+        pagesize=letter,
+        pageCompression=1,
+        invariant=1,
+    )
     pdf.setTitle("Run One Honest Barter-Circle Test")
     pdf.setAuthor("unscrewed.lol")
     pdf.setSubject(
