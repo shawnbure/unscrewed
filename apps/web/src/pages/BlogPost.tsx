@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Download } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { ReportButton } from "../ui/ReportButton.js";
 import { api } from "../lib/api.js";
@@ -114,6 +114,29 @@ export default function BlogPostPage() {
       <article className="prose prose-neutral mt-8 max-w-none text-ink-800">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.bodyMd}</ReactMarkdown>
       </article>
+
+      {post.slug === "how-to-start-a-neighborhood-barter-circle" && (
+        <aside className="mt-8 rounded-2xl border border-brand-200 bg-brand-50 p-5 sm:flex sm:items-center sm:justify-between sm:gap-6">
+          <div>
+            <h2 className="text-lg font-semibold text-ink-900">
+              Run one honest barter-circle test
+            </h2>
+            <p className="mt-1 text-sm leading-relaxed text-ink-600">
+              Print the one-page organizer sheet to plan a 2–5-person pilot,
+              record the furthest verified outcome, and capture why a match
+              succeeds or fails.
+            </p>
+          </div>
+          <a
+            href="/one-honest-barter-circle-test.pdf"
+            download
+            className="btn-brand mt-4 inline-flex shrink-0 items-center gap-2 sm:mt-0"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Download field sheet
+          </a>
+        </aside>
+      )}
 
       <div className="mt-8 flex justify-end border-t border-surface-200 pt-4">
         <ReportButton targetType="blog_post" targetId={post.id} variant="link" />
