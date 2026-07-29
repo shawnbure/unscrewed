@@ -35,11 +35,13 @@ import AdminListings from "./pages/admin/Listings.js";
 import AdminSupport from "./pages/admin/Support.js";
 import { RequireAdmin } from "./ui/RequireAdmin.js";
 import { RequireAuth } from "./ui/RequireAuth.js";
+import { HashScroll } from "./ui/HashScroll.js";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
+      <HashScroll />
       <Routes>
         <Route element={<App />}>
           <Route index element={<Home />} />
