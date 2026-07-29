@@ -380,7 +380,7 @@ export default function MovementPage() {
 
           <div className="mt-8 flex flex-wrap gap-3 border-t border-brand-200 pt-6">
             <Link
-              to="/contact?intent=organizer-pilot&utm_source=movement&utm_medium=organizer_cta&utm_campaign=honest_barter_circle"
+              to="/contact?intent=organizer-pilot"
               className="btn-brand"
             >
               I can organize a 2–5 person test
