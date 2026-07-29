@@ -319,6 +319,9 @@ export default function App() {
             <Link to="/public-benefit" className="hover:text-ink-900">
               Public benefit
             </Link>
+            <Link to="/press" className="hover:text-ink-900">
+              Press
+            </Link>
             <Link to="/movement" className="hover:text-ink-900">
               Movement
             </Link>

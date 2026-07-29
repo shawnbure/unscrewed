@@ -26,6 +26,7 @@ const STATIC_PAGES: Array<{ path: string; changefreq: string; priority: string }
   { path: "/community", changefreq: "weekly", priority: "0.6" },
   { path: "/umass", changefreq: "monthly", priority: "0.7" },
   { path: "/public-benefit", changefreq: "weekly", priority: "0.7" },
+  { path: "/press", changefreq: "weekly", priority: "0.7" },
   { path: "/safety", changefreq: "monthly", priority: "0.7" },
   { path: "/contact", changefreq: "monthly", priority: "0.5" },
   { path: "/signup", changefreq: "monthly", priority: "0.5" },
