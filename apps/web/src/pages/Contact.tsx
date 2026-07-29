@@ -21,16 +21,24 @@ People I can invite: [rough number]
 One genuine offer we could start with: [item or skill]
 What I need from unscrewed: [feedback, setup help, or something else]`;
 
+const PRESS_MESSAGE = `I am interested in covering or discussing unscrewed.lol.
+
+Publication, program, or event: [name and public URL, if available]
+What I am working on: [story, interview, newsletter, podcast, conference, or other]
+Deadline and time zone: [date and time zone, or no deadline]
+What I need: [interview, fact check, media asset, demo, or something else]`;
+
 export default function ContactPage() {
   const [searchParams] = useSearchParams();
   const organizerIntent = searchParams.get("intent") === "organizer-pilot";
+  const pressIntent = searchParams.get("intent") === "press";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [topic, setTopic] = useState<SupportTopic>(
-    organizerIntent ? "organizer" : "question"
+    organizerIntent ? "organizer" : pressIntent ? "press" : "question"
   );
   const [message, setMessage] = useState(
-    organizerIntent ? ORGANIZER_MESSAGE : ""
+    organizerIntent ? ORGANIZER_MESSAGE : pressIntent ? PRESS_MESSAGE : ""
   );
   const [website, setWebsite] = useState("");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -42,11 +50,13 @@ export default function ContactPage() {
     const previous = document.title;
     document.title = organizerIntent
       ? "Run a barter-circle pilot — unscrewed.lol"
-      : "Contact unscrewed.lol";
+      : pressIntent
+        ? "Press inquiry — unscrewed.lol"
+        : "Contact unscrewed.lol";
     return () => {
       document.title = previous;
     };
-  }, [organizerIntent]);
+  }, [organizerIntent, pressIntent]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,7 +65,10 @@ export default function ContactPage() {
       setError("Please complete the bot check.");
       return;
     }
-    if (topic === "organizer" && /\[[^\]]+\]/.test(message)) {
+    if (
+      (topic === "organizer" || topic === "press") &&
+      /\[[^\]]+\]/.test(message)
+    ) {
       setError("Please replace each bracketed prompt with a real answer.");
       return;
     }
@@ -100,7 +113,9 @@ export default function ContactPage() {
           <h1 className="mt-4 text-3xl font-bold text-ink-900">
             {topic === "organizer"
               ? "Your pilot request is in the private inbox."
-              : "Your message is in the private support inbox."}
+              : topic === "press"
+                ? "Your publication inquiry is in the private inbox."
+                : "Your message is in the private support inbox."}
           </h1>
           <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-ink-500">
             A human can review it and reply to the email address you provided.
@@ -129,12 +144,16 @@ export default function ContactPage() {
           <h1 className="display mt-4 text-4xl text-ink-900">
             {organizerIntent
               ? "Run one honest barter-circle test."
-              : "Contact a human."}
+              : pressIntent
+                ? "Verify the story with a human."
+                : "Contact a human."}
           </h1>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-500">
             {organizerIntent
               ? "Tell us where you can gather two to five real people and the first genuine offer they could test. This is a small learning pilot—not a promise that a local marketplace already exists."
-              : "Ask about the site, an account, a community partnership, or share blunt feedback. Your message and reply address stay private to the operator and are never shown on a listing or profile."}
+              : pressIntent
+                ? "Share the publication, program, deadline, and exact fact, interview, asset, or demonstration you need. The live numbers and public source pages remain the evidence of record."
+                : "Ask about the site, an account, a community partnership, or share blunt feedback. Your message and reply address stay private to the operator and are never shown on a listing or profile."}
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
@@ -218,6 +237,13 @@ export default function ContactPage() {
                 Replace every bracketed prompt before sending. A named
                 organizer and one genuine starting offer are more useful than
                 a large audience estimate.
+              </span>
+            )}
+            {topic === "press" && (
+              <span className="mt-2 block text-xs leading-relaxed text-ink-500">
+                Replace every bracketed prompt before sending. Include a real
+                deadline only when one exists; the live press brief remains the
+                source for current marketplace numbers.
               </span>
             )}
           </Field>

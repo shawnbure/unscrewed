@@ -8,7 +8,10 @@ import { getDb, supportRequests } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { sha256Hex, uuidv4 } from "../lib/crypto.js";
-import { notifyOrganizerLead } from "../lib/organizerLeadEmail.js";
+import {
+  notifyOrganizerLead,
+  notifyPressLead,
+} from "../lib/organizerLeadEmail.js";
 import { rateLimit } from "../lib/rateLimit.js";
 import { verifyTurnstile } from "../lib/turnstile.js";
 
@@ -56,6 +59,18 @@ supportRoutes.post("/", async (c) => {
         message: input.message,
       }).catch((error) => {
         console.error("[support] organizer alert failed", error);
+      })
+    );
+  }
+  if (input.topic === "press") {
+    c.executionCtx.waitUntil(
+      notifyPressLead(c.env, {
+        requestId: id,
+        name: input.name,
+        email: input.email,
+        message: input.message,
+      }).catch((error) => {
+        console.error("[support] press alert failed", error);
       })
     );
   }

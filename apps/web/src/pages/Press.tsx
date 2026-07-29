@@ -67,7 +67,7 @@ export default function PressPage() {
             of presenting visits or signups as community impact.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Link to="/contact" className="btn-brand">
+            <Link to="/contact?intent=press" className="btn-brand">
               Contact the project
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
@@ -248,7 +248,7 @@ export default function PressPage() {
               <Link to="/tos" className="btn-outline">
                 Terms
               </Link>
-              <Link to="/contact" className="btn-brand">
+              <Link to="/contact?intent=press" className="btn-brand">
                 Request an interview
               </Link>
             </div>
