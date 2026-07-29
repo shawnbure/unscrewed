@@ -333,6 +333,78 @@ export default function MovementPage() {
       </Container>
 
       <Container size="lg" className="mt-16">
+        <section
+          id="organize"
+          className="scroll-mt-24 overflow-hidden rounded-3xl border border-brand-200 bg-brand-50 p-7 shadow-card sm:p-10"
+        >
+          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+                For reuse and community leaders
+              </p>
+              <h2 className="display mt-2 text-balance text-4xl text-ink-900">
+                Run one small test. Bring back honest evidence.
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-ink-600">
+                A campus program, town sustainability team, library, repair
+                group, or zero-waste network can test unscrewed without
+                endorsing it or promising a crowd. Gather two to five people,
+                start with one genuine offer, and see whether a fair exchange
+                actually happens.
+              </p>
+              <p className="mt-3 text-xs leading-relaxed text-ink-500">
+                The platform is open across the United States. Each pilot is
+                named for its real community; national reach is never used to
+                invent local supply.
+              </p>
+            </div>
+
+            <div className="grid gap-3">
+              <Principle
+                icon={<Users className="h-5 w-5" />}
+                title="Invite a workable circle"
+                body="Choose two to five people who can name something useful they can genuinely offer or do."
+              />
+              <Principle
+                icon={<ArrowRightLeft className="h-5 w-5" />}
+                title="Measure the full exchange"
+                body="Record the first offer, a two-sided conversation, an agreement, and whether both people confirm the trade happened."
+              />
+              <Principle
+                icon={<FileSignature className="h-5 w-5" />}
+                title="Share what failed too"
+                body="A mismatch, safety concern, or confusing step is useful pilot evidence—not a reason to manufacture success."
+              />
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-3 border-t border-brand-200 pt-6">
+            <Link
+              to="/contact?intent=organizer-pilot&utm_source=movement&utm_medium=organizer_cta&utm_campaign=honest_barter_circle"
+              className="btn-brand"
+            >
+              I can organize a 2–5 person test
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+            <a
+              href="/one-honest-barter-circle-test.pdf"
+              className="btn-outline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open the one-page field sheet
+            </a>
+            <Link
+              to="/blog/how-to-start-a-neighborhood-barter-circle"
+              className="btn-outline"
+            >
+              Read the organizer guide
+            </Link>
+          </div>
+        </section>
+      </Container>
+
+      <Container size="lg" className="mt-16">
         <section className="grid gap-8 rounded-3xl border border-surface-200 bg-white p-7 shadow-card sm:p-10 lg:grid-cols-2">
           <div>
             <Sparkles className="h-6 w-6 text-brand-600" />
