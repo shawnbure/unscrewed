@@ -15,6 +15,9 @@ interface SupportRow {
   email: string;
   topic: SupportTopic;
   message: string;
+  attributionSource: string | null;
+  attributionMedium: string | null;
+  attributionCampaign: string | null;
   status: SupportStatus;
   adminNote: string | null;
   dateCreated: number;
@@ -98,6 +101,17 @@ export default function AdminSupport() {
                   {new Date(item.dateCreated).toLocaleString()} ·{" "}
                   <span className="font-mono">{item.id}</span>
                 </p>
+                {item.attributionSource &&
+                  item.attributionMedium &&
+                  item.attributionCampaign && (
+                    <p className="mt-1 text-xs text-ink-500">
+                      Source:{" "}
+                      <span className="font-mono">
+                        {item.attributionSource} / {item.attributionMedium} /{" "}
+                        {item.attributionCampaign}
+                      </span>
+                    </p>
+                  )}
               </div>
               <a
                 href={`mailto:${item.email}?subject=${encodeURIComponent(`Re: unscrewed support request ${item.id}`)}`}

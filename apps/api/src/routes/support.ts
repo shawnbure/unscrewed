@@ -48,6 +48,9 @@ supportRoutes.post("/", async (c) => {
     email: input.email.toLowerCase(),
     topic: input.topic,
     message: input.message,
+    attributionSource: input.attribution?.source,
+    attributionMedium: input.attribution?.medium,
+    attributionCampaign: input.attribution?.campaign,
   });
 
   if (input.topic === "organizer") {
@@ -57,6 +60,7 @@ supportRoutes.post("/", async (c) => {
         name: input.name,
         email: input.email,
         message: input.message,
+        attribution: input.attribution,
       }).catch((error) => {
         console.error("[support] organizer alert failed", error);
       })
@@ -69,6 +73,7 @@ supportRoutes.post("/", async (c) => {
         name: input.name,
         email: input.email,
         message: input.message,
+        attribution: input.attribution,
       }).catch((error) => {
         console.error("[support] press alert failed", error);
       })

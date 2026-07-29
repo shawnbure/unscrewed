@@ -381,6 +381,9 @@ export const supportRequests = sqliteTable(
     email: text("email").notNull(),
     topic: text("topic").notNull(),
     message: text("message").notNull(),
+    attributionSource: text("attribution_source"),
+    attributionMedium: text("attribution_medium"),
+    attributionCampaign: text("attribution_campaign"),
     status: text("status").notNull().default("open"),
     adminNote: text("admin_note"),
     resolvedBy: text("resolved_by").references(() => users.id),
@@ -398,6 +401,11 @@ export const supportRequests = sqliteTable(
       t.dateCreated
     ),
     ixDate: index("ix_support_requests_date").on(t.dateCreated),
+    ixAttribution: index("ix_support_requests_attribution").on(
+      t.attributionSource,
+      t.attributionMedium,
+      t.attributionCampaign
+    ),
   })
 );
 

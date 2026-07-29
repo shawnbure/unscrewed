@@ -7,6 +7,7 @@ import {
 } from "@unscrewed/shared";
 import Turnstile from "../components/Turnstile.js";
 import { api } from "../lib/api.js";
+import { getStoredAttribution } from "../lib/attribution.js";
 import { Container } from "../ui/Container.js";
 
 const TOPICS = Object.entries(SUPPORT_TOPIC_LABELS) as [
@@ -81,6 +82,7 @@ export default function ContactPage() {
           email,
           topic,
           message,
+          attribution: getStoredAttribution(),
           website,
           turnstileToken,
         }),
@@ -176,8 +178,9 @@ export default function ContactPage() {
             and <Link to="/tos" className="underline">Terms</Link>. Submitting
             this form creates a private support record containing the name,
             email, topic, and message you enter. We do not store your IP
-            address with the request. Resolved and spam requests are removed
-            after one year.
+            address with the request. If you arrived through a campaign link,
+            the request also stores that link’s source, medium, and campaign
+            labels. Resolved and spam requests are removed after one year.
           </p>
         </div>
 

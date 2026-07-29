@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AttributionSchema } from "./auth.js";
 
 export const SupportTopic = z.enum([
   "question",
@@ -28,6 +29,7 @@ export const SupportRequestCreateSchema = z.object({
   email: z.string().trim().email().max(254),
   topic: SupportTopic,
   message: z.string().trim().min(10).max(5000),
+  attribution: AttributionSchema.optional(),
   turnstileToken: z.string().min(1),
   // Hidden honeypot. A real visitor never sees or fills this.
   website: z.string().max(200).optional(),
