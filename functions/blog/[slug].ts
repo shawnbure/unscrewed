@@ -102,9 +102,33 @@ export async function onRequest(context: FunctionContext): Promise<Response> {
       url: SITE,
     },
   }).replaceAll("<", "\\u003c");
+  const breadcrumbData = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blog",
+        item: `${SITE}/blog`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: compact(post.title),
+        item: canonical,
+      },
+    ],
+  }).replaceAll("<", "\\u003c");
   html = html.replace(
     "</head>",
-    `    <meta property="article:published_time" content="${datePublished}" />\n    <meta property="article:modified_time" content="${dateModified}" />\n    <script type="application/ld+json">${structuredData}</script>\n  </head>`
+    `    <meta property="article:published_time" content="${datePublished}" />\n    <meta property="article:modified_time" content="${dateModified}" />\n    <script type="application/ld+json">${structuredData}</script>\n    <script type="application/ld+json">${breadcrumbData}</script>\n  </head>`
   );
 
   return new Response(context.request.method === "HEAD" ? null : html, {
