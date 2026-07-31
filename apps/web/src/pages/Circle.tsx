@@ -1,13 +1,40 @@
-import { ArrowRight, MapPin, ShieldCheck, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Loader2, MapPin, ShieldCheck, Users } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { api } from "../lib/api.js";
 import { listingStarterPath } from "../lib/listingStarters.js";
 import { Container } from "../ui/Container.js";
+import { ListingCard, type ListingCardData } from "../ui/ListingCard.js";
 import { StartCircleInvite } from "../ui/StartCircleInvite.js";
 
 const ZIP_PATTERN = /^\d{5}$/;
 
 export default function CirclePage() {
   const { zip = "" } = useParams();
+  const [inventory, setInventory] = useState<ListingCardData[] | null>(null);
+  const [inventoryUnavailable, setInventoryUnavailable] = useState(false);
+
+  useEffect(() => {
+    if (!ZIP_PATTERN.test(zip)) return;
+    let current = true;
+    setInventory(null);
+    setInventoryUnavailable(false);
+    const query = new URLSearchParams({
+      postalCode: zip,
+      exchangeMode: "local",
+      limit: "12",
+    });
+    api<{ items: ListingCardData[] }>(`/listings?${query.toString()}`)
+      .then((response) => {
+        if (current) setInventory(response.items);
+      })
+      .catch(() => {
+        if (current) setInventoryUnavailable(true);
+      });
+    return () => {
+      current = false;
+    };
+  }, [zip]);
 
   if (!ZIP_PATTERN.test(zip)) {
     return (
@@ -27,6 +54,15 @@ export default function CirclePage() {
     );
   }
 
+  const hasInventory = (inventory?.length ?? 0) > 0;
+  const confirmedEmpty = inventory !== null && inventory.length === 0;
+  const itemAction = confirmedEmpty
+    ? "Post the first useful item"
+    : "Post a useful item";
+  const skillAction = confirmedEmpty
+    ? "Offer the first useful skill"
+    : "Offer a useful skill";
+
   return (
     <div className="pb-20">
       <section className="border-b border-surface-200 bg-ink-900 text-white">
@@ -35,25 +71,38 @@ export default function CirclePage() {
             <MapPin className="h-3.5 w-3.5" /> Local circle invitation
           </p>
           <h1 className="display mt-5 max-w-4xl text-balance text-4xl text-white sm:text-6xl">
-            Help start a barter circle around ZIP {zip}.
+            {hasInventory
+              ? `Trade locally around ZIP ${zip}.`
+              : `Help start a barter circle around ZIP ${zip}.`}
           </h1>
           <p className="mt-5 max-w-3xl text-balance text-base leading-relaxed text-white/75 sm:text-lg">
-            This area is not being presented as an established marketplace.
-            A real circle starts when someone posts one useful item or skill,
-            invites one plausible trading partner, and completes a fair trade.
+            {hasInventory
+              ? "These are genuine active offers marked for local exchange in this exact ZIP. Open one that fits, propose a fair return, or add another offer the circle can use."
+              : confirmedEmpty
+                ? "There are no active local offers in this exact ZIP yet. A real circle starts when someone posts one useful item or skill, invites one plausible trading partner, and completes a fair trade."
+                : "See genuine local offers if they exist, or add one useful item or skill you can really exchange. This page never counts remote supply as local activity."}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
+            {hasInventory ? (
+              <a href="#local-offers" className="btn-brand">
+                See local offers <ArrowRight className="h-4 w-4" />
+              </a>
+            ) : (
+              <Link
+                to={listingStarterPath("useful_item", zip)}
+                className="btn-brand"
+              >
+                {itemAction} <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
             <Link
-              to={listingStarterPath("useful_item", zip)}
-              className="btn-brand"
-            >
-              Post the first useful item <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to={listingStarterPath("one_hour_help", zip)}
+              to={listingStarterPath(
+                hasInventory ? "useful_item" : "one_hour_help",
+                zip
+              )}
               className="btn-outline border-white/30 bg-white/10 text-white hover:bg-white/15"
             >
-              Offer one hour of help
+              {hasInventory ? "Add another offer" : skillAction}
             </Link>
           </div>
           <p className="mt-4 text-xs leading-relaxed text-white/50">
@@ -66,7 +115,61 @@ export default function CirclePage() {
       </section>
 
       <Container size="lg" className="py-12 sm:py-16">
-        <section aria-labelledby="circle-steps-heading">
+        {hasInventory ? (
+          <section
+            id="local-offers"
+            className="scroll-mt-24"
+            aria-labelledby="local-offers-heading"
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
+              Active in ZIP {zip}
+            </p>
+            <h2
+              id="local-offers-heading"
+              className="display mt-2 text-3xl text-ink-900 sm:text-4xl"
+            >
+              Start with a real offer, not an empty feed.
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-500">
+              These listings are marked for in-person exchange in this exact
+              ZIP. Opening one does not create a match; a genuine proposal
+              starts the conversation.
+            </p>
+            <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {inventory?.map((listing) => (
+                <ListingCard key={listing.id} l={listing} />
+              ))}
+            </div>
+          </section>
+        ) : inventory === null && !inventoryUnavailable ? (
+          <section
+            className="flex items-center gap-3 rounded-2xl border border-surface-200 bg-white px-5 py-4 text-sm text-ink-500"
+            aria-live="polite"
+          >
+            <Loader2
+              className="h-4 w-4 animate-spin text-brand-600"
+              aria-hidden
+            />
+            Checking this ZIP for genuine local offers…
+          </section>
+        ) : inventoryUnavailable ? (
+          <section
+            className="rounded-2xl border border-surface-200 bg-white px-5 py-4 text-sm text-ink-500"
+            role="status"
+          >
+            Local inventory is temporarily unavailable. You can still add a
+            genuine offer; this page will not claim the ZIP is empty.
+          </section>
+        ) : null}
+
+        <section
+          aria-labelledby="circle-steps-heading"
+          className={
+            hasInventory || inventory === null || inventoryUnavailable
+              ? "mt-12"
+              : undefined
+          }
+        >
           <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
             One honest starting loop
           </p>

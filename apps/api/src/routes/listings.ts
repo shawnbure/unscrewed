@@ -124,6 +124,14 @@ listingsRoutes.get("/", optionalAuth, async (c) => {
   } else if (q.exchangeMode === "local") {
     where.push("l.exchange_mode IN ('local', 'either')");
   }
+  if (q.postalCode) {
+    // A member's home ZIP does not turn remote supply into local-circle
+    // inventory. Only listings that can genuinely be exchanged in this ZIP
+    // belong on its circle landing.
+    where.push("l.exchange_mode IN ('local', 'either')");
+    where.push("l.postal_code = ?");
+    binds.push(q.postalCode);
+  }
 
   const hasBounds =
     q.north !== undefined &&

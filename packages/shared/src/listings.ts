@@ -103,6 +103,9 @@ export const ListingSearchSchema = z.object({
   category: ListingCategory.optional(),
   kind: ListingKind.optional(),
   exchangeMode: ListingExchangeMode.optional(),
+  // Exact U.S. ZIP filtering powers truthful local-circle inventory. The API
+  // additionally excludes remote-only offers when this filter is present.
+  postalCode: z.string().regex(/^\d{5}$/).optional(),
   // Bounding box for map viewport queries
   north: z.number().optional(),
   south: z.number().optional(),
