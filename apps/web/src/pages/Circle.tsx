@@ -20,7 +20,7 @@ export default function CirclePage() {
           Generate a truthful local-circle invitation from the nationwide
           movement page.
         </p>
-        <Link to="/movement#start-circle" className="btn-brand mt-6">
+        <Link to="/movement#start" className="btn-brand mt-6">
           Choose a ZIP
         </Link>
       </Container>

@@ -11,7 +11,7 @@ export async function onRequest(context: {
   const requestUrl = new URL(context.request.url);
   const zip = requestUrl.pathname.split("/").filter(Boolean)[1] ?? "";
   if (!/^\d{5}$/.test(zip)) {
-    return Response.redirect(`${requestUrl.origin}/movement#start-circle`, 302);
+    return Response.redirect(`${requestUrl.origin}/movement#start`, 302);
   }
 
   const canonicalUrl = `https://unscrewed.lol/circle/${zip}`;
