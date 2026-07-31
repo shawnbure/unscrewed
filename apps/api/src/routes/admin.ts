@@ -128,9 +128,21 @@ adminRoutes.get("/stats", async (c) => {
                AND posted.id IS NOT NULL
              )
              OR (
-               substr(gv.campaign, 1, 18) = 'invite_your_block:'
+               (
+                 (
+                   substr(gv.campaign, 1, 18) = 'invite_your_block:'
+                   AND length(gv.campaign) = 23
+                   AND substr(gv.campaign, 19) GLOB '[0-9][0-9][0-9][0-9][0-9]'
+                   AND posted.postal_code = substr(gv.campaign, 19)
+                 )
+                 OR (
+                   substr(gv.campaign, 1, 15) = 'start_a_circle:'
+                   AND length(gv.campaign) = 20
+                   AND substr(gv.campaign, 16) GLOB '[0-9][0-9][0-9][0-9][0-9]'
+                   AND posted.postal_code = substr(gv.campaign, 16)
+                 )
+               )
                AND posted.exchange_mode IN ('local', 'either')
-               AND posted.postal_code = substr(gv.campaign, 19)
              )
              OR (
                substr(gv.campaign, 1, 6) = 'umass_'

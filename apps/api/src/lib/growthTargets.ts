@@ -25,7 +25,9 @@ export function umassBounds() {
 
 export function campaignTargetLabel(campaign: string): string | null {
   if (campaign === "national_barter_movement_2026") return "United States";
-  const localZip = /^invite_your_block:(\d{5})$/.exec(campaign)?.[1];
+  const localZip = /^(?:invite_your_block|start_a_circle):(\d{5})$/.exec(
+    campaign
+  )?.[1];
   if (localZip) return `ZIP ${localZip}`;
   if (campaign.startsWith("umass_")) return "UMass Amherst area";
   return null;
