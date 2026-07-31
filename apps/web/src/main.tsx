@@ -18,6 +18,7 @@ import PressPage from "./pages/Press.js";
 import MovementPage from "./pages/Movement.js";
 import ThoughtsPage from "./pages/Thoughts.js";
 import CommunityPage from "./pages/Community.js";
+import CirclePage from "./pages/Circle.js";
 import BlogPage from "./pages/Blog.js";
 import BlogPostPage from "./pages/BlogPost.js";
 import AdminBlogList from "./pages/admin/BlogList.js";
@@ -100,6 +101,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           />
           <Route path="thoughts" element={<ThoughtsPage />} />
           <Route path="community" element={<CommunityPage />} />
+          <Route path="circle/:zip" element={<CirclePage />} />
           <Route path="public-benefit" element={<PublicBenefitPage />} />
           <Route path="press" element={<PressPage />} />
           <Route path="movement" element={<MovementPage />} />

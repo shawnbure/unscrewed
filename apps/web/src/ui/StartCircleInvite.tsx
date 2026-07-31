@@ -8,8 +8,7 @@ const ZIP_PATTERN = /^\d{5}$/;
 export function buildCircleInvite(zip: string, origin = window.location.origin) {
   if (!ZIP_PATTERN.test(zip)) return null;
 
-  const url = new URL("/movement", origin);
-  url.searchParams.set("zip", zip);
+  const url = new URL(`/circle/${zip}`, origin);
   url.searchParams.set("utm_source", "circle_invite");
   url.searchParams.set("utm_medium", "share");
   url.searchParams.set("utm_campaign", `start_a_circle:${zip}`);
