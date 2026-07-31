@@ -141,6 +141,12 @@ adminRoutes.get("/stats", async (c) => {
                    AND substr(gv.campaign, 16) GLOB '[0-9][0-9][0-9][0-9][0-9]'
                    AND posted.postal_code = substr(gv.campaign, 16)
                  )
+                 OR (
+                   substr(gv.campaign, 1, 14) = 'join_a_circle:'
+                   AND length(gv.campaign) = 19
+                   AND substr(gv.campaign, 15) GLOB '[0-9][0-9][0-9][0-9][0-9]'
+                   AND posted.postal_code = substr(gv.campaign, 15)
+                 )
                )
                AND posted.exchange_mode IN ('local', 'either')
              )

@@ -202,7 +202,13 @@ export default function CirclePage() {
         </section>
 
         <section id="share" className="mt-12 scroll-mt-24">
-          <StartCircleInvite initialZip={zip} />
+          <StartCircleInvite
+            initialZip={zip}
+            state={
+              hasInventory ? "active" : confirmedEmpty ? "start" : "unknown"
+            }
+            fixedZip
+          />
         </section>
 
         <div className="mt-8 text-center text-sm text-ink-500">

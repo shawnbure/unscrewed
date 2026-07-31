@@ -1,31 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Copy, MapPin, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import {
+  buildCircleInvite,
+  type CircleInviteState,
+} from "../lib/circleInvite.js";
 import { listingStarterPath } from "../lib/listingStarters.js";
 
 const ZIP_PATTERN = /^\d{5}$/;
 
-export function buildCircleInvite(zip: string, origin = window.location.origin) {
-  if (!ZIP_PATTERN.test(zip)) return null;
-
-  const url = new URL(`/circle/${zip}`, origin);
-  url.searchParams.set("utm_source", "circle_invite");
-  url.searchParams.set("utm_medium", "share");
-  url.searchParams.set("utm_campaign", `start_a_circle:${zip}`);
-
-  return {
-    url: url.toString(),
-    title: `Help start a barter circle around ZIP ${zip}`,
-    text: `Help start a free barter circle around ZIP ${zip}. Post one useful item or skill, invite one plausible trading partner, and keep local value in local hands—no listing fees or transaction fees.`,
-  };
-}
-
-export function StartCircleInvite({ initialZip = "" }: { initialZip?: string }) {
+export function StartCircleInvite({
+  initialZip = "",
+  state = "start",
+  fixedZip = false,
+}: {
+  initialZip?: string;
+  state?: CircleInviteState;
+  fixedZip?: boolean;
+}) {
   const normalizedInitialZip = ZIP_PATTERN.test(initialZip) ? initialZip : "";
   const [zip, setZip] = useState(normalizedInitialZip);
   const [copied, setCopied] = useState(false);
   const resetTimer = useRef<number | null>(null);
-  const invite = useMemo(() => buildCircleInvite(zip), [zip]);
+  const invite = useMemo(
+    () => buildCircleInvite(zip, window.location.origin, state),
+    [state, zip]
+  );
+  const active = state === "active";
 
   useEffect(
     () => () => {
@@ -70,15 +71,25 @@ export function StartCircleInvite({ initialZip = "" }: { initialZip?: string }) 
             <MapPin className="h-5 w-5" strokeWidth={2.25} />
           </span>
           <p className="mt-5 text-xs font-semibold uppercase tracking-widest text-brand-700">
-            Launch anywhere in America
+            {active
+              ? "Grow a real local circle"
+              : state === "unknown"
+                ? "Verify the local circle"
+                : "Launch anywhere in America"}
           </p>
           <h2 className="display mt-2 text-balance text-3xl text-ink-900 sm:text-4xl">
-            Give your ZIP a circle it can join.
+            {active
+              ? "Invite the next trading partner."
+              : state === "unknown"
+                ? "Confirm this circle before sharing."
+                : "Give your ZIP a circle it can join."}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-ink-500">
-            Enter a ZIP to make a truthful local launch link. It invites people
-            to create the first supply; it never claims your area already has
-            members, listings, or completed trades.
+            {active
+              ? "This ZIP has genuine local offers. Share the circle with one plausible person who may want an existing offer or add another useful one."
+              : state === "unknown"
+                ? "Local inventory could not be confirmed, so sharing is paused rather than making a false claim about this ZIP."
+                : "Enter a ZIP to make a truthful local launch link. It invites people to create the first supply; it never claims your area already has members, listings, or completed trades."}
           </p>
         </div>
 
@@ -97,11 +108,14 @@ export function StartCircleInvite({ initialZip = "" }: { initialZip?: string }) 
                   setCopied(false);
                 }}
                 inputMode="numeric"
+                readOnly={fixedZip}
                 autoComplete="postal-code"
                 pattern="\d{5}"
                 maxLength={5}
                 placeholder="85224"
-                className="input min-w-0 flex-1"
+                className={`input min-w-0 flex-1 ${
+                  fixedZip ? "bg-surface-100" : ""
+                }`}
                 aria-describedby="circle-zip-help"
               />
               <button
@@ -116,8 +130,9 @@ export function StartCircleInvite({ initialZip = "" }: { initialZip?: string }) 
             </div>
           </label>
           <p id="circle-zip-help" className="mt-2 text-xs text-ink-400">
-            The ZIP appears in the invitation. No street address or exact
-            location is collected here.
+            {fixedZip
+              ? "This invitation stays scoped to the circle shown on this page."
+              : "The ZIP appears in the invitation. No street address or exact location is collected here."}
           </p>
 
           {invite ? (
@@ -147,13 +162,13 @@ export function StartCircleInvite({ initialZip = "" }: { initialZip?: string }) 
                   to={listingStarterPath("useful_item", zip)}
                   className="btn-outline text-sm"
                 >
-                  Post the first item
+                  {active ? "Add another item" : "Post the first item"}
                 </Link>
                 <Link
                   to={listingStarterPath("one_hour_help", zip)}
                   className="btn-outline text-sm"
                 >
-                  Post the first skill
+                  {active ? "Add another skill" : "Post the first skill"}
                 </Link>
               </div>
               <p className="mt-3 text-[11px] leading-relaxed text-ink-400">
@@ -164,8 +179,9 @@ export function StartCircleInvite({ initialZip = "" }: { initialZip?: string }) 
             </>
           ) : (
             <p className="mt-4 rounded-xl border border-dashed border-surface-300 bg-white px-4 py-5 text-sm text-ink-500">
-              Enter five digits to generate the exact local invitation and the
-              path to its first real offer.
+              {state === "unknown"
+                ? "Sharing will be available after genuine local inventory can be confirmed."
+                : "Enter five digits to generate the exact local invitation and the path to its first real offer."}
             </p>
           )}
         </div>
