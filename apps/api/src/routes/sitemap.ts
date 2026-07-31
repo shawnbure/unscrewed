@@ -5,9 +5,10 @@
 //   - static marketing pages (hand-listed)
 //   - every published, non-deleted blog post keyed by slug
 //   - every listing that isn't archived or deleted keyed by id
+//   - every exact U.S. ZIP with active local/either supply
 
 import { Hono } from "hono";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, inArray, sql } from "drizzle-orm";
 import { getDb, listings, blogPosts } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 
@@ -54,7 +55,7 @@ function iso(ts: number | null | undefined): string {
 }
 
 async function loadSitemapEntries(db: ReturnType<typeof getDb>) {
-  const [pubBlog, activeListings] = await Promise.all([
+  const [pubBlog, activeListings, activeCircles] = await Promise.all([
     db
       .select({
         slug: blogPosts.slug,
@@ -80,22 +81,43 @@ async function loadSitemapEntries(db: ReturnType<typeof getDb>) {
       )
       .orderBy(desc(listings.dateModified))
       .limit(45_000),
+    db
+      .select({
+        postalCode: listings.postalCode,
+        dateModified: sql<number>`MAX(${listings.dateModified})`,
+      })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.status, "active"),
+          eq(listings.isArchived, 0),
+          eq(listings.isDeleted, 0),
+          inArray(listings.exchangeMode, ["local", "either"]),
+          sql`${listings.postalCode} GLOB '[0-9][0-9][0-9][0-9][0-9]'`
+        )
+      )
+      .groupBy(listings.postalCode)
+      .orderBy(desc(sql`MAX(${listings.dateModified})`))
+      .limit(10_000),
   ]);
 
   return {
     pubBlog,
     activeListings,
+    activeCircles,
     urls: [
       ...STATIC_PAGES.map((p) => `${SITE}${p.path}`),
       ...pubBlog.map((b) => `${SITE}/blog/${b.slug}`),
       ...activeListings.map((l) => `${SITE}/listing/${l.id}`),
+      ...activeCircles.map((circle) => `${SITE}/circle/${circle.postalCode}`),
     ],
   };
 }
 
 sitemapRoutes.get("/sitemap.xml", async (c) => {
   const db = getDb(c.env.DB);
-  const { pubBlog, activeListings } = await loadSitemapEntries(db);
+  const { pubBlog, activeListings, activeCircles } =
+    await loadSitemapEntries(db);
 
   const urls: string[] = [];
 
@@ -113,6 +135,11 @@ sitemapRoutes.get("/sitemap.xml", async (c) => {
   for (const l of activeListings) {
     urls.push(
       `<url><loc>${SITE}/listing/${xmlEscape(l.id)}</loc><lastmod>${iso(l.dateModified)}</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>`
+    );
+  }
+  for (const circle of activeCircles) {
+    urls.push(
+      `<url><loc>${SITE}/circle/${xmlEscape(circle.postalCode ?? "")}</loc><lastmod>${iso(circle.dateModified)}</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>`
     );
   }
 

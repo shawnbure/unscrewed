@@ -13,6 +13,7 @@ import type { AppContext } from "../env.js";
 import { requireAuth, optionalAuth } from "../middleware/auth.js";
 import { uuidv4 } from "../lib/crypto.js";
 import { notifyLocalListingWatchers } from "../lib/localListingEmail.js";
+import { notifyIndexNow } from "../lib/indexNow.js";
 import {
   REMOTE_MARKET_LOCATION,
   resolveCreateListingLocation,
@@ -98,7 +99,11 @@ listingsRoutes.get("/", optionalAuth, async (c) => {
 
   // Build one query for both browsing and FTS so category, kind, and location
   // keep applying when someone types a search term.
-  const where: string[] = ["l.status = 'active'", "l.is_deleted = 0"];
+  const where: string[] = [
+    "l.status = 'active'",
+    "l.is_archived = 0",
+    "l.is_deleted = 0",
+  ];
   const binds: any[] = [];
   let join = "";
   let orderBy = "l.date_created DESC";
@@ -299,6 +304,18 @@ listingsRoutes.post("/", requireAuth, async (c) => {
       console.error("[local-listing-email] send failed", error);
     })
   );
+  c.executionCtx.waitUntil(
+    notifyIndexNow(
+      listingDiscoveryPaths(id, [
+        {
+          exchangeMode: input.exchangeMode,
+          postalCode: location.postalCode,
+        },
+      ])
+    ).catch((error) => {
+      console.error("[indexnow] listing publish failed", error);
+    })
+  );
 
   return c.json({ id });
 });
@@ -438,8 +455,45 @@ listingsRoutes.patch("/:id", requireAuth, async (c) => {
 
   await c.env.DB.batch(statements);
 
+  c.executionCtx.waitUntil(
+    notifyIndexNow(
+      listingDiscoveryPaths(id, [
+        { exchangeMode: row.exchangeMode, postalCode: row.postalCode },
+        {
+          exchangeMode: input.exchangeMode ?? row.exchangeMode,
+          postalCode: input.postalCode ?? row.postalCode,
+        },
+      ])
+    ).catch((error) => {
+      console.error("[indexnow] listing update failed", error);
+    })
+  );
+
   return c.json({ ok: true });
 });
+
+function listingDiscoveryPaths(
+  listingId: string,
+  circleStates: Array<{
+    exchangeMode: string | null | undefined;
+    postalCode: string | null | undefined;
+  }>
+): string[] {
+  const paths = [
+    `/listing/${encodeURIComponent(listingId)}`,
+    "/sitemap.xml",
+    "/sitemap.txt",
+  ];
+  for (const state of circleStates) {
+    if (
+      state.exchangeMode !== "remote" &&
+      /^\d{5}$/.test(state.postalCode ?? "")
+    ) {
+      paths.push(`/circle/${state.postalCode}`);
+    }
+  }
+  return [...new Set(paths)];
+}
 
 function listingColumn(property: string): string {
   const columns: Record<string, string> = {
