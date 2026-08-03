@@ -65,8 +65,9 @@ export async function onRequest(context: FunctionContext): Promise<Response> {
     `${compact(listing.title)} — barter${location} | unscrewed.lol`,
     90
   );
+  const requestedReturn = withoutRequestedReturnLeadIn(listing.wants);
   const description = truncate(
-    `Looking to trade for ${withoutTrailingPunctuation(listing.wants)}. ${compact(listing.description)}`,
+    `Looking to trade for ${withoutTrailingPunctuation(requestedReturn)}. ${compact(listing.description)}`,
     160
   );
   const firstPhoto = payload.photos.find((photo) => photo.r2Key)?.r2Key;
@@ -121,6 +122,19 @@ function compact(value: string): string {
 
 function withoutTrailingPunctuation(value: string): string {
   return compact(value).replace(/[.!?]+$/, "");
+}
+
+// Keep aligned with packages/shared/src/listings.ts. Pages Functions compile
+// independently and cannot resolve the workspace package at this boundary.
+export function withoutRequestedReturnLeadIn(value: string): string {
+  const compactValue = compact(value);
+  const withoutLeadIn = compactValue
+    .replace(
+      /^(?:(?:i(?:['’]m| am)\s+)?looking\s+for|in\s+(?:trade|exchange))\s*:\s*/i,
+      ""
+    )
+    .trim();
+  return withoutLeadIn || compactValue;
 }
 
 function truncate(value: string, maxLength: number): string {

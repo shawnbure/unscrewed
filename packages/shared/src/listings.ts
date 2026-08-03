@@ -1,5 +1,20 @@
 import { z } from "zod";
 
+/**
+ * Removes a redundant, user-authored label when the surrounding UI already
+ * introduces the requested return. Stored listing text remains unchanged.
+ */
+export function withoutRequestedReturnLeadIn(value: string): string {
+  const compact = value.replace(/\s+/g, " ").trim();
+  const withoutLeadIn = compact
+    .replace(
+      /^(?:(?:i(?:['’]m| am)\s+)?looking\s+for|in\s+(?:trade|exchange))\s*:\s*/i,
+      ""
+    )
+    .trim();
+  return withoutLeadIn || compact;
+}
+
 export const ListingKind = z.enum(["good", "service"]);
 export type ListingKind = z.infer<typeof ListingKind>;
 

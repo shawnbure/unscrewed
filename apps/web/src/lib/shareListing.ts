@@ -1,3 +1,5 @@
+import { withoutRequestedReturnLeadIn } from "@unscrewed/shared";
+
 export function buildListingShareText(
   title: string,
   wants: string,
@@ -5,7 +7,7 @@ export function buildListingShareText(
   exchangeMode: "local" | "remote" | "either" = "local",
   owner = false
 ): string {
-  const compactWants = wants.replace(/\s+/g, " ").trim();
+  const compactWants = withoutRequestedReturnLeadIn(wants);
   const shortenedWants =
     compactWants.length > 140
       ? `${compactWants.slice(0, 137).trimEnd()}…`

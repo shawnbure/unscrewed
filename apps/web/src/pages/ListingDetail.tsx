@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { withoutRequestedReturnLeadIn } from "@unscrewed/shared";
 import {
   Link,
   useNavigate,
@@ -82,8 +83,9 @@ export default function ListingDetail() {
       `${compactMeta(listing.title)} — barter${location} | unscrewed.lol`,
       90
     );
+    const requestedReturn = withoutRequestedReturnLeadIn(listing.wants);
     const description = truncateMeta(
-      `Looking to trade for ${withoutTrailingPunctuation(listing.wants)}. ${compactMeta(listing.description)}`,
+      `Looking to trade for ${withoutTrailingPunctuation(requestedReturn)}. ${compactMeta(listing.description)}`,
       160
     );
     const canonical = `${window.location.origin}/listing/${encodeURIComponent(listing.id)}`;
