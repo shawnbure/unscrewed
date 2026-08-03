@@ -144,6 +144,7 @@ export default function ListingDetail() {
   const photoKeys = photos.map((p) => p.r2Key!).filter(Boolean);
   const current = photoKeys[idx];
   const justPosted = searchParams.get("posted") === "1" && l.isOwner === true;
+  const requestedReturn = withoutRequestedReturnLeadIn(l.wants);
 
   return (
     <Container size="lg" className="py-6">
@@ -294,7 +295,7 @@ export default function ListingDetail() {
               <div className="text-xs font-semibold uppercase tracking-wider text-brand-700">
                 Wants in trade
               </div>
-              <p className="mt-1 text-ink-900">{l.wants}</p>
+              <p className="mt-1 text-ink-900">{requestedReturn}</p>
             </div>
 
             {(() => {
@@ -468,7 +469,7 @@ export default function ListingDetail() {
       {showPropose && (
         <ProposeModal
           listingId={l.id}
-          listingWants={l.wants}
+          listingWants={requestedReturn}
           onClose={() => setShowPropose(false)}
           onSent={(negId) => nav(`/n/${negId}`)}
         />
