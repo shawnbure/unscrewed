@@ -24,6 +24,11 @@ export const AttributionSchema = z.object({
 });
 export type AttributionInput = z.infer<typeof AttributionSchema>;
 
+export const ProposalIntentSchema = AttributionSchema.extend({
+  listingId: z.string().uuid(),
+});
+export type ProposalIntentInput = z.infer<typeof ProposalIntentSchema>;
+
 // Signup normally includes ZIP. It may be deferred only when the request
 // identifies the remote listing the new member is returning to propose on;
 // the API performs the authoritative listing check. Phone remains an optional

@@ -10,6 +10,7 @@ interface ListingShareOutcomesProps {
 interface ShareOutcomes {
   current: {
     uniqueVisitors: number;
+    proposalIntents: number;
     attributedMembers: number;
     proposals: number;
     twoSidedConversations: number;
@@ -27,6 +28,7 @@ const METRICS: Array<{
   label: string;
 }> = [
   { key: "uniqueVisitors", label: "Invitation visits" },
+  { key: "proposalIntents", label: "Clicked propose" },
   { key: "attributedMembers", label: "New members" },
   { key: "proposals", label: "Proposals" },
   { key: "twoSidedConversations", label: "Two-sided chats" },

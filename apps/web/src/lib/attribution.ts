@@ -83,6 +83,19 @@ export function getStoredAttribution(): Attribution | undefined {
   }
 }
 
+export function recordProposalIntent(listingId: string): void {
+  const attribution = getStoredAttribution();
+  if (!attribution || !UUID_PATTERN.test(listingId)) return;
+
+  api("/growth/proposal-intent", {
+    method: "POST",
+    keepalive: true,
+    body: JSON.stringify({ ...attribution, listingId }),
+  }).catch(() => {
+    // Measurement must never delay or block signup/proposal navigation.
+  });
+}
+
 function clean(value: string | null, maxLength: number): string {
   return value?.trim().slice(0, maxLength) ?? "";
 }

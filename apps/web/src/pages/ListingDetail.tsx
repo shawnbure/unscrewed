@@ -24,6 +24,7 @@ import { useSession } from "../lib/session.js";
 import { photoUrl } from "../lib/photoUrl.js";
 import { ShareListing } from "../ui/ShareListing.js";
 import { withNext } from "../lib/navigation.js";
+import { recordProposalIntent } from "../lib/attribution.js";
 import { ListingMatchability } from "../ui/ListingMatchability.js";
 import { ListingShareOutcomes } from "../ui/ListingShareOutcomes.js";
 import {
@@ -342,6 +343,7 @@ export default function ListingDetail() {
                   <>
                     <Link
                       to={proposalSignupPath}
+                      onClick={() => recordProposalIntent(l.id)}
                       className="btn-primary mt-5 flex w-full items-center justify-center"
                     >
                       Create account to propose

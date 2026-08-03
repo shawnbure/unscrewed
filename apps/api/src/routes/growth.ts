@@ -1,5 +1,8 @@
 import { Hono } from "hono";
-import { AttributionSchema } from "@unscrewed/shared";
+import {
+  AttributionSchema,
+  ProposalIntentSchema,
+} from "@unscrewed/shared";
 import { getDb, growthVisits } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 import { uuidv4 } from "../lib/crypto.js";
@@ -335,6 +338,13 @@ growthRoutes.get("/listing/:id", requireAuth, async (c) => {
            AND attribution_medium = 'share'
            AND attribution_campaign = ?1) AS attributed_members,
        (SELECT COUNT(*)
+          FROM growth_visits
+         WHERE source = 'listing_share'
+           AND medium = 'share'
+           AND campaign = ?1
+           AND first_proposal_intent_at IS NOT NULL
+           AND first_proposal_listing_id = ?2) AS proposal_intents,
+       (SELECT COUNT(*)
           FROM negotiations
          WHERE listing_id = ?2
            AND is_deleted = 0) AS proposals,
@@ -358,6 +368,7 @@ growthRoutes.get("/listing/:id", requireAuth, async (c) => {
     .first<{
       unique_visitors: number;
       attributed_members: number;
+      proposal_intents: number;
       proposals: number;
       two_sided_conversations: number;
       completed_trades: number;
@@ -368,6 +379,7 @@ growthRoutes.get("/listing/:id", requireAuth, async (c) => {
     current: {
       uniqueVisitors: summary?.unique_visitors ?? 0,
       attributedMembers: summary?.attributed_members ?? 0,
+      proposalIntents: summary?.proposal_intents ?? 0,
       proposals: summary?.proposals ?? 0,
       twoSidedConversations: summary?.two_sided_conversations ?? 0,
       completedTrades: summary?.completed_trades ?? 0,
@@ -412,6 +424,72 @@ growthRoutes.post("/visit", async (c) => {
     "DELETE FROM growth_visits WHERE date_created < ?1"
   )
     .bind(Date.now() - 90 * 24 * 60 * 60 * 1000)
+    .run();
+
+  return c.json({ ok: true });
+});
+
+growthRoutes.post("/proposal-intent", async (c) => {
+  const json = await c.req.json().catch(() => null);
+  const parsed = ProposalIntentSchema.safeParse(json);
+  if (!parsed.success) return c.json({ error: "invalid_input" }, 400);
+
+  const ip =
+    c.req.header("cf-connecting-ip") ||
+    c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
+  const rl = await rateLimit(
+    c.env,
+    `growth-proposal-intent:${ip ?? parsed.data.visitorId}`,
+    60,
+    3600
+  );
+  if (!rl.allowed) return c.json({ error: "rate_limited" }, 429);
+
+  const listing = await c.env.DB.prepare(
+    `SELECT id
+       FROM listings
+      WHERE id = ?1
+        AND status = 'active'
+        AND is_archived = 0
+        AND is_deleted = 0
+      LIMIT 1`
+  )
+    .bind(parsed.data.listingId)
+    .first<{ id: string }>();
+  if (!listing) return c.json({ error: "listing_unavailable" }, 409);
+
+  const now = Date.now();
+  await c.env.DB.prepare(
+    `INSERT INTO growth_visits (
+       id,
+       visitor_id,
+       source,
+       medium,
+       campaign,
+       first_proposal_intent_at,
+       first_proposal_listing_id,
+       date_created
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?6)
+     ON CONFLICT (visitor_id, source, medium, campaign)
+     DO UPDATE SET
+       first_proposal_intent_at = COALESCE(
+         growth_visits.first_proposal_intent_at,
+         excluded.first_proposal_intent_at
+       ),
+       first_proposal_listing_id = COALESCE(
+         growth_visits.first_proposal_listing_id,
+         excluded.first_proposal_listing_id
+       )`
+  )
+    .bind(
+      uuidv4(),
+      parsed.data.visitorId,
+      parsed.data.source,
+      parsed.data.medium,
+      parsed.data.campaign,
+      now,
+      parsed.data.listingId
+    )
     .run();
 
   return c.json({ ok: true });

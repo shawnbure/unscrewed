@@ -63,6 +63,8 @@ export const growthVisits = sqliteTable(
     source: text("source").notNull(),
     medium: text("medium").notNull(),
     campaign: text("campaign").notNull(),
+    firstProposalIntentAt: integer("first_proposal_intent_at"),
+    firstProposalListingId: text("first_proposal_listing_id"),
     dateCreated: integer("date_created")
       .notNull()
       .default(sql`(unixepoch() * 1000)`),
