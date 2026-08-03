@@ -1,5 +1,6 @@
 interface PublicListing {
   id: string;
+  kind?: "good" | "service";
   title: string;
   description: string;
   wants: string;
@@ -106,6 +107,10 @@ export async function onRequest(context: FunctionContext): Promise<Response> {
     /<title>[^<]*<\/title>/,
     `<title>${escapeHtml(title)}</title>`
   );
+  html = html.replace(
+    '<div id="root"></div>',
+    `<div id="root">${listingSnapshot(listing, requestedReturn, canonical, location)}</div>`
+  );
 
   return new Response(context.request.method === "HEAD" ? null : html, {
     headers: {
@@ -140,6 +145,30 @@ export function withoutRequestedReturnLeadIn(value: string): string {
 function truncate(value: string, maxLength: number): string {
   if (value.length <= maxLength) return value;
   return `${value.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function listingSnapshot(
+  listing: PublicListing,
+  requestedReturn: string,
+  canonical: string,
+  location: string
+): string {
+  const offerType =
+    listing.kind === "service"
+      ? "service"
+      : listing.kind === "good"
+        ? "item"
+        : "offer";
+  return `<main id="listing-server-snapshot">
+      <article>
+        <p>Active ${offerType} offered for barter${escapeHtml(location)}.</p>
+        <h1>${escapeHtml(compact(listing.title))}</h1>
+        <p>${escapeHtml(compact(listing.description))}</p>
+        <h2>Requested in return</h2>
+        <p>${escapeHtml(requestedReturn)}</p>
+        <p><a href="${escapeHtml(`${canonical}?propose=1`)}">View this trade and propose an exchange</a></p>
+      </article>
+    </main>`;
 }
 
 function replaceMeta(html: string, selector: string, content: string): string {
