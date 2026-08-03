@@ -88,10 +88,11 @@ export function ShareListing({
 
   return (
     <div
+      id={`share-listing-${id}`}
       className={
         variant === "default"
-          ? "mt-5 border-t border-surface-200 pt-4"
-          : "mt-4"
+          ? "mt-5 scroll-mt-24 border-t border-surface-200 pt-4"
+          : "mt-4 scroll-mt-24"
       }
     >
       {variant === "default" && (

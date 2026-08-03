@@ -1,21 +1,18 @@
 import { useEffect, useState } from "react";
-import { BarChart3 } from "lucide-react";
+import { ArrowRight, BarChart3, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
+import {
+  getNextOutcomeAction,
+  type ListingShareCounts,
+} from "../lib/listingOutcome.js";
 
 interface ListingShareOutcomesProps {
   listingId: string;
 }
 
 interface ShareOutcomes {
-  current: {
-    uniqueVisitors: number;
-    proposalIntents: number;
-    attributedMembers: number;
-    proposals: number;
-    twoSidedConversations: number;
-    completedTrades: number;
-  };
+  current: ListingShareCounts;
   ownerAlertReadiness: {
     viewerIsOwner: boolean;
     emailVerified: boolean;
@@ -56,6 +53,8 @@ export function ListingShareOutcomes({
 
   if (!data) return null;
 
+  const nextAction = getNextOutcomeAction(data.current, listingId);
+
   return (
     <section className="card p-5" aria-labelledby="share-outcomes-heading">
       <div className="flex items-start gap-3">
@@ -95,6 +94,29 @@ export function ListingShareOutcomes({
         Counts only. Visitor identities, emails, and browsing details are not
         shown. Anonymous invitation visits expire after 90 days.
       </p>
+      <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50 p-3">
+        <div className="flex items-start gap-2.5">
+          <Target
+            className="mt-0.5 h-4 w-4 shrink-0 text-brand-700"
+            strokeWidth={2.25}
+          />
+          <div>
+            <p className="text-xs font-semibold text-brand-900">
+              Next real outcome: {nextAction.title}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-brand-900">
+              {nextAction.body}
+            </p>
+            <Link
+              to={nextAction.to}
+              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand-900 underline"
+            >
+              {nextAction.label}
+              <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.25} />
+            </Link>
+          </div>
+        </div>
+      </div>
       {data.ownerAlertReadiness.viewerIsOwner &&
         !data.ownerAlertReadiness.emailVerified && (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
