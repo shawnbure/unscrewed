@@ -9,7 +9,7 @@
 
 import { Hono } from "hono";
 import { and, eq, desc, inArray, sql } from "drizzle-orm";
-import { getDb, listings, blogPosts } from "@unscrewed/db";
+import { getDb, listings, blogPosts, users } from "@unscrewed/db";
 import type { AppContext } from "../env.js";
 
 export const sitemapRoutes = new Hono<AppContext>();
@@ -175,10 +175,13 @@ sitemapRoutes.get("/blog/feed.xml", async (c) => {
       slug: blogPosts.slug,
       title: blogPosts.title,
       excerpt: blogPosts.excerpt,
+      bodyMd: blogPosts.bodyMd,
       datePublished: blogPosts.datePublished,
       dateModified: blogPosts.dateModified,
+      authorName: users.displayName,
     })
     .from(blogPosts)
+    .leftJoin(users, eq(users.id, blogPosts.authorId))
     .where(and(eq(blogPosts.status, "published"), eq(blogPosts.isDeleted, 0)))
     .orderBy(desc(blogPosts.datePublished))
     .limit(50);
@@ -199,7 +202,9 @@ sitemapRoutes.get("/blog/feed.xml", async (c) => {
   <id>${url}</id>
   <published>${published}</published>
   <updated>${updated}</updated>
+  <author><name>${xmlEscape(post.authorName ?? "unscrewed.lol")}</name></author>
   <summary type="text">${xmlEscape(post.excerpt ?? "")}</summary>
+  <content type="text">${xmlEscape(post.bodyMd)}</content>
 </entry>`;
   });
   const feed = `<?xml version="1.0" encoding="UTF-8"?>
