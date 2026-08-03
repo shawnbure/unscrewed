@@ -11,8 +11,8 @@ from reportlab.platypus import Paragraph
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "output" / "pdf" / "unscrewed-one-honest-barter-circle-test.pdf"
-ORGANIZER_URL = "https://unscrewed.lol/contact?intent=organizer-pilot"
+OUTPUT = ROOT / "apps" / "web" / "public" / "one-honest-barter-circle-test.pdf"
+ORGANIZER_URL = "https://unscrewed.lol/go/organizer-sheet"
 
 WIDTH, HEIGHT = letter
 INK = HexColor("#171717")
@@ -246,7 +246,7 @@ def build() -> None:
     )
     pdf.setFillColor(BRAND)
     pdf.setFont("Helvetica-Bold", 8.5)
-    pdf.drawString(56, 356, "unscrewed.lol/contact?intent=organizer-pilot")
+    pdf.drawString(56, 356, "unscrewed.lol/go/organizer-sheet")
     pdf.setFillColor(WHITE)
     pdf.roundRect(508, 350, 60, 60, 5, fill=1, stroke=0)
     draw_qr(pdf, 513, 355, 50)
