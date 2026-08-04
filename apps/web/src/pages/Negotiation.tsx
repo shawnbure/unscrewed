@@ -204,6 +204,13 @@ export default function NegotiationPage() {
     [...data.contracts]
       .sort((a, b) => b.dateCreated - a.dateCreated)
       .find((c) => c.status !== "cancelled") ?? null;
+  const listerHasReplied = messages.some(
+    (message) => message.senderUserId === n.listerUserId
+  );
+  const requesterHasReplied = messages.some(
+    (message) => message.senderUserId === n.requesterUserId
+  );
+  const conversationIsTwoSided = listerHasReplied && requesterHasReplied;
 
   return (
     <Container size="md" className="py-6">
@@ -264,6 +271,7 @@ export default function NegotiationPage() {
           >
             <div className="flex items-end gap-2">
               <textarea
+                id="reply-message"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 placeholder="Write a specific reply…"
@@ -308,7 +316,7 @@ export default function NegotiationPage() {
               negotiation={n}
               onChange={load}
             />
-          ) : (
+          ) : conversationIsTwoSided ? (
             <div className="card p-4">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-400">
                 Ready to commit?
@@ -325,6 +333,27 @@ export default function NegotiationPage() {
               >
                 <Sparkles className="h-4 w-4" /> Draft contract
               </button>
+            </div>
+          ) : (
+            <div className="card p-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-400">
+                Conversation before agreement
+              </h3>
+              <p className="mt-1 text-sm text-ink-500">
+                Both people must reply here before either person can send an
+                agreement. This keeps terms from arriving before a real
+                conversation.
+              </p>
+              {me?.id === n.listerUserId && !listerHasReplied ? (
+                <a href="#reply-message" className="btn-brand mt-3 w-full">
+                  Reply to the proposal first
+                </a>
+              ) : (
+                <p className="mt-3 rounded-xl bg-surface-50 p-3 text-xs text-ink-500">
+                  Waiting for the other trader to reply. One opening message is
+                  not treated as an agreement.
+                </p>
+              )}
             </div>
           )}
 

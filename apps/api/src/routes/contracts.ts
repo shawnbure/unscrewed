@@ -375,6 +375,16 @@ export async function generateDraft(
   ]);
   const listing = listingRow[0];
   if (!listing) return c.json({ error: "listing_gone" }, 404);
+  if (!hasTwoSidedConversation(n, msgRows)) {
+    return c.json(
+      {
+        error: "conversation_not_two_sided",
+        message:
+          "Both people must reply in the private conversation before anyone sends an agreement.",
+      },
+      400
+    );
+  }
 
   const terms = await draftContractTerms(c.env, {
     listingTitle: listing.title,
@@ -417,6 +427,21 @@ export async function createContract(
     return c.json({ error: "not_found" }, 404);
   if (n.listerUserId !== userId && n.requesterUserId !== userId)
     return c.json({ error: "forbidden" }, 403);
+
+  const messageSenders = await db
+    .select({ senderUserId: negotiationMessages.senderUserId })
+    .from(negotiationMessages)
+    .where(eq(negotiationMessages.negotiationId, negotiationId));
+  if (!hasTwoSidedConversation(n, messageSenders)) {
+    return c.json(
+      {
+        error: "conversation_not_two_sided",
+        message:
+          "Both people must reply in the private conversation before anyone sends an agreement.",
+      },
+      400
+    );
+  }
 
   // Cancel any prior awaiting_signatures contract on this negotiation so
   // we don't end up with duplicates. A signed contract blocks new drafts.
@@ -466,4 +491,22 @@ export async function createContract(
   );
 
   return c.json({ id });
+}
+
+function hasTwoSidedConversation(
+  negotiation: { listerUserId: string; requesterUserId: string },
+  messages: Array<{ senderUserId: string }>
+): boolean {
+  let listerHasReplied = false;
+  let requesterHasReplied = false;
+  for (const message of messages) {
+    if (message.senderUserId === negotiation.listerUserId) {
+      listerHasReplied = true;
+    }
+    if (message.senderUserId === negotiation.requesterUserId) {
+      requesterHasReplied = true;
+    }
+    if (listerHasReplied && requesterHasReplied) return true;
+  }
+  return false;
 }
