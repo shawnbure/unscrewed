@@ -29,6 +29,12 @@ export const ProposalIntentSchema = AttributionSchema.extend({
 });
 export type ProposalIntentInput = z.infer<typeof ProposalIntentSchema>;
 
+export const ListingIntentSchema = AttributionSchema.extend({
+  context: z.enum(["community"]),
+  starter: z.enum(["useful_item", "remote_skill"]),
+});
+export type ListingIntentInput = z.infer<typeof ListingIntentSchema>;
+
 // Signup normally includes ZIP. It may be deferred only when the request
 // identifies the remote listing the new member is returning to propose on;
 // the API performs the authoritative listing check. Phone remains an optional

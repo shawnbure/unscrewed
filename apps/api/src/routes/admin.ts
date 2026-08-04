@@ -29,6 +29,7 @@ interface GrowthFunnelRow {
   source: string;
   medium: string;
   visitors: number;
+  listing_intents: number;
   proposal_intents: number;
   signups: number;
   first_listings: number;
@@ -121,6 +122,9 @@ adminRoutes.get("/stats", async (c) => {
            gv.medium,
            MAX(alert_listing.postal_code) AS local_watch_zip,
            COUNT(DISTINCT gv.visitor_id) AS visitors,
+           COUNT(DISTINCT CASE
+             WHEN gv.first_listing_intent_at IS NOT NULL THEN gv.visitor_id
+           END) AS listing_intents,
            COUNT(DISTINCT CASE
              WHEN gv.first_proposal_intent_at IS NOT NULL THEN gv.visitor_id
            END) AS proposal_intents,

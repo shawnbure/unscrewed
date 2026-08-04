@@ -9,6 +9,7 @@ import { Container } from "../ui/Container.js";
 import { getStats, type StatsPayload } from "../lib/stats.js";
 import { useSession } from "../lib/session.js";
 import { listingStarterPath } from "../lib/listingStarters.js";
+import { recordListingIntent } from "../lib/attribution.js";
 
 export default function CommunityPage() {
   const { session } = useSession();
@@ -129,6 +130,9 @@ export default function CommunityPage() {
               <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <Link
                   to={listingStarterPath("useful_item")}
+                  onClick={() =>
+                    recordListingIntent("community", "useful_item")
+                  }
                   className="btn-brand text-base"
                 >
                   Post a real offer
@@ -221,12 +225,18 @@ export default function CommunityPage() {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
               to={listingStarterPath("useful_item")}
+              onClick={() =>
+                recordListingIntent("community", "useful_item")
+              }
               className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-ink-900 hover:bg-surface-100"
             >
               Post a useful item
             </Link>
             <Link
               to={listingStarterPath("remote_skill")}
+              onClick={() =>
+                recordListingIntent("community", "remote_skill")
+              }
               className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
             >
               Offer a remote skill

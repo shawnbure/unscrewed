@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import {
   AttributionSchema,
+  ListingIntentSchema,
   ProposalIntentSchema,
 } from "@unscrewed/shared";
 import { getDb, growthVisits } from "@unscrewed/db";
@@ -420,6 +421,73 @@ growthRoutes.post("/visit", async (c) => {
 
   // Keep the anonymous measurement window intentionally short. User account
   // attribution remains with the account, but unconverted visit rows expire.
+  await c.env.DB.prepare(
+    "DELETE FROM growth_visits WHERE date_created < ?1"
+  )
+    .bind(Date.now() - 90 * 24 * 60 * 60 * 1000)
+    .run();
+
+  return c.json({ ok: true });
+});
+
+growthRoutes.post("/listing-intent", async (c) => {
+  const json = await c.req.json().catch(() => null);
+  const parsed = ListingIntentSchema.safeParse(json);
+  if (!parsed.success) return c.json({ error: "invalid_input" }, 400);
+
+  const ip =
+    c.req.header("cf-connecting-ip") ||
+    c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
+  const rl = await rateLimit(
+    c.env,
+    `growth-listing-intent:${ip ?? parsed.data.visitorId}`,
+    60,
+    3600
+  );
+  if (!rl.allowed) return c.json({ error: "rate_limited" }, 429);
+
+  const now = Date.now();
+  await c.env.DB.prepare(
+    `INSERT INTO growth_visits (
+       id,
+       visitor_id,
+       source,
+       medium,
+       campaign,
+       first_listing_intent_at,
+       first_listing_intent_context,
+       first_listing_starter,
+       date_created
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?6)
+     ON CONFLICT (visitor_id, source, medium, campaign)
+     DO UPDATE SET
+       first_listing_intent_at = COALESCE(
+         growth_visits.first_listing_intent_at,
+         excluded.first_listing_intent_at
+       ),
+       first_listing_intent_context = COALESCE(
+         growth_visits.first_listing_intent_context,
+         excluded.first_listing_intent_context
+       ),
+       first_listing_starter = COALESCE(
+         growth_visits.first_listing_starter,
+         excluded.first_listing_starter
+       )`
+  )
+    .bind(
+      uuidv4(),
+      parsed.data.visitorId,
+      parsed.data.source,
+      parsed.data.medium,
+      parsed.data.campaign,
+      now,
+      parsed.data.context,
+      parsed.data.starter
+    )
+    .run();
+
+  // Direct onsite visitors may not have generated a separate campaign visit,
+  // so keep the same short anonymous-retention window on this path too.
   await c.env.DB.prepare(
     "DELETE FROM growth_visits WHERE date_created < ?1"
   )

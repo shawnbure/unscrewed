@@ -63,6 +63,9 @@ export const growthVisits = sqliteTable(
     source: text("source").notNull(),
     medium: text("medium").notNull(),
     campaign: text("campaign").notNull(),
+    firstListingIntentAt: integer("first_listing_intent_at"),
+    firstListingIntentContext: text("first_listing_intent_context"),
+    firstListingStarter: text("first_listing_starter"),
     firstProposalIntentAt: integer("first_proposal_intent_at"),
     firstProposalListingId: text("first_proposal_listing_id"),
     dateCreated: integer("date_created")
@@ -81,6 +84,12 @@ export const growthVisits = sqliteTable(
     ixCampaignDate: index("ix_growth_visits_campaign_date").on(
       t.campaign,
       t.dateCreated
+    ),
+    ixListingIntent: index("ix_growth_visits_listing_intent").on(
+      t.source,
+      t.medium,
+      t.campaign,
+      t.firstListingIntentAt
     ),
     ixDate: index("ix_growth_visits_date").on(t.dateCreated),
   })

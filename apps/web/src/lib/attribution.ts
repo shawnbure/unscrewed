@@ -96,6 +96,45 @@ export function recordProposalIntent(listingId: string): void {
   });
 }
 
+export function recordListingIntent(
+  context: "community",
+  starter: "useful_item" | "remote_skill"
+): void {
+  const attribution =
+    getStoredAttribution() ?? createOnsiteAttribution("community_supply");
+  if (!attribution) return;
+
+  api("/growth/listing-intent", {
+    method: "POST",
+    keepalive: true,
+    body: JSON.stringify({ ...attribution, context, starter }),
+  }).catch(() => {
+    // Measurement must never delay or block signup/listing navigation.
+  });
+}
+
+function createOnsiteAttribution(campaign: string): Attribution | undefined {
+  try {
+    let visitorId = window.localStorage.getItem(VISITOR_KEY);
+    if (!visitorId || !UUID_PATTERN.test(visitorId)) {
+      visitorId = crypto.randomUUID();
+      window.localStorage.setItem(VISITOR_KEY, visitorId);
+    }
+
+    const attribution: StoredAttribution = {
+      visitorId,
+      source: "community",
+      medium: "onsite",
+      campaign,
+      capturedAt: Date.now(),
+    };
+    window.localStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution));
+    return attribution;
+  } catch {
+    return undefined;
+  }
+}
+
 function clean(value: string | null, maxLength: number): string {
   return value?.trim().slice(0, maxLength) ?? "";
 }
