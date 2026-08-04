@@ -114,6 +114,32 @@ export default function NewListing() {
     kind === "good"
       ? CATEGORIES.filter((c) => c.kind !== "service")
       : CATEGORIES.filter((c) => c.kind !== "good");
+  const requiredDetails = [
+    {
+      label: "A specific title",
+      complete: title.trim().length >= 4,
+    },
+    {
+      label: "An accurate description",
+      complete: description.trim().length >= 10,
+    },
+    {
+      label: "What you would accept in trade",
+      complete: wants.trim().length >= 2,
+    },
+    ...(exchangeMode === "remote"
+      ? []
+      : [
+          {
+            label: "An approximate exchange area",
+            complete: address !== null,
+          },
+        ]),
+  ];
+  const requiredRemaining = requiredDetails.filter(
+    (detail) => !detail.complete
+  ).length;
+  const readyToPost = requiredRemaining === 0;
 
   return (
     <Container size="md" className="py-8">
@@ -130,6 +156,34 @@ export default function NewListing() {
             details before posting; nothing is posted automatically.
           </div>
         )}
+        <div
+          className="mt-4 rounded-2xl border border-surface-200 bg-white p-4 shadow-card"
+          aria-live="polite"
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <strong className="text-sm text-ink-900">
+              {readyToPost
+                ? "Required details complete"
+                : `${requiredRemaining} required ${requiredRemaining === 1 ? "detail" : "details"} remaining`}
+            </strong>
+            <span className="text-xs text-ink-400">
+              Photos are optional
+            </span>
+          </div>
+          <ul className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+            {requiredDetails.map((detail) => (
+              <li
+                key={detail.label}
+                className={
+                  detail.complete ? "text-brand-700" : "text-ink-500"
+                }
+              >
+                <span aria-hidden>{detail.complete ? "✓" : "○"}</span>{" "}
+                {detail.label}
+              </li>
+            ))}
+          </ul>
+        </div>
       </header>
 
       <form onSubmit={submit} className="mt-6 space-y-6">
@@ -243,7 +297,10 @@ export default function NewListing() {
           )}
         </Section>
 
-        <Section title="5. Add photos">
+        <Section
+          title="5. Add photos (optional)"
+          subtitle="A clear photo can build confidence, but you can post a truthful offer without one."
+        >
           <PhotoUploader value={photoKeys} onChange={setPhotoKeys} max={8} />
         </Section>
 
@@ -304,12 +361,19 @@ export default function NewListing() {
 
         <div className="sticky bottom-0 z-10 -mx-4 border-t border-sand-200 bg-sand-50/95 px-4 py-3 backdrop-blur">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-ink-500">
-              By posting you agree to the Terms.
-            </p>
+            <div className="text-xs text-ink-500">
+              <p>
+                {readyToPost
+                  ? "Ready to post. You can edit the offer later."
+                  : `Complete ${requiredRemaining} required ${requiredRemaining === 1 ? "detail" : "details"} above.`}
+              </p>
+              <p className="mt-0.5 text-ink-400">
+                By posting you agree to the Terms.
+              </p>
+            </div>
             <button
               type="submit"
-              disabled={busy}
+              disabled={busy || !readyToPost}
               className="btn-primary"
             >
               {busy ? "Posting…" : "Post trade"}
