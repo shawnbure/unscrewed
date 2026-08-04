@@ -374,7 +374,10 @@ export default function ListingDetail() {
                 <>
                   <button
                     type="button"
-                    onClick={() => setShowPropose(true)}
+                    onClick={() => {
+                      recordProposalIntent(l.id);
+                      setShowPropose(true);
+                    }}
                     className="btn-primary mt-5 w-full"
                   >
                     Propose a trade

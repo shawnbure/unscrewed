@@ -84,8 +84,14 @@ export function getStoredAttribution(): Attribution | undefined {
 }
 
 export function recordProposalIntent(listingId: string): void {
-  const attribution = getStoredAttribution();
-  if (!attribution || !UUID_PATTERN.test(listingId)) return;
+  if (!UUID_PATTERN.test(listingId)) return;
+  const attribution =
+    getStoredAttribution() ??
+    createOnsiteAttribution(
+      "listing_detail",
+      `proposal_interest:${listingId}`
+    );
+  if (!attribution) return;
 
   api("/growth/proposal-intent", {
     method: "POST",
@@ -101,7 +107,8 @@ export function recordListingIntent(
   starter: "useful_item" | "remote_skill"
 ): void {
   const attribution =
-    getStoredAttribution() ?? createOnsiteAttribution("community_supply");
+    getStoredAttribution() ??
+    createOnsiteAttribution("community", "community_supply");
   if (!attribution) return;
 
   api("/growth/listing-intent", {
@@ -113,7 +120,10 @@ export function recordListingIntent(
   });
 }
 
-function createOnsiteAttribution(campaign: string): Attribution | undefined {
+function createOnsiteAttribution(
+  source: "community" | "listing_detail",
+  campaign: string
+): Attribution | undefined {
   try {
     let visitorId = window.localStorage.getItem(VISITOR_KEY);
     if (!visitorId || !UUID_PATTERN.test(visitorId)) {
@@ -123,7 +133,7 @@ function createOnsiteAttribution(campaign: string): Attribution | undefined {
 
     const attribution: StoredAttribution = {
       visitorId,
-      source: "community",
+      source,
       medium: "onsite",
       campaign,
       capturedAt: Date.now(),
