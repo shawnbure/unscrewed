@@ -3,6 +3,7 @@ import { Container } from "../../ui/Container.js";
 
 const NAV = [
   { to: "/admin", label: "Dashboard", end: true },
+  { to: "/admin/growth", label: "Growth" },
   { to: "/admin/users", label: "Users" },
   { to: "/admin/listings", label: "Listings" },
   { to: "/admin/blog", label: "Blog" },

@@ -32,6 +32,7 @@ import EmailPreferencesPage from "./pages/EmailPreferences.js";
 import VerifyEmailPage from "./pages/VerifyEmail.js";
 import { AdminLayout } from "./pages/admin/AdminLayout.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
+import AdminGrowth from "./pages/admin/Growth.js";
 import AdminUsers from "./pages/admin/Users.js";
 import AdminListings from "./pages/admin/Listings.js";
 import AdminSupport from "./pages/admin/Support.js";
@@ -122,6 +123,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             }
           >
             <Route index element={<AdminDashboard />} />
+            <Route path="growth" element={<AdminGrowth />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="listings" element={<AdminListings />} />
             <Route path="blog" element={<AdminBlogList />} />
