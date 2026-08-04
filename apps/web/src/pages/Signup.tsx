@@ -38,6 +38,8 @@ export default function Signup() {
   const suggestedZip =
     searchParams.get("zip") ?? nextUrl.searchParams.get("zip") ?? "";
   const continuesToPost = nextUrl.pathname === "/post";
+  const continuesToRemotePost =
+    continuesToPost && nextUrl.searchParams.get("starter") === "remote_skill";
   const continuesToProposal =
     nextUrl.pathname.startsWith("/listing/") &&
     nextUrl.searchParams.get("propose") === "1";
@@ -120,8 +122,10 @@ export default function Signup() {
     <AuthLayout
       title="Create your account"
       subtitle={
-        continuesToPost
-          ? "Then you’ll go straight to posting your first trade. Phone is optional."
+        continuesToRemotePost
+          ? "Then you’ll go straight to an editable nationwide remote-skill offer. Your home ZIP anchors your optional local circle, but it will not appear on the remote listing. Phone is optional."
+          : continuesToPost
+            ? "Then you’ll go straight to posting your first trade. Phone is optional."
           : continuesToProposal
             ? continuesToRemoteProposal
               ? "Then you’ll return to this nationwide remote trade to make your proposal. ZIP and phone are optional. You can propose immediately; email verification only turns on trade alerts."
@@ -178,11 +182,15 @@ export default function Signup() {
           label={
             continuesToRemoteProposal
               ? "ZIP code (optional for this remote trade)"
+              : continuesToRemotePost
+                ? "Home ZIP (not shown on the remote offer)"
               : "ZIP code"
           }
           hint={
             continuesToRemoteProposal
               ? "Skip this for now if you only want to make the remote proposal. You can add a ZIP later to join a local circle; nobody sees your exact ZIP but you."
+              : continuesToRemotePost
+                ? "Required for your account’s optional local circle and privacy-coarsened community map. The remote offer itself is available across the United States and does not display this ZIP."
               : "US 5-digit ZIP only. Used to place you on the community map in aggregate — nobody sees your exact ZIP but you."
           }
         >
