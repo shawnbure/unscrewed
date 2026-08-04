@@ -63,6 +63,8 @@ export default function NegotiationPage() {
   } | null>(null);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+  const [threadError, setThreadError] = useState<string | null>(null);
+  const [messageError, setMessageError] = useState<string | null>(null);
   const [draftOpen, setDraftOpen] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -71,6 +73,7 @@ export default function NegotiationPage() {
     if (!id) return;
     const r = await api<any>(`/negotiations/${id}`);
     setData(r);
+    setThreadError(null);
     window.dispatchEvent(new Event("unscrewed:unread-changed"));
   }
 
@@ -82,7 +85,11 @@ export default function NegotiationPage() {
 
   useEffect(() => {
     if (!id) return;
-    load().catch(console.error);
+    load().catch(() =>
+      setThreadError(
+        "We couldn’t load this private conversation. Check your connection and try again."
+      )
+    );
     try {
       const proto = location.protocol === "https:" ? "wss" : "ws";
       const host =
@@ -94,13 +101,25 @@ export default function NegotiationPage() {
       ws.onmessage = () => {
         // Do not mark a reply read merely because this thread is open in a
         // background tab. The visibility handler will load it on return.
-        if (document.visibilityState === "visible") load();
+        if (document.visibilityState === "visible") {
+          load().catch(() =>
+            setThreadError(
+              "We couldn’t refresh this private conversation. Try again."
+            )
+          );
+        }
       };
     } catch {
       /* ws optional */
     }
     const onVisibility = () => {
-      if (document.visibilityState === "visible") load().catch(console.error);
+      if (document.visibilityState === "visible") {
+        load().catch(() =>
+          setThreadError(
+            "We couldn’t refresh this private conversation. Try again."
+          )
+        );
+      }
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
@@ -115,19 +134,60 @@ export default function NegotiationPage() {
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
-    if (!body.trim()) return;
+    const reply = body.trim();
+    if (!reply || busy) return;
+    setMessageError(null);
     setBusy(true);
     try {
       await api(`/negotiations/${id}/messages`, {
         method: "POST",
-        body: JSON.stringify({ body }),
+        body: JSON.stringify({ body: reply }),
       });
       setBody("");
-      await load();
+      try {
+        await load();
+      } catch {
+        setMessageError(
+          "Your reply was sent, but the conversation did not refresh. Reload before sending it again."
+        );
+      }
+    } catch (e: any) {
+      setMessageError(
+        e?.body?.message ??
+          e?.body?.error ??
+          e?.message ??
+          "Your reply was not sent. Try again."
+      );
     } finally {
       setBusy(false);
     }
   }
+
+  if (!data && threadError)
+    return (
+      <Container size="md" className="py-10">
+        <section className="card p-6 text-center" role="alert">
+          <h1 className="text-lg font-bold text-ink-900">
+            Conversation unavailable
+          </h1>
+          <p className="mt-2 text-sm text-red-700">{threadError}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setThreadError(null);
+              load().catch(() =>
+                setThreadError(
+                  "We couldn’t load this private conversation. Check your connection and try again."
+                )
+              );
+            }}
+            className="btn-primary mt-4"
+          >
+            Try again
+          </button>
+        </section>
+      </Container>
+    );
 
   if (!data)
     return (
@@ -200,17 +260,34 @@ export default function NegotiationPage() {
           </ul>
           <form
             onSubmit={send}
-            className="flex items-center gap-2 border-t border-surface-200 p-3"
+            className="border-t border-surface-200 p-3"
           >
-            <input
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Type a message…"
-              className="input flex-1"
-            />
-            <button type="submit" disabled={busy} className="btn-primary">
-              Send
-            </button>
+            <div className="flex items-end gap-2">
+              <textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Write a specific reply…"
+                className="input min-h-11 flex-1 resize-y"
+                rows={2}
+                maxLength={4000}
+                aria-describedby="reply-status"
+              />
+              <button
+                type="submit"
+                disabled={busy || !body.trim()}
+                className="btn-primary"
+              >
+                {busy ? "Sending…" : "Send"}
+              </button>
+            </div>
+            <p
+              id="reply-status"
+              className={`mt-1.5 text-xs ${messageError ? "text-red-700" : "text-ink-400"}`}
+              aria-live="polite"
+            >
+              {messageError ??
+                "Nothing is sent until you choose Send. Keep exact meetup details in the private conversation."}
+            </p>
           </form>
         </section>
 
