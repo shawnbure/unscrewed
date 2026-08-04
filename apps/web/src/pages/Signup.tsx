@@ -34,6 +34,7 @@ export default function Signup() {
     ? nextPath
     : "/neighborhood?welcome=1";
   const returningMemberPath = hasExplicitNext ? nextPath : "/neighborhood";
+  const loginPath = withNext("/login", returningMemberPath);
   const nextUrl = new URL(nextPath, window.location.origin);
   const suggestedZip =
     searchParams.get("zip") ?? nextUrl.searchParams.get("zip") ?? "";
@@ -50,6 +51,9 @@ export default function Signup() {
     continuesToProposal &&
     searchParams.get("exchange") === "remote" &&
     /^[0-9a-f-]{36}$/i.test(proposalListingId ?? "");
+  const proposalLoginPath = continuesToRemoteProposal
+    ? `${loginPath}&exchange=remote`
+    : loginPath;
   const continuesToLocalWatch =
     nextUrl.pathname === "/account" && nextUrl.hash === "#local-watch";
   const [email, setEmail] = useState("");
@@ -138,7 +142,7 @@ export default function Signup() {
         <>
           Already a member?{" "}
           <Link
-            to={withNext("/login", returningMemberPath)}
+            to={proposalLoginPath}
             className="font-medium text-brand-700 hover:underline"
           >
             Sign in

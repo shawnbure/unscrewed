@@ -22,6 +22,8 @@ export default function Login() {
   const continuesToProposal =
     nextUrl.pathname.startsWith("/listing/") &&
     nextUrl.searchParams.get("propose") === "1";
+  const continuesToRemoteProposal =
+    continuesToProposal && searchParams.get("exchange") === "remote";
   const continuesToLocalWatch =
     nextUrl.pathname === "/account" && nextUrl.hash === "#local-watch";
   const [email, setEmail] = useState("");
@@ -35,6 +37,11 @@ export default function Login() {
   useEffect(() => {
     setPkSupported(passkeysSupported());
   }, []);
+
+  const signupPath = withNext("/signup", nextPath);
+  const proposalSignupPath = continuesToRemoteProposal
+    ? `${signupPath}&exchange=remote`
+    : signupPath;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -91,7 +98,7 @@ export default function Login() {
         <>
           New here?{" "}
           <Link
-            to={withNext("/signup", nextPath)}
+            to={proposalSignupPath}
             className="font-medium text-ink-900 hover:underline"
           >
             Create an account

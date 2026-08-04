@@ -305,6 +305,11 @@ export default function ListingDetail() {
                 l.exchangeMode === "remote"
                   ? `${signupPath}&exchange=remote`
                   : signupPath;
+              const loginPath = withNext("/login", proposalPath);
+              const proposalLoginPath =
+                l.exchangeMode === "remote"
+                  ? `${loginPath}&exchange=remote`
+                  : loginPath;
               if (session === null) {
                 return (
                   <>
@@ -354,7 +359,7 @@ export default function ListingDetail() {
                     <p className="mt-2 text-center text-xs text-ink-400">
                       Already a member?{" "}
                       <Link
-                        to={withNext("/login", proposalPath)}
+                        to={proposalLoginPath}
                         className="font-semibold text-brand-700 hover:underline"
                       >
                         Sign in and return here
