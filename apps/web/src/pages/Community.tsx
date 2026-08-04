@@ -8,6 +8,7 @@ import { ArrowRight, Users, MapPin, Handshake } from "lucide-react";
 import { Container } from "../ui/Container.js";
 import { getStats, type StatsPayload } from "../lib/stats.js";
 import { useSession } from "../lib/session.js";
+import { listingStarterPath } from "../lib/listingStarters.js";
 
 export default function CommunityPage() {
   const { session } = useSession();
@@ -120,14 +121,17 @@ export default function CommunityPage() {
               neighbors have joined so far.
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-base text-ink-500 sm:text-lg">
-              Every number on the map counts real members in a broad area. No
-              fees, no middleman—just neighbors deciding to help each other
-              out.
+              The total counts real members. The map shows only broad areas
+              that meet the privacy threshold. No fees, no middleman—just
+              people deciding what they can genuinely exchange.
             </p>
             {!session?.authenticated && (
               <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                <Link to="/signup" className="btn-brand text-base">
-                  Join the community
+                <Link
+                  to={listingStarterPath("useful_item")}
+                  className="btn-brand text-base"
+                >
+                  Post a real offer
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link to="/browse" className="btn-outline text-base">
@@ -154,6 +158,14 @@ export default function CommunityPage() {
               value={(stats?.listings_this_month ?? 0).toLocaleString()}
             />
           </div>
+          {stats && stats.listings_active < 10 && (
+            <p className="mx-auto mt-5 max-w-2xl text-center text-sm leading-relaxed text-ink-500">
+              This marketplace is still in its founding stage. One specific
+              item or skill you can actually exchange is more useful than a
+              passive signup—and gives the next person something real to act
+              on.
+            </p>
+          )}
         </Container>
       </section>
 
@@ -199,43 +211,31 @@ export default function CommunityPage() {
       <Container size="lg" className="mt-16">
         <div className="rounded-3xl bg-ink-900 p-8 text-center text-white sm:p-12">
           <h2 className="display text-3xl text-balance sm:text-4xl">
-            Add one dot to the map.
+            Turn one useful thing into a real trade.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-base text-white/70">
-            Every new neighbor makes the network more useful for the neighbors
-            already here. It's how this thing works.
+            Post an item for someone near you or offer a skill that works
+            remotely across the United States. A real offer—not another vanity
+            signup—is what makes the network useful.
           </p>
-          {!session?.authenticated ? (
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/signup"
-                className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-ink-900 hover:bg-surface-100"
-              >
-                Create an account
-              </Link>
-              <Link
-                to="/browse"
-                className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
-              >
-                Just look around
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/post"
-                className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-ink-900 hover:bg-surface-100"
-              >
-                Post a trade
-              </Link>
-              <Link
-                to="/account"
-                className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
-              >
-                Update my ZIP
-              </Link>
-            </div>
-          )}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              to={listingStarterPath("useful_item")}
+              className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-ink-900 hover:bg-surface-100"
+            >
+              Post a useful item
+            </Link>
+            <Link
+              to={listingStarterPath("remote_skill")}
+              className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              Offer a remote skill
+            </Link>
+          </div>
+          <p className="mx-auto mt-4 max-w-xl text-xs leading-relaxed text-white/50">
+            Each starter opens editable fields. Nothing is published until you
+            add accurate details and choose Post trade.
+          </p>
         </div>
       </Container>
     </div>
