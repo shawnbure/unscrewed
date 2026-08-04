@@ -706,8 +706,8 @@ function ContractCard({
           contractId={contract.id}
           onClose={() => setSignOpen(false)}
           onSigned={async () => {
-            setSignOpen(false);
             await onChange();
+            setSignOpen(false);
           }}
         />
       )}
@@ -722,24 +722,44 @@ function SignModal({
 }: {
   contractId: string;
   onClose: () => void;
-  onSigned: () => void;
+  onSigned: () => Promise<void> | void;
 }) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [recorded, setRecorded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function sign(e: React.FormEvent) {
     e.preventDefault();
+    const typedName = name.trim();
+    if (typedName.length < 2 || busy || recorded) return;
     setBusy(true);
     setError(null);
     try {
       await api(`/contracts/${contractId}/sign`, {
         method: "POST",
-        body: JSON.stringify({ typedName: name }),
+        body: JSON.stringify({ typedName }),
       });
-      onSigned();
+      setRecorded(true);
+      try {
+        await onSigned();
+      } catch {
+        setError(
+          "Your signature was recorded, but the conversation did not refresh. Close and reload; do not sign again."
+        );
+      }
     } catch (e: any) {
-      setError(e?.body?.error ?? e?.message ?? "Could not sign");
+      const code = e?.body?.error;
+      if (code === "already_signed" || code === "you_already_signed") {
+        setRecorded(true);
+        setError(
+          "Your signature is already recorded. Close and reload this conversation."
+        );
+      } else {
+        setError(
+          e?.body?.message ?? code ?? e?.message ?? "Your signature was not recorded. Try again."
+        );
+      }
     } finally {
       setBusy(false);
     }
@@ -764,15 +784,24 @@ function SignModal({
             minLength={2}
             maxLength={120}
             autoFocus
+            disabled={recorded}
           />
         </label>
-        {error && <p className="text-sm text-red-700">{error}</p>}
+        {error && (
+          <p className="text-sm text-red-700" aria-live="polite">
+            {error}
+          </p>
+        )}
         <div className="flex justify-end gap-2 pt-1">
           <button type="button" onClick={onClose} className="btn-ghost">
             Cancel
           </button>
-          <button type="submit" disabled={busy || name.length < 2} className="btn-primary">
-            {busy ? "Signing…" : "Sign"}
+          <button
+            type="submit"
+            disabled={busy || recorded || name.trim().length < 2}
+            className="btn-primary"
+          >
+            {busy ? "Signing…" : recorded ? "Signature recorded" : "Sign"}
           </button>
         </div>
         <p className="text-xs text-ink-400">

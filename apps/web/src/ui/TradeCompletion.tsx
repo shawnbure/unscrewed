@@ -21,6 +21,7 @@ export function TradeCompletion({
   onConfirmed,
 }: TradeCompletionProps) {
   const [busy, setBusy] = useState(false);
+  const [recorded, setRecorded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const completed = Boolean(partyACompletedAt && partyBCompletedAt);
 
@@ -38,7 +39,14 @@ export function TradeCompletion({
       await api(`/contracts/${encodeURIComponent(contractId)}/complete`, {
         method: "POST",
       });
-      await onConfirmed();
+      setRecorded(true);
+      try {
+        await onConfirmed();
+      } catch {
+        setError(
+          "Your completion was recorded, but the trade did not refresh. Reload; do not confirm again."
+        );
+      }
     } catch (e: any) {
       setError(
         e?.body?.error === "agreement_not_signed"
@@ -101,13 +109,21 @@ export function TradeCompletion({
       <button
         type="button"
         onClick={confirmCompletion}
-        disabled={busy}
+        disabled={busy || recorded}
         className="btn-brand mt-3 w-full"
       >
         <CheckCircle2 className="h-4 w-4" />
-        {busy ? "Confirming…" : "Confirm my side is complete"}
+        {busy
+          ? "Confirming…"
+          : recorded
+            ? "Completion recorded"
+            : "Confirm my side is complete"}
       </button>
-      {error && <p className="mt-2 text-red-700">{error}</p>}
+      {error && (
+        <p className="mt-2 text-red-700" aria-live="polite">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
