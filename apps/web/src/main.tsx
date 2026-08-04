@@ -55,7 +55,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route
             path="post"
             element={
-              <RequireAuth>
+              <RequireAuth signupFirst>
                 <NewListing />
               </RequireAuth>
             }

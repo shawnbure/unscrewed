@@ -24,6 +24,7 @@ export default function Login() {
     nextUrl.searchParams.get("propose") === "1";
   const continuesToRemoteProposal =
     continuesToProposal && searchParams.get("exchange") === "remote";
+  const continuesToTradeConversation = nextUrl.pathname.startsWith("/n/");
   const continuesToLocalWatch =
     nextUrl.pathname === "/account" && nextUrl.hash === "#local-watch";
   const [email, setEmail] = useState("");
@@ -90,6 +91,8 @@ export default function Login() {
       subtitle={
         continuesToProposal
           ? "Sign in, then you’ll return to this trade to make your proposal."
+          : continuesToTradeConversation
+            ? "Sign in, then you’ll return to this private trade conversation."
           : continuesToLocalWatch
             ? "Sign in, then you can review your optional local-listing alerts."
             : "Sign in with your email and password."

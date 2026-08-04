@@ -3,7 +3,13 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useSession } from "../lib/session.js";
 import { withNext } from "../lib/navigation.js";
 
-export function RequireAuth({ children }: { children: React.ReactNode }) {
+export function RequireAuth({
+  children,
+  signupFirst = false,
+}: {
+  children: React.ReactNode;
+  signupFirst?: boolean;
+}) {
   const { session, refresh } = useSession();
   const location = useLocation();
 
@@ -20,7 +26,12 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   }
   if (!session.authenticated) {
     const next = `${location.pathname}${location.search}${location.hash}`;
-    return <Navigate to={withNext("/signup", next)} replace />;
+    return (
+      <Navigate
+        to={withNext(signupFirst ? "/signup" : "/login", next)}
+        replace
+      />
+    );
   }
   return <>{children}</>;
 }
