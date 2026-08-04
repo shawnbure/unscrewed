@@ -503,6 +503,24 @@ function ProposeModal({
     offering,
     openingMessage
   );
+  const proposalDetails = [
+    {
+      label: "A specific offer with no bracketed prompts",
+      complete:
+        offering.trim().length >= 2 &&
+        !hasProposalPlaceholders(offering),
+    },
+    {
+      label: "A clear opening message",
+      complete:
+        openingMessage.trim().length >= 2 &&
+        !hasProposalPlaceholders(openingMessage),
+    },
+  ];
+  const proposalDetailsRemaining = proposalDetails.filter(
+    (detail) => !detail.complete
+  ).length;
+  const proposalReady = proposalDetailsRemaining === 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -520,8 +538,12 @@ function ProposeModal({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (draftHasPlaceholders) {
-      setError("Replace every [bracketed prompt] before sending.");
+    if (!proposalReady) {
+      setError(
+        draftHasPlaceholders
+          ? "Replace every [bracketed prompt] before sending."
+          : "Complete your specific offer and opening message before sending."
+      );
       return;
     }
     setBusy(true);
@@ -566,6 +588,33 @@ function ProposeModal({
           </p>
           <p className="mt-1 text-sm leading-relaxed text-ink-800">
             {listingWants}
+          </p>
+        </div>
+        <div
+          className="mt-3 rounded-xl border border-surface-200 bg-white p-3"
+          aria-live="polite"
+        >
+          <strong className="text-sm text-ink-900">
+            {proposalReady
+              ? "Proposal ready to send"
+              : `${proposalDetailsRemaining} required ${proposalDetailsRemaining === 1 ? "detail" : "details"} remaining`}
+          </strong>
+          <ul className="mt-2 space-y-1 text-xs">
+            {proposalDetails.map((detail) => (
+              <li
+                key={detail.label}
+                className={
+                  detail.complete ? "text-brand-700" : "text-ink-500"
+                }
+              >
+                <span aria-hidden>{detail.complete ? "✓" : "○"}</span>{" "}
+                {detail.label}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
+            Nothing is sent until you choose Send proposal. The lister can
+            reply in chat before either person signs terms.
           </p>
         </div>
         <form onSubmit={submit} className="mt-4 space-y-3">
@@ -669,7 +718,7 @@ function ProposeModal({
             </button>
             <button
               type="submit"
-              disabled={busy || draftHasPlaceholders}
+              disabled={busy || !proposalReady}
               className="btn-primary"
             >
               {busy ? "Sending…" : "Send proposal"}
