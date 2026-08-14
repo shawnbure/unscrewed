@@ -12,3 +12,10 @@ build
 coverage
 *.log
 gtm/
+
+# Local scratch / agent output — not for version control
+output/
+outputs/
+tmp/
+.artifacts/
+*.tsbuildinfo
