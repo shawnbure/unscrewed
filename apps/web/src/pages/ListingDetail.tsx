@@ -628,6 +628,19 @@ function ProposeModal({
               Start with an editable draft
             </legend>
             <div className="mt-1 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setOffering(`I can offer: ${listingWants}`);
+                  setOpeningMessage(
+                    "Hi — I’m interested in this trade and can provide the requested return. My exact scope, timing, and deliverable are: [replace with specific details]. Would that be a fair exchange for you?"
+                  );
+                  setError(null);
+                }}
+                className="rounded-lg border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-800 transition-colors hover:border-brand-500 hover:bg-brand-100"
+              >
+                Offer what they requested
+              </button>
               {PROPOSAL_STARTERS.map((starter) => (
                 <button
                   key={starter.id}
@@ -645,8 +658,10 @@ function ProposeModal({
             </div>
             <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
               Choosing one replaces the two draft fields below and sends
-              nothing. Replace every [bracketed prompt] with something you can
-              genuinely provide.
+              nothing. The first option copies the requested return so you do
+              not have to retype it, but you must still add your exact scope,
+              timing, and deliverable. Replace every [bracketed prompt] with
+              something you can genuinely provide.
             </p>
           </fieldset>
           {myListings && myListings.length > 0 && (

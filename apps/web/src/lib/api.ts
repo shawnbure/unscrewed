@@ -10,7 +10,7 @@ export const API_BASE = (() => {
   if (typeof window === "undefined") return "/api";
   const host = window.location.hostname;
   if (host === "localhost" || host === "127.0.0.1") return "/api";
-  return "https://api.unscrewed.lol";
+  return "/api";
 })();
 const BASE = API_BASE;
 

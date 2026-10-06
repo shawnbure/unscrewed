@@ -11,8 +11,8 @@
   },
   "scripts": {
     "generate": "drizzle-kit generate",
-    "migrate:local": "wrangler d1 migrations apply unscrewed --local --config ../../apps/api/wrangler.toml",
-    "migrate:remote": "wrangler d1 migrations apply unscrewed --remote --config ../../apps/api/wrangler.toml",
+    "migrate:local": "wrangler d1 migrations apply DB --local --config ../../apps/api/wrangler.toml",
+    "migrate:remote": "wrangler d1 migrations apply DB --remote --config ../../apps/api/wrangler.toml",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -20,7 +20,6 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260527.1",
-    "better-sqlite3": "^11.5.0",
     "drizzle-kit": "^0.28.1",
     "wrangler": "^3.90.0"
   }

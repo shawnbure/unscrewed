@@ -2,30 +2,26 @@ name = "unscrewed-api"
 main = "src/index.ts"
 compatibility_date = "2024-11-12"
 compatibility_flags = ["nodejs_compat"]
-account_id = "485a8b721eeb6afa98c6e4071b50fe04"  # smb
 
 workers_dev = true
 
 # Custom domain — auto-creates AAAA + SSL on the unscrewed.lol zone.
-[[routes]]
-pattern = "api.unscrewed.lol"
-custom_domain = true
 
 # ---------- D1 ----------
 [[d1_databases]]
 binding = "DB"
 database_name = "unscrewed"
-database_id = "9369c48b-e156-4963-827e-a0b7ed76e149"
+database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "../../packages/db/src/migrations"
 
 # ---------- KV ----------
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "3f47aca094bf4d338da2fb0cbb71085f"
+id = "00000000000000000000000000000000"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "d30c4d4391c64dbdbb0438235623c642"
+id = "00000000000000000000000000000000"
 
 # ---------- R2 ----------
 [[r2_buckets]]
@@ -37,9 +33,6 @@ bucket_name = "unscrewed-photos"     # `wrangler r2 bucket create unscrewed-phot
 binding = "AI"
 
 # ---------- Transactional email ----------
-[[send_email]]
-name = "EMAIL"
-allowed_sender_addresses = ["notifications@unscrewed.lol"]
 
 # ---------- Durable Objects ----------
 [[durable_objects.bindings]]
@@ -52,9 +45,9 @@ new_sqlite_classes = ["NegotiationRoom"]
 
 # ---------- Public env ----------
 [vars]
-API_BASE_URL = "https://api.unscrewed.lol"
-PUBLIC_BASE_URL = "https://unscrewed.lol"
-OPERATOR_EMAIL = "smb@workrr.ai"
+API_BASE_URL = "http://localhost:8787"
+PUBLIC_BASE_URL = "http://localhost:5173"
+OPERATOR_EMAIL = "operator@example.com"
 TOS_VERSION = "2026-07-18"
 
 # ---------- Secrets (set via `wrangler secret put`, do NOT commit) ----------

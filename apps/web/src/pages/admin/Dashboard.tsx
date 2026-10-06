@@ -196,36 +196,45 @@ export default function AdminDashboard() {
             No campaign visits yet. Share a tracked invite to start measuring.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1080px] text-left text-sm">
+          <div>
+            <table className="w-full table-fixed text-left text-xs lg:text-sm">
+              <colgroup>
+                <col className="w-[27%]" />
+                <col className="w-[7%]" />
+                <col className="w-[11%]" />
+                <col className="w-[12%]" />
+                <col className="w-[19%]" />
+                <col className="w-[12%]" />
+                <col className="w-[12%]" />
+              </colgroup>
               <thead className="bg-surface-50 text-xs uppercase tracking-wider text-ink-400">
                 <tr>
-                  <th className="px-5 py-3 font-semibold">Campaign</th>
-                  <th className="px-4 py-3 font-semibold">Visits</th>
-                  <th className="px-4 py-3 font-semibold">Members</th>
-                  <th className="px-4 py-3 font-semibold">Posted anywhere</th>
-                  <th className="px-4 py-3 font-semibold">
+                  <th className="px-3 py-3 font-semibold lg:px-4">Campaign</th>
+                  <th className="px-2 py-3 font-semibold">Visits</th>
+                  <th className="px-2 py-3 font-semibold">Members</th>
+                  <th className="px-2 py-3 font-semibold">Posted anywhere</th>
+                  <th className="px-2 py-3 font-semibold">
                     In-scope supply
                   </th>
-                  <th className="px-4 py-3 font-semibold">Started talks</th>
-                  <th className="px-5 py-3 font-semibold">Completed trade</th>
+                  <th className="px-2 py-3 font-semibold">Started talks</th>
+                  <th className="px-2 py-3 font-semibold">Completed trade</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-200">
                 {stats.growth.campaigns.map((campaign) => (
                   <tr key={`${campaign.source}:${campaign.medium}:${campaign.campaign}`}>
-                    <td className="px-5 py-4">
-                      <div className="font-medium text-ink-900">
+                    <td className="px-3 py-4 lg:px-4">
+                      <div className="break-words font-medium text-ink-900">
                         {campaign.campaign.replaceAll("_", " ")}
                       </div>
-                      <div className="mt-0.5 text-xs text-ink-400">
+                      <div className="mt-0.5 break-words text-xs text-ink-400">
                         {campaign.source} / {campaign.medium}
                       </div>
                     </td>
-                    <td className="px-4 py-4 font-medium text-ink-900">
+                    <td className="px-2 py-4 font-medium text-ink-900">
                       {campaign.visitors.toLocaleString()}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-2 py-4">
                       <div className="font-medium text-ink-900">
                         {campaign.signups.toLocaleString()}
                       </div>
@@ -233,7 +242,7 @@ export default function AdminDashboard() {
                         {percent(campaign.signups, campaign.visitors)} of visits
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-2 py-4">
                       <div className="font-medium text-ink-900">
                         {campaign.first_listings.toLocaleString()}
                       </div>
@@ -242,7 +251,7 @@ export default function AdminDashboard() {
                         members
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-2 py-4">
                       {campaign.target_area_posters === null ? (
                         <div className="text-ink-400">Not location-scoped</div>
                       ) : (
@@ -261,7 +270,7 @@ export default function AdminDashboard() {
                         </>
                       )}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-2 py-4">
                       <div className="font-medium text-ink-900">
                         {campaign.negotiation_starters.toLocaleString()}
                       </div>
@@ -273,7 +282,7 @@ export default function AdminDashboard() {
                         of members
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-2 py-4">
                       <div className="font-semibold text-brand-700">
                         {campaign.completed_traders.toLocaleString()}
                       </div>

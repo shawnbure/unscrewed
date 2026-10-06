@@ -27,20 +27,19 @@ const app = new Hono<AppContext>();
 app.use("*", logger());
 app.use(
   "*",
-  cors({
+  (c, next) => cors({
     origin: (origin) => {
       // Allow prod + localhost + Pages preview URLs.
       if (!origin) return origin;
-      if (origin === "https://unscrewed.lol") return origin;
-      if (origin === "https://www.unscrewed.lol") return origin;
+      if (origin === c.env.PUBLIC_BASE_URL) return origin;
       if (origin.startsWith("http://localhost:")) return origin;
-      if (origin.endsWith(".unscrewed-web.pages.dev")) return origin;
+
       return null;
     },
     credentials: true,
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  })
+  })(c, next)
 );
 
 app.get("/", (c) => c.json({ ok: true, service: "unscrewed-api" }));
